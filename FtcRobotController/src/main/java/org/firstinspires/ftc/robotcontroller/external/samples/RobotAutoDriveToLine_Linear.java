@@ -114,7 +114,7 @@ public class RobotAutoDriveToLine_Linear extends LinearOpMode {
             telemetry.addData("Status", "Ready to drive to white line.");    //
 
             // Display the light level while we are waiting to start
-            getBrightness();
+               getBrightness();
         }
 
         // Start the robot moving forward, and then begin looking for a white line.
