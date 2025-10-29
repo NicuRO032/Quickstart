@@ -31,6 +31,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public void stop() {
+        currentPower = 0;
         setPower(0);
     }
 }
