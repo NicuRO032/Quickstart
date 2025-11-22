@@ -27,8 +27,8 @@ public class ExampleAutoIntakeOuttakeParallel extends OpMode {
     private IntakeSubsystem intake;
     private OuttakeSubsystem outtake;
 
-    private final Pose startPose = new Pose(28.5, 128, Math.toRadians(180));
-    private final Pose pickupPose = new Pose(50, 130, Math.toRadians(0));
+    private final Pose startPose = new Pose(36, 135.5, Math.toRadians(180));
+    private final Pose pickupPose = new Pose(50, 84, Math.toRadians(143));
     private final Pose scorePose = new Pose(60, 90, Math.toRadians(135));
 
     private Path toPickup;
@@ -58,7 +58,7 @@ public class ExampleAutoIntakeOuttakeParallel extends OpMode {
 
         follower.setStartingPose(startPose);
 
-        // 🚀 Autonomie combinată (paralel)
+        //  Autonomie combinată (paralel)
         SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                 // 1️⃣ Mergem către pickup și rulăm intake-ul simultan
                 new ParallelCommandGroup(

@@ -1,19 +1,25 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 import java.util.function.Supplier;
+
 
 @Configurable
 @TeleOp
@@ -26,8 +32,21 @@ public class ExampleTeleOp extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
+    private DcMotor motorMatura;
+    private DcMotor motorShooter;
+
+    private DcMotor motorTransport;
+
     @Override
     public void init() {
+        motorMatura = hardwareMap.get(DcMotor.class, "motorMatura");
+        motorShooter = hardwareMap.get(DcMotor.class, "motorShooter");
+        motorShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorTransport = hardwareMap.get(DcMotor.class, "motorTransport");
+        //motorShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorShooter.setDirection(DcMotor.Direction.REVERSE);
+        motorTransport.setDirection(DcMotor.Direction.REVERSE);
+
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
         follower.update();
@@ -61,7 +80,7 @@ public class ExampleTeleOp extends OpMode {
             if (!slowMode) follower.setTeleOpDrive(
                     -gamepad1.left_stick_y,
                     -gamepad1.left_stick_x,
-                    -gamepad1.right_stick_x,
+                    -gamepad1.left_trigger - gamepad1.right_trigger,
                     true // Robot Centric
             );
 
@@ -69,7 +88,7 @@ public class ExampleTeleOp extends OpMode {
             else follower.setTeleOpDrive(
                     -gamepad1.left_stick_y * slowModeMultiplier,
                     -gamepad1.left_stick_x * slowModeMultiplier,
-                    -gamepad1.right_stick_x * slowModeMultiplier,
+                    -gamepad1.left_trigger - gamepad1.right_trigger * slowModeMultiplier,
                     true // Robot Centric
             );
         }
@@ -100,6 +119,19 @@ public class ExampleTeleOp extends OpMode {
         if (gamepad2.yWasPressed()) {
             slowModeMultiplier -= 0.25;
         }
+
+        motorMatura.setPower(gamepad1.right_stick_y);
+
+        if(gamepad1.y) {
+            motorShooter.setPower(.5);
+            motorTransport.setPower(.5);
+        }
+
+        else {
+            motorShooter.setPower(0);
+            motorTransport.setPower(0);
+        }
+
 
         telemetryM.debug("position", follower.getPose());
         telemetryM.debug("velocity", follower.getVelocity());

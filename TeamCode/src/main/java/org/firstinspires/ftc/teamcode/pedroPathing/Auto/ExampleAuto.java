@@ -8,6 +8,7 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -19,8 +20,10 @@ public class ExampleAuto extends OpMode {
 
     private int pathState;
 
-    private final Pose startPose = new Pose(28.5, 128, Math.toRadians(180)); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(60, 85, Math.toRadians(135)); // Scoring Pose of our robot. It is facing the goal at a 135 degree angle.
+    private DcMotor motorMatura;
+
+    private final Pose startPose = new Pose(36, 136, Math.toRadians(180)); // Start Pose of our robot.
+    private final Pose scorePose = new Pose(60, 84, Math.toRadians(143)); // Scoring Pose of our robot. It is facing the goal at a 135 degree angle.
     private final Pose pickup1Pose = new Pose(37, 121, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
     private final Pose pickup2Pose = new Pose(43, 130, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
     private final Pose pickup3Pose = new Pose(49, 135, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
@@ -93,7 +96,7 @@ public class ExampleAuto extends OpMode {
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
                     follower.followPath(grabPickup1, true);
-                    setPathState(2);
+                    setPathState(7);
                 }
                 break;
             case 2:
@@ -103,7 +106,7 @@ public class ExampleAuto extends OpMode {
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
                     follower.followPath(scorePickup1, true);
-                    setPathState(3);
+                    setPathState(-1);
                 }
                 break;
             case 3:
@@ -113,7 +116,7 @@ public class ExampleAuto extends OpMode {
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
                     follower.followPath(grabPickup2, true);
-                    setPathState(4);
+                    setPathState(-1);
                 }
                 break;
             case 4:
@@ -123,7 +126,7 @@ public class ExampleAuto extends OpMode {
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
                     follower.followPath(scorePickup2, true);
-                    setPathState(5);
+                    setPathState(-1);
                 }
                 break;
             case 5:
@@ -133,7 +136,7 @@ public class ExampleAuto extends OpMode {
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
                     follower.followPath(grabPickup3, true);
-                    setPathState(6);
+                    setPathState(-1);
                 }
                 break;
             case 6:
@@ -143,7 +146,7 @@ public class ExampleAuto extends OpMode {
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
                     follower.followPath(scorePickup3, true);
-                    setPathState(7);
+                    setPathState(-1);
                 }
                 break;
             case 7:

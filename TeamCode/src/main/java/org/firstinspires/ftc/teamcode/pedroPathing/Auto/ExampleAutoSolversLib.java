@@ -20,8 +20,8 @@ public class ExampleAutoSolversLib extends OpMode {
 
     private Follower follower;
 
-    private final Pose startPose = new Pose(28.5, 128, Math.toRadians(180));
-    private final Pose scorePose = new Pose(60, 85, Math.toRadians(135));
+    private final Pose startPose = new Pose(36, 135.5, Math.toRadians(180));
+    private final Pose scorePose = new Pose(59, 84, Math.toRadians(143));
     private final Pose pickup1Pose = new Pose(37, 121, Math.toRadians(0));
     private final Pose pickup2Pose = new Pose(43, 130, Math.toRadians(0));
     private final Pose pickup3Pose = new Pose(49, 135, Math.toRadians(0));
