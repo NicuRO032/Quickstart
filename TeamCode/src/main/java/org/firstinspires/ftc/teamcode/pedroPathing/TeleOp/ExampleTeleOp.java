@@ -80,7 +80,7 @@ public class ExampleTeleOp extends OpMode {
             if (!slowMode) follower.setTeleOpDrive(
                     -gamepad1.left_stick_y,
                     -gamepad1.left_stick_x,
-                    -gamepad1.left_trigger - gamepad1.right_trigger,
+                    gamepad1.left_trigger - gamepad1.right_trigger,
                     true // Robot Centric
             );
 
@@ -88,7 +88,7 @@ public class ExampleTeleOp extends OpMode {
             else follower.setTeleOpDrive(
                     -gamepad1.left_stick_y * slowModeMultiplier,
                     -gamepad1.left_stick_x * slowModeMultiplier,
-                    -gamepad1.left_trigger - gamepad1.right_trigger * slowModeMultiplier,
+                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
                     true // Robot Centric
             );
         }
