@@ -11,7 +11,8 @@ import com.pedropathing.geometry.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.OuttakeSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeCommand;
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeBrushCommand;
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeBeltCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunOuttakeCommand;
 
 @TeleOp(name = "Command TeleOp (Subsystems + Scheduler)", group = "Pedro Pathing")
@@ -70,7 +71,7 @@ public class CommandTeleOp extends OpMode {
         if (gamepad1.right_bumper) {
             slowMode = !slowMode;
         }
-
+/**
         // === INTAKE CONTROL ===
         if (gamepad2.right_trigger > 0.2) {
             CommandScheduler.getInstance().schedule(new RunIntakeCommand(intake, 1.0));
@@ -88,10 +89,20 @@ public class CommandTeleOp extends OpMode {
         } else {
             outtake.stopMotor();
         }
+**/
+
+        // === INTAKE CONTROL ===
+
+        CommandScheduler.getInstance().schedule(new RunIntakeBrushCommand(intake, -gamepad1.right_stick_y));
+        //CommandScheduler.getInstance().schedule(new RunIntakeBeltCommand(intake, -gamepad1.left_stick_y));
+
+
+
 
         // === TELEMETRY ===
         telemetry.addData("Pose", follower.getPose());
-        telemetry.addData("Intake Power", intake.getPower());
+        telemetry.addData("Intake Brush Motor Power", intake.getBrushMotorPower());
+        telemetry.addData("Intake Belt Motor Power", intake.getBeltMotorPower());
         telemetry.addData("Outtake Motor Power", outtake.getPower());
         telemetry.addData("Outtake Servo Pos", outtake.getServoPosition());
         telemetry.update();
@@ -100,7 +111,8 @@ public class CommandTeleOp extends OpMode {
     @Override
     public void stop() {
         CommandScheduler.getInstance().reset();
-        intake.stop();
+        intake.stopBrushMotor();
+        intake.stopBeltMotor();
         outtake.stopMotor();
     }
 }

@@ -1,21 +1,22 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Commands;
 
 import com.seattlesolvers.solverslib.command.CommandBase;
+
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem;
 
-public class RunIntakeCommand extends CommandBase {
+public class RunIntakeBeltCommand extends CommandBase {
     private final IntakeSubsystem intake;
-    private final double power;
+    private final double beltMotorPower;
 
-    public RunIntakeCommand(IntakeSubsystem intake, double power) {
+    public RunIntakeBeltCommand(IntakeSubsystem intake, double beltMotorPower) {
         this.intake = intake;
-        this.power = power;
+        this.beltMotorPower = beltMotorPower;
         addRequirements(intake);
     }
 
     @Override
     public void initialize() {
-        intake.setPower(power);
+        intake.setBeltMotorPower(beltMotorPower);
     }
 
     @Override
@@ -25,6 +26,6 @@ public class RunIntakeCommand extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        intake.stop();
+        intake.stopBeltMotor();
     }
 }
