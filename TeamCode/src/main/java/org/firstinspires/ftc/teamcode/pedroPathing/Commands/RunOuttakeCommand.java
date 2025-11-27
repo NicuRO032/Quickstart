@@ -17,8 +17,8 @@ public class RunOuttakeCommand extends CommandBase {
 
     @Override
     public void initialize() {
-        outtake.runMotor(motorPower);
-        outtake.setServo(servoPosition);
+        outtake.setShooterMotorPower(motorPower);
+        outtake.setShooterServoPos(servoPosition);
     }
 
     @Override

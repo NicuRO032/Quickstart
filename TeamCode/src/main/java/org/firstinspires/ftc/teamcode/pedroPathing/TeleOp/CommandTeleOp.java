@@ -103,8 +103,8 @@ public class CommandTeleOp extends OpMode {
         telemetry.addData("Pose", follower.getPose());
         telemetry.addData("Intake Brush Motor Power", intake.getBrushMotorPower());
         telemetry.addData("Intake Belt Motor Power", intake.getBeltMotorPower());
-        telemetry.addData("Outtake Motor Power", outtake.getPower());
-        telemetry.addData("Outtake Servo Pos", outtake.getServoPosition());
+        telemetry.addData("Outtake Motor Power", outtake.getShooterMotorPower());
+        telemetry.addData("Outtake Servo Pos", outtake.getShooterServoPosition());
         telemetry.update();
     }
 
