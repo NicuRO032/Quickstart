@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
@@ -15,6 +16,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeBrushComman
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeBeltCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunOuttakeCommand;
 
+@Configurable
 @TeleOp(name = "Command TeleOp (Subsystems + Scheduler)", group = "Pedro Pathing")
 public class CommandTeleOp extends OpMode {
 

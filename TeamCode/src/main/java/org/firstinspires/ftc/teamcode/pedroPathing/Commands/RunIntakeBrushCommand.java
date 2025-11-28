@@ -25,6 +25,6 @@ public class RunIntakeBrushCommand extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        intake.stopBrushMotor();
+        //intake.stopBrushMotor();
     }
 }

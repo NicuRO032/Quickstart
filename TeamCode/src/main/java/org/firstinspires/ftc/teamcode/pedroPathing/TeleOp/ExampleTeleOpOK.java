@@ -3,27 +3,28 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
-
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.seattlesolvers.solverslib.command.CommandScheduler;
+import com.seattlesolvers.solverslib.command.InstantCommand;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunOuttakeSequenceCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.OuttakeSubsystem;
 
 import java.util.function.Supplier;
 
 
 @Configurable
-@TeleOp(name="ExampleTeleOp")
-public class ExampleTeleOp extends OpMode {
+@TeleOp(name="ExampleTeleOpOK")
+public class ExampleTeleOpOK extends OpMode {
     private Follower follower;
     public static Pose startingPose; //See ExampleAuto to understand how to use this
     private boolean automatedDrive;
@@ -32,20 +33,27 @@ public class ExampleTeleOp extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
-    private DcMotor motorMatura;
-    private DcMotor motorShooter;
+    private IntakeSubsystem intake;
+    private OuttakeSubsystem outtake;
 
-    private DcMotor motorTransport;
+
+    public boolean sequenceRunning = false;
+
 
     @Override
     public void init() {
-        motorMatura = hardwareMap.get(DcMotor.class, "brushMotor");
-        motorShooter = hardwareMap.get(DcMotor.class, "shooterMotor");
-        motorShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorTransport = hardwareMap.get(DcMotor.class, "beltMotor");
-        //motorShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motorShooter.setDirection(DcMotor.Direction.REVERSE);
-        motorTransport.setDirection(DcMotor.Direction.REVERSE);
+
+
+        // Initialize subsystems
+        intake = new IntakeSubsystem(hardwareMap);
+        outtake = new OuttakeSubsystem(hardwareMap);
+
+        // Register subsystems in the CommandScheduler
+        CommandScheduler.getInstance().registerSubsystem(intake);
+        CommandScheduler.getInstance().registerSubsystem(outtake);
+
+        telemetry.addLine("Initialized Command TeleOp with Scheduler");
+        telemetry.update();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
@@ -56,6 +64,8 @@ public class ExampleTeleOp extends OpMode {
                 .addPath(new Path(new BezierLine(follower::getPose, new Pose(45, 98))))
                 .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(45), 0.8))
                 .build();
+
+        outtake.setShooterServoPos(0.9);
     }
 
     @Override
@@ -71,6 +81,7 @@ public class ExampleTeleOp extends OpMode {
         //Call this once per loop
         follower.update();
         telemetryM.update();
+        CommandScheduler.getInstance().run();
 
         if (!automatedDrive) {
             //Make the last parameter false for field-centric
@@ -120,18 +131,38 @@ public class ExampleTeleOp extends OpMode {
             slowModeMultiplier -= 0.25;
         }
 
-        motorMatura.setPower(gamepad1.right_stick_y);
+        if(!sequenceRunning) {
+            intake.setBrushMotorPower(-gamepad1.right_stick_y);
+        }
+        //CommandScheduler.getInstance().schedule(new RunIntakeBrushCommand(intake, -gamepad1.right_stick_y));
+        //CommandScheduler.getInstance().schedule(new RunIntakeBeltCommand(intake, -gamepad1.right_stick_y));
 
-        if(gamepad1.y) {
-            motorShooter.setPower(.5);
-            motorTransport.setPower(.5);
+        /**
+        if (gamepad1.y){
+         CommandScheduler.getInstance().schedule(new RunOuttakeServoPosCommand(outtake, SERVO_HOLD));
+         }
+         if (gamepad1.x){
+             CommandScheduler.getInstance().schedule(new RunOuttakeServoPosCommand(outtake, SERVO_FIRE));
+         }
+        **/
+
+        if (gamepad1.y){
+            sequenceRunning = true;
+            CommandScheduler.getInstance().schedule(
+                    new RunOuttakeSequenceCommand(intake, outtake).andThen(
+                            new InstantCommand(() -> sequenceRunning = false))
+            );
+            //CommandScheduler.getInstance().schedule(new OuttakeSequence(intake, outtake));
         }
 
-        else {
-            motorShooter.setPower(0);
-            motorTransport.setPower(0);
-        }
 
+
+        /**if (gamepad1.y){
+            CommandScheduler.getInstance().schedule(new RunOuttakeShooterCommand(outtake, 0.25));
+        }
+        if (gamepad1.x){
+            CommandScheduler.getInstance().schedule(new RunOuttakeShooterCommand(outtake, 0.0));
+        }**/
 
         telemetryM.debug("position", follower.getPose());
         telemetryM.debug("velocity", follower.getVelocity());

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
@@ -17,7 +18,7 @@ public class IntakeSubsystem extends SubsystemBase {
         beltMotor = hardwareMap.get(DcMotor.class, "beltMotor");
 
         // inversarea unui motor dacă e necesar
-        brushMotor.setDirection(DcMotor.Direction.FORWARD);
+        brushMotor.setDirection(DcMotor.Direction.REVERSE);
         beltMotor.setDirection(DcMotor.Direction.REVERSE);
     }
 

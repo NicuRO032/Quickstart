@@ -26,6 +26,6 @@ public class RunIntakeBeltCommand extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        intake.stopBeltMotor();
+        //intake.stopBeltMotor();
     }
 }

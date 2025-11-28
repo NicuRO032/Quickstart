@@ -15,7 +15,7 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeCommand;
+//import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunIntakeCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunOuttakeCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.OuttakeSubsystem;
@@ -62,8 +62,8 @@ public class ExampleAutoIntakeOuttakeParallel extends OpMode {
         SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                 // 1️⃣ Mergem către pickup și rulăm intake-ul simultan
                 new ParallelCommandGroup(
-                        new FollowPathCommand(follower, toPickup, true, 1.0),
-                        new RunIntakeCommand(intake, 1.0)
+                        new FollowPathCommand(follower, toPickup, true, 1.0)
+                        //new RunIntakeCommand(intake, 1.0)
                 ),
 
                 // 2️⃣ Mergem către zona de scoring și rulăm outtake-ul simultan
