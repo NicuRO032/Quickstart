@@ -13,7 +13,7 @@ public class RunOuttakeSequenceCommand extends SequentialCommandGroup {
     private static final double SERVO_HOLD = 0.87;
     public RunOuttakeSequenceCommand(IntakeSubsystem intake, OuttakeSubsystem outtake) {
         addCommands(
-                new RunOuttakeShooterCommand(outtake, 0.75),
+                new RunOuttakeShooterCommand(outtake, 0.70),
                 new WaitCommand(1000),
                 new RunIntakeBeltCommand(intake, 0.5),
                 new RunIntakeBrushCommand(intake, 0.5),

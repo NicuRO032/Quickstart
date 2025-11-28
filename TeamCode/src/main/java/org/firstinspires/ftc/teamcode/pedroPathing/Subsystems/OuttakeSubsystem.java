@@ -15,6 +15,7 @@ public class OuttakeSubsystem extends SubsystemBase {
     public OuttakeSubsystem(HardwareMap hardwareMap) {
         shooterMotor = hardwareMap.get(DcMotor.class, "shooterMotor");
         shooterServo = hardwareMap.get(Servo.class, "shooterServo");
+        shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooterMotor.setDirection(DcMotor.Direction.REVERSE);
         shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
