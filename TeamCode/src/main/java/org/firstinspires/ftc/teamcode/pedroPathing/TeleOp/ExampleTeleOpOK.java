@@ -127,12 +127,12 @@ public class ExampleTeleOpOK extends OpMode {
         }
 
         //Optional way to change slow mode strength
-        if (gamepad2.yWasPressed()) {
+        if (gamepad1.yWasPressed()) {
             slowModeMultiplier -= 0.25;
         }
 
         if(!sequenceRunning) {
-            intake.setBrushMotorPower(-gamepad1.right_stick_y);
+            intake.setBrushMotorPower(-gamepad2.right_stick_y);
         }
         //CommandScheduler.getInstance().schedule(new RunIntakeBrushCommand(intake, -gamepad1.right_stick_y));
         //CommandScheduler.getInstance().schedule(new RunIntakeBeltCommand(intake, -gamepad1.right_stick_y));
@@ -146,7 +146,7 @@ public class ExampleTeleOpOK extends OpMode {
          }
         **/
 
-        if (gamepad1.y){
+        if (gamepad2.y){
             sequenceRunning = true;
             CommandScheduler.getInstance().schedule(
                     new RunOuttakeSequenceCommand(intake, outtake).andThen(
