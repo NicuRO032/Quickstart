@@ -10,20 +10,20 @@ import com.seattlesolvers.solverslib.command.WaitCommand;
 public class RunOuttakeSequenceCommand extends SequentialCommandGroup {
 
     private static final double SERVO_FIRE = 0.85;
-    private static final double SERVO_HOLD = 0.90;
+    private static final double SERVO_HOLD = 0.93;
     public RunOuttakeSequenceCommand(IntakeSubsystem intake, OuttakeSubsystem outtake) {
         addCommands(
 
-                new RunOuttakeShooterCommand(outtake, 0.5),
-                new WaitCommand(1300),
-                new RunIntakeBeltCommand(intake, 0.70),
+                new RunOuttakeShooterCommand(outtake, 0.3),
+                new WaitCommand(1500),
+                new RunIntakeBeltCommand(intake, 0.50),
                 new RunIntakeBrushCommand(intake, 0.4),
                 new RunOuttakeServoPosCommand(outtake,SERVO_FIRE),
-                new WaitCommand(300),
+                new WaitCommand(450),
                 new RunOuttakeServoPosCommand(outtake,SERVO_HOLD),
-                new WaitCommand(900),
+                new WaitCommand(1000),
                 new RunOuttakeServoPosCommand(outtake,SERVO_FIRE),
-                new WaitCommand(1500),
+                new WaitCommand(1700),
 
 
                 new RunOuttakeShooterCommand(outtake, 0.0),
