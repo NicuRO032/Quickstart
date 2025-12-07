@@ -44,4 +44,13 @@ public class OuttakeSubsystem extends SubsystemBase {
     public void stopMotor() {
         shooterMotor.setPower(0);
     }
+
+    public void setShooterPower(double MotorPower) {
+    }
+
+    public void setServoPosition(double servoPosition) {
+    }
+
+    public void stop() {
+    }
 }

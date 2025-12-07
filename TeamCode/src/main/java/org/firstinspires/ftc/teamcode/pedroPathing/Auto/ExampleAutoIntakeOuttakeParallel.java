@@ -24,12 +24,12 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.OuttakeSubsystem;
 public class ExampleAutoIntakeOuttakeParallel extends OpMode {
 
     private Follower follower;
-    private IntakeSubsystem intake;
+    private  IntakeSubsystem intake;
     private OuttakeSubsystem outtake;
 
-    private final Pose startPose = new Pose(36, 135.5, Math.toRadians(180));
-    private final Pose pickupPose = new Pose(50, 84, Math.toRadians(143));
-    private final Pose scorePose = new Pose(60, 90, Math.toRadians(135));
+    private final Pose startPose = new Pose(24.2, 129, Math.toRadians(143));
+    private final Pose pickupPose = new Pose(20, 50, Math.toRadians(180));
+    private final Pose scorePose = new Pose(60, 50, Math.toRadians(143));
 
     private Path toPickup;
     private PathChain toScore;

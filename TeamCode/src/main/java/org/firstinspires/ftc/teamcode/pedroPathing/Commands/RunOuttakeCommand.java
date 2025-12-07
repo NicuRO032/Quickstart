@@ -8,7 +8,7 @@ public class RunOuttakeCommand extends CommandBase {
     private final double motorPower;
     private final double servoPosition;
 
-    public RunOuttakeCommand(OuttakeSubsystem outtake, double motorPower, double servoPosition) {
+    public RunOuttakeCommand(OuttakeSubsystem outtake,double motorPower, double servoPosition) {
         this.outtake = outtake;
         this.motorPower = motorPower;
         this.servoPosition = servoPosition;

@@ -1,23 +1,26 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
+// Declarația clasei trebuie să fie prima (după importuri)
 public class IntakeSubsystem extends SubsystemBase {
+
+    // Toate variabilele și metodele trebuie să fie AICI, în interiorul clasei
+
     private final DcMotor brushMotor;
     private final DcMotor beltMotor;
 
     private double currentBrushMotorPower = 0.0;
     private double currentBeltMotorPower = 0.0;
 
-
     public IntakeSubsystem(HardwareMap hardwareMap) {
         brushMotor = hardwareMap.get(DcMotor.class, "brushMotor");
         beltMotor = hardwareMap.get(DcMotor.class, "beltMotor");
 
-        // inversarea unui motor dacă e necesar
+        // Inversarea unui motor dacă e necesar
+        // NOTĂ: Poți folosi și DcMotorSimple.Direction.REVERSE
         brushMotor.setDirection(DcMotor.Direction.REVERSE);
         beltMotor.setDirection(DcMotor.Direction.REVERSE);
     }
@@ -41,14 +44,24 @@ public class IntakeSubsystem extends SubsystemBase {
         return currentBeltMotorPower;
     }
 
+    // --- Metodele de oprire ---
+
     public void stopBrushMotor() {
-        currentBrushMotorPower = 0;
         setBrushMotorPower(0);
     }
 
     public void stopBeltMotor() {
-        currentBeltMotorPower = 0;
         setBeltMotorPower(0);
     }
 
+    /**
+     * O metodă ajutătoare care oprește ambele motoare de la intake.
+     * Este bună practică să ai o astfel de metodă.
+     */
+    public void stop() {
+        stopBrushMotor();
+        stopBeltMotor();
+    }
+
+    // Aici se termină clasa IntakeSubsystem
 }
