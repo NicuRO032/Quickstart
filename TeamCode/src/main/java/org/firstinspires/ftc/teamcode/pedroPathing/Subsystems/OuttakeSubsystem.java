@@ -52,5 +52,6 @@ public class OuttakeSubsystem extends SubsystemBase {
     }
 
     public void stop() {
+
     }
 }
