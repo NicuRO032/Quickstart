@@ -3,28 +3,17 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.bylazar.configurables.annotations.Configurable;
-import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.HeadingInterpolator;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
-import com.seattlesolvers.solverslib.command.InstantCommand;
-
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.AutoStoreCommand;
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.RunOuttakeSequenceCommand;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.OuttakeSubsystem;
-
 import java.util.function.Supplier;
+import com.seattlesolvers.solverslib.gamepad.GamepadEx;
+import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
 
 //@Configurable
@@ -32,6 +21,9 @@ import java.util.function.Supplier;
 @TeleOp(name="TeleOpCarousel")
 @Config
 public class TeleOpCarousel extends OpMode {
+
+    private GamepadEx driver1;
+    private GamepadEx driver2;
 
     public static boolean simulateDpadLeft = false;
     public static boolean simulateDpadRight = false;
@@ -45,28 +37,20 @@ public class TeleOpCarousel extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
+
     private CarouselSubsystem carousel;
-    // pentru detectare front crescător
-    private boolean lastBallState = false;
-
-
-    //public boolean sequenceRunning = false;
     FtcDashboard dashboard = FtcDashboard.getInstance();
 
 
     @Override
     public void init() {
-
+        driver1 = new GamepadEx(gamepad1);
+        driver2 = new GamepadEx(gamepad2);
 
         // Initialize subsystems
-
         carousel = new CarouselSubsystem(hardwareMap);
-
-
         // Register subsystems in the CommandScheduler
         CommandScheduler.getInstance().registerSubsystem(carousel);
-
-
     }
 
     @Override
@@ -76,40 +60,23 @@ public class TeleOpCarousel extends OpMode {
 
     @Override
     public void loop() {
+
         //Call this once per loop
-        //telemetryM.update();
         CommandScheduler.getInstance().run();
 
+        driver1.readButtons();
+        driver2.readButtons();
 
-
-        /* ================= AUTO STORE ================= */
-
-        boolean ballDetected = carousel.entrySlotHasBall(); // deja delay-uit în subsystem
-
-        // pornește AutoStore o singură dată per bilă
-        if (ballDetected && !lastBallState && !carousel.allSlotsOccupied()) {
-            CommandScheduler.getInstance().schedule(
-                    new AutoStoreCommand(carousel)
-            );
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)
+                || simulateDpadLeft) {
+            carousel.enableAuto(false);
+            carousel.manualStepLeft();
         }
 
-        lastBallState = ballDetected;
-
-        /* ================= MANUAL OVERRIDE ================= */
-
-        boolean leftPressed = gamepad1.dpadLeftWasPressed() || simulateDpadLeft;
-        boolean rightPressed = gamepad1.dpadRightWasPressed() || simulateDpadRight;
-
-        if (leftPressed) {
-            CommandScheduler.getInstance().cancelAll();
-            carousel.stepLeft();
-            simulateDpadLeft = false; // resetăm după simulare
-        }
-
-        if (rightPressed) {
-            CommandScheduler.getInstance().cancelAll();
-            carousel.stepRight();
-            simulateDpadRight = false; // resetăm după simulare
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)
+                || simulateDpadRight) {
+            carousel.enableAuto(false);
+            carousel.manualStepRight();
         }
 
 
@@ -122,9 +89,10 @@ public class TeleOpCarousel extends OpMode {
         packet.put("Occupied 0", carousel.getOccupied(0));
         packet.put("Occupied 1", carousel.getOccupied(1));
         packet.put("Occupied 2", carousel.getOccupied(2));
+        packet.put("State", carousel.getState());
+        packet.put("ButonStanga", driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT));
+        packet.put("ButonDreapta", driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT));
         //packet.put("Actual Power", carousel.motor.getPower());
         dashboard.sendTelemetryPacket(packet);
-
-
     }
 }
