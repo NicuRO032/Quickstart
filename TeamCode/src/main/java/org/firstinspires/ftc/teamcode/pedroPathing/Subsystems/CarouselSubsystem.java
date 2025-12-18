@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -13,11 +14,15 @@ public class CarouselSubsystem extends SubsystemBase {
     // 🔧 Constante
     // determinat experimental
     public static final float TICKS_PER_SLOT = 128.1666666f;
-    public static final double POWER = 1.0;
+    public static final double POWER = 1;
     public static final int POSITION_TOLERANCE = 3;
 
     // distanță sub care slotul de intrare e ocupat
     public static final double SLOT_OCCUPIED_MM = 100.0;
+
+    // debounce / delay senzor intrare
+    private final ElapsedTime entryTimer = new ElapsedTime();
+    private boolean timerRunning = false;
 
     private final DcMotorEx motor;
     private final DistanceSensor entrySensor;
@@ -89,8 +94,22 @@ public class CarouselSubsystem extends SubsystemBase {
     /* ================= SLOT DE INTRARE ================= */
 
     public boolean entrySlotHasBall() {
-        return entrySensor.getDistance(DistanceUnit.MM) < SLOT_OCCUPIED_MM;
+
+        boolean raw = entrySensor.getDistance(DistanceUnit.MM) < SLOT_OCCUPIED_MM;
+
+        if (raw) {
+            if (!timerRunning) {
+                entryTimer.reset();
+                timerRunning = true;
+            }
+            return entryTimer.milliseconds() >= 50;
+        } else {
+            timerRunning = false;
+            return false;
+        }
     }
+
+
 
     public boolean isCurrentSlotFree() {
         return !occupied[logicalIndex];
@@ -118,5 +137,9 @@ public class CarouselSubsystem extends SubsystemBase {
 
     public int getCurrentPosition(){
         return motor.getCurrentPosition();
+    }
+
+    public boolean getOccupied(int i) {
+        return occupied[i];
     }
 }

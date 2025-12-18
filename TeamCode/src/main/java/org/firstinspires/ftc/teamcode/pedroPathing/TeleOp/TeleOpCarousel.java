@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -26,9 +27,16 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.OuttakeSubsystem;
 import java.util.function.Supplier;
 
 
-@Configurable
+//@Configurable
+
 @TeleOp(name="TeleOpCarousel")
+@Config
 public class TeleOpCarousel extends OpMode {
+
+    public static boolean simulateDpadLeft = false;
+    public static boolean simulateDpadRight = false;
+
+
     private Follower follower;
     public static Pose startingPose; //See ExampleAuto to understand how to use this
     private boolean automatedDrive;
@@ -38,9 +46,11 @@ public class TeleOpCarousel extends OpMode {
     private double slowModeMultiplier = 0.5;
 
     private CarouselSubsystem carousel;
+    // pentru detectare front crescător
+    private boolean lastBallState = false;
 
 
-    public boolean sequenceRunning = false;
+    //public boolean sequenceRunning = false;
     FtcDashboard dashboard = FtcDashboard.getInstance();
 
 
@@ -61,6 +71,7 @@ public class TeleOpCarousel extends OpMode {
 
     @Override
     public void start() {
+
     }
 
     @Override
@@ -69,17 +80,38 @@ public class TeleOpCarousel extends OpMode {
         //telemetryM.update();
         CommandScheduler.getInstance().run();
 
-        CommandScheduler.getInstance().schedule(
-                new AutoStoreCommand(carousel));
 
 
-        // controale manuale opționale (debug)
-        if (gamepad1.dpadLeftWasPressed()) {
+        /* ================= AUTO STORE ================= */
+
+        boolean ballDetected = carousel.entrySlotHasBall(); // deja delay-uit în subsystem
+
+        // pornește AutoStore o singură dată per bilă
+        if (ballDetected && !lastBallState && !carousel.allSlotsOccupied()) {
+            CommandScheduler.getInstance().schedule(
+                    new AutoStoreCommand(carousel)
+            );
+        }
+
+        lastBallState = ballDetected;
+
+        /* ================= MANUAL OVERRIDE ================= */
+
+        boolean leftPressed = gamepad1.dpadLeftWasPressed() || simulateDpadLeft;
+        boolean rightPressed = gamepad1.dpadRightWasPressed() || simulateDpadRight;
+
+        if (leftPressed) {
+            CommandScheduler.getInstance().cancelAll();
             carousel.stepLeft();
+            simulateDpadLeft = false; // resetăm după simulare
         }
-        if (gamepad1.dpadRightWasPressed()) {
+
+        if (rightPressed) {
+            CommandScheduler.getInstance().cancelAll();
             carousel.stepRight();
+            simulateDpadRight = false; // resetăm după simulare
         }
+
 
         // 6️⃣ Trimite datele la Dashboard (pentru grafic)
         TelemetryPacket packet = new TelemetryPacket();
@@ -87,6 +119,9 @@ public class TeleOpCarousel extends OpMode {
         packet.put("logicalIndex", carousel.getLogicalIndex());
         packet.put("CarouselTarget Position", carousel.getTargetPosition());
         packet.put("Actual Position", carousel.getCurrentPosition());
+        packet.put("Occupied 0", carousel.getOccupied(0));
+        packet.put("Occupied 1", carousel.getOccupied(1));
+        packet.put("Occupied 2", carousel.getOccupied(2));
         //packet.put("Actual Power", carousel.motor.getPower());
         dashboard.sendTelemetryPacket(packet);
 

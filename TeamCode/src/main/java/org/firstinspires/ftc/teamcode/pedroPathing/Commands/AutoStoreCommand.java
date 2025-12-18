@@ -30,7 +30,7 @@ public class AutoStoreCommand extends CommandBase {
         }
 
         // bila tocmai a ajuns → o marcăm o singură dată
-        if (!ballHandled) {
+        if (!ballHandled && carousel.entrySlotHasBall() && carousel.atTarget()) {
             carousel.markCurrentSlotOccupied();
             ballHandled = true;
         }
