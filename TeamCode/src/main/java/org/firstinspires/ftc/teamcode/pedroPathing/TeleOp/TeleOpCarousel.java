@@ -10,6 +10,8 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem;
 import java.util.function.Supplier;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
@@ -89,10 +91,16 @@ public class TeleOpCarousel extends OpMode {
         packet.put("Occupied 0", carousel.getOccupied(0));
         packet.put("Occupied 1", carousel.getOccupied(1));
         packet.put("Occupied 2", carousel.getOccupied(2));
+        packet.put("Color 0", carousel.getBallColor(0));
+        packet.put("Color 1", carousel.getBallColor(1));
+        packet.put("Color 2", carousel.getBallColor(2));
+        packet.put("Hue1", carousel.getHue1());
+        packet.put("Hue2", carousel.getHue2());
+        packet.put("HueMax", carousel.getHueMax());
+        packet.put("CurrentColor", carousel.getBallColor());
         packet.put("State", carousel.getState());
-        packet.put("ButonStanga", driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT));
-        packet.put("ButonDreapta", driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT));
-        //packet.put("Actual Power", carousel.motor.getPower());
+        packet.put("Distance", carousel.getDistance());
+
         dashboard.sendTelemetryPacket(packet);
     }
 }
