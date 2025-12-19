@@ -85,6 +85,8 @@ public class SensorColor extends LinearOpMode {
     X   //Unknown
   }
 
+
+
   /** The colorSensor field will contain a reference to our color sensor hardware object */
   NormalizedColorSensor colorSensor;
 
@@ -247,12 +249,15 @@ public class SensorColor extends LinearOpMode {
       // Update the hsvValues array by passing it to Color.colorToHSV()
       Color.colorToHSV(colors.toColor(), hsvValues);
 
+
+
+
 // 6️⃣ Trimite datele la Dashboard (pentru grafic)
       TelemetryPacket packet = new TelemetryPacket();
       packet.put("Hue", hsvValues[0]);
       packet.put("DetectedColor", detectBallColor());
 
-      packet.put("DetectedColorFiltered", detectBallColorFiltered());
+      packet.put("Distance", ((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
 
 
       //packet.put("Actual Power", carousel.motor.getPower());
