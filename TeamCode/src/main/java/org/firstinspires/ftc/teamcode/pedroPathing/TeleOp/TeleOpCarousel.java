@@ -81,6 +81,15 @@ public class TeleOpCarousel extends OpMode {
             carousel.manualStepRight();
         }
 
+        if (driver1.wasJustPressed(GamepadKeys.Button.X))
+            carousel.startOuttake(CarouselSubsystem.OuttakePattern.PGG);
+
+        if (driver1.wasJustPressed(GamepadKeys.Button.Y))
+            carousel.startOuttake(CarouselSubsystem.OuttakePattern.GPG);
+
+        if (driver1.wasJustPressed(GamepadKeys.Button.B))
+            carousel.startOuttake(CarouselSubsystem.OuttakePattern.GGP);
+
 
         // 6️⃣ Trimite datele la Dashboard (pentru grafic)
         TelemetryPacket packet = new TelemetryPacket();
@@ -98,7 +107,8 @@ public class TeleOpCarousel extends OpMode {
         packet.put("Hue2", carousel.getHue2());
         packet.put("HueMax", carousel.getHueMax());
         packet.put("CurrentColor", carousel.getBallColor());
-        packet.put("State", carousel.getState());
+        packet.put("IntakeState", carousel.getIntakeState());
+        packet.put("OuttakeState", carousel.getOuttakeState());
         packet.put("Distance", carousel.getDistance());
 
         dashboard.sendTelemetryPacket(packet);

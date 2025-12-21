@@ -8,38 +8,59 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CarouselSubsystem extends SubsystemBase {
 
     /* ================= CONSTANTE ================= */
 
     public static final float TICKS_PER_SLOT = 128.1666666f;
-    public static final double POWER = 0.7;
+    public static final float OUTTAKE_OFFSET_TICKS = TICKS_PER_SLOT * 1.5f;
+    public static final double POWER = 0.4;
     public static final int POSITION_TOLERANCE = 3;
     public static final double SLOT_OCCUPIED_MM = 125.0;
     public static final long SENSOR_DELAY_MS = 200;
+    public static final double PUSH_POS = 0.7;
+    public static final double RETRACT_POS = 0.2;
+    public static final long PUSH_TIME_MS = 1000;
 
     /* ================= HARDWARE ================= */
 
-    private final DcMotorEx motor;
+    private final DcMotorEx motorCarousel;
+    private final DcMotorEx motorShooter;
     private final DistanceSensor entrySensor;
     private final NormalizedColorSensor colorSensor1;
     private final NormalizedColorSensor colorSensor2;
-    /* ================= FSM ================= */
 
-    private enum State {
+    private final Servo pusher;
+
+    /* ================= INTAKE FSM ================= */
+
+    private enum IntakeState {
         IDLE,
         CHECK_SLOT,
         ROTATE_TO_SLOT,
         STORE_AND_ADVANCE,
         MANUAL_MOVE
     }
+    private IntakeState intakeState = IntakeState.IDLE;
 
-    private State state = State.IDLE;
+    /* ================= OUTTAKE FSM ================= */
+
+    private enum OuttakeState {
+        OUT_IDLE, PREPARE_SEQ, ROTATE_TO_OUTTAKE,
+        PUSH, WAIT_PUSH, ADVANCE, FINISHED
+    }
+
+    private OuttakeState outtakeState = OuttakeState.OUT_IDLE;
+
 
     /* ================= LOGIC ================= */
 
@@ -54,10 +75,17 @@ public class CarouselSubsystem extends SubsystemBase {
     private boolean ballHandled = false;
     private boolean autoResumePending = false;
 
-    /* ================= DISTANCE SENSOR FILTER ================= */
+    private int[] outtakeOrder;
+    private int outtakePtr = 0;
 
-    private final ElapsedTime entryTimer = new ElapsedTime();
+    public enum OuttakePattern { PGG, GPG, GGP }
+
+    /* ================= TIMERS ================= */
+
+    private final ElapsedTime intakeTimer = new ElapsedTime();
     private boolean timerRunning = false;
+
+    private final ElapsedTime outtakeTimer = new ElapsedTime();
 
     /* ================= COLOR SENSOR================= */
     public enum BallColor {
@@ -72,19 +100,21 @@ public class CarouselSubsystem extends SubsystemBase {
 
     public CarouselSubsystem(HardwareMap hardwareMap) {
 
-        motor = hardwareMap.get(DcMotorEx.class, "motorCarusel");
+        motorCarousel = hardwareMap.get(DcMotorEx.class, "motorCarusel");
+        motorShooter = hardwareMap.get(DcMotorEx.class, "motorShooter");
         entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
+        pusher = hardwareMap.get(Servo.class, "pusher");
 
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        motor.setVelocityPIDFCoefficients(15, 1, 5, 0);
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setPositionPIDFCoefficients(15);
-        motor.setTargetPosition(0);
+        motorCarousel.setVelocityPIDFCoefficients(15, 1, 5, 0);
+        motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorCarousel.setPositionPIDFCoefficients(15);
+        motorCarousel.setTargetPosition(0);
 
         for (int i = 0; i < 3; i++) {
             occupied[i] = false;
@@ -99,10 +129,10 @@ public class CarouselSubsystem extends SubsystemBase {
 
         if (raw) {
             if (!timerRunning) {
-                entryTimer.reset();
+                intakeTimer.reset();
                 timerRunning = true;
             }
-            return entryTimer.milliseconds() >= SENSOR_DELAY_MS;
+            return intakeTimer.milliseconds() >= SENSOR_DELAY_MS;
         } else {
             timerRunning = false;
             return false;
@@ -133,14 +163,29 @@ public class CarouselSubsystem extends SubsystemBase {
 
     /* ================= MOTOR ================= */
 
-    private void moveToIndex(int idx) {
+    private void moveToIndexIntake(int idx) {
         targetPosition = Math.round(idx * TICKS_PER_SLOT);
-        motor.setTargetPosition(targetPosition);
-        motor.setPower(POWER);
+        motorCarousel.setTargetPosition(targetPosition);
+        motorCarousel.setPower(POWER);
+    }
+
+    private void moveToLogicalIndexOuttake(int idx) {
+        if ((logicalIndex == 0) && (idx ==1)){index = index + 1;}
+        if ((logicalIndex == 0) && (idx ==2)){index = index - 1;}
+        if ((logicalIndex == 1) && (idx ==0)){index = index - 1;}
+        if ((logicalIndex == 1) && (idx ==2)){index = index + 1;}
+        if ((logicalIndex == 2) && (idx ==0)){index = index + 1;}
+        if ((logicalIndex == 2) && (idx ==1)){index = index - 1;}
+
+        logicalIndex = (index % 3 + 3) % 3;
+
+        targetPosition = Math.round(index * TICKS_PER_SLOT - OUTTAKE_OFFSET_TICKS);
+        motorCarousel.setTargetPosition(targetPosition);
+        motorCarousel.setPower(POWER);
     }
 
     private boolean atTarget() {
-        return Math.abs(motor.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE;
+        return Math.abs(motorCarousel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE;
     }
 
     /* ================= API PUBLIC ================= */
@@ -155,9 +200,9 @@ public class CarouselSubsystem extends SubsystemBase {
 
         index--;
         logicalIndex = (index % 3 + 3) % 3;
-        moveToIndex(index);
+        moveToIndexIntake(index);
 
-        state = State.MANUAL_MOVE;
+        intakeState = IntakeState.MANUAL_MOVE;
     }
 
     public void manualStepRight() {
@@ -166,21 +211,63 @@ public class CarouselSubsystem extends SubsystemBase {
 
         index++;
         logicalIndex = (index % 3 + 3) % 3;
-        moveToIndex(index);
+        moveToIndexIntake(index);
 
-        state = State.MANUAL_MOVE;
+        intakeState = IntakeState.MANUAL_MOVE;
     }
 
     public boolean allSlotsOccupied() {
         return occupied[0] && occupied[1] && occupied[2];
     }
 
+    /* ================= OUTTAKE LOGIC ================= */
+
+    public void startOuttake(OuttakePattern pattern) {
+        if (outtakeState != OuttakeState.OUT_IDLE) return;
+
+        outtakeOrder = buildFallbackOrder(pattern);
+        if (outtakeOrder.length == 0) return;
+
+        autoEnabled = false;
+        outtakePtr = 0;
+        outtakeState = OuttakeState.PREPARE_SEQ;
+    }
+
+    private int[] buildFallbackOrder(OuttakePattern pattern) {
+        List<Integer> result = new ArrayList<>();
+        boolean[] used = new boolean[3];
+
+        BallColor[] wanted;
+        switch (pattern) {
+            case PGG: wanted = new BallColor[]{BallColor.PURPLE, BallColor.GREEN, BallColor.GREEN}; break;
+            case GPG: wanted = new BallColor[]{BallColor.GREEN, BallColor.PURPLE, BallColor.GREEN}; break;
+            default:  wanted = new BallColor[]{BallColor.GREEN, BallColor.GREEN, BallColor.PURPLE};
+        }
+
+        for (BallColor w : wanted) {
+            for (int i = 0; i < 3; i++) {
+                if (!used[i] && occupied[i] && slotColor[i] == w) {
+                    result.add(i);
+                    used[i] = true;
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < 3; i++) {
+            if (occupied[i] && !used[i]) result.add(i);
+        }
+
+        return result.stream().mapToInt(i -> i).toArray();
+    }
+
     /* ================= FSM LOOP ================= */
 
     @Override
     public void periodic() {
-
-        switch (state) {
+        /* ---------- OUTTAKE FSM ---------- */
+        if (outtakeState == OuttakeState.OUT_IDLE) {
+        switch (intakeState) {
 
             case IDLE:
                 // Reset only when ball leaves sensor
@@ -189,20 +276,20 @@ public class CarouselSubsystem extends SubsystemBase {
                 }
 
                 if (autoEnabled && entrySlotHasBall() && !ballHandled && !allSlotsOccupied()) {
-                    state = State.CHECK_SLOT;
+                    intakeState = IntakeState.CHECK_SLOT;
                 }
                 break;
 
             case CHECK_SLOT:
                 if (!occupied[logicalIndex]) {
                     // Slot liber → stochează bila
-                    state = State.STORE_AND_ADVANCE;
+                    intakeState = IntakeState.STORE_AND_ADVANCE;
                 } else {
                     // Slot ocupat → caută următorul
                     index++;
                     logicalIndex = (index % 3 + 3) % 3;
-                    moveToIndex(index);
-                    state = State.ROTATE_TO_SLOT;
+                    moveToIndexIntake(index);
+                    intakeState = IntakeState.ROTATE_TO_SLOT;
                 }
                 break;
 
@@ -215,15 +302,15 @@ public class CarouselSubsystem extends SubsystemBase {
                     // 🔄 Mută la următorul slot (feedback vizual)
                     index++;
                     logicalIndex = (index % 3 + 3) % 3;
-                    moveToIndex(index);
+                    moveToIndexIntake(index);
 
-                    state = State.ROTATE_TO_SLOT;
+                    intakeState = IntakeState.ROTATE_TO_SLOT;
                 }
                 break;
 
             case ROTATE_TO_SLOT:
                 if (atTarget()) {
-                    state = State.IDLE;
+                    intakeState = IntakeState.IDLE;
                 }
                 break;
 
@@ -233,16 +320,74 @@ public class CarouselSubsystem extends SubsystemBase {
                         autoEnabled = true;
                         autoResumePending = false;
                     }
-                    state = State.IDLE;
+                    intakeState = IntakeState.IDLE;
                 }
+                break;
+        }}
+
+        /* ---------- OUTTAKE FSM ---------- */
+
+        switch (outtakeState) {
+
+            case PREPARE_SEQ:
+                motorShooter.setPower(0.4);
+                outtakeState = OuttakeState.ROTATE_TO_OUTTAKE;
+                break;
+
+            case ROTATE_TO_OUTTAKE:
+                int slot = outtakeOrder[outtakePtr];
+                moveToLogicalIndexOuttake(slot);
+
+                if (atTarget()) {
+                    pusher.setPosition(PUSH_POS);
+                    outtakeTimer.reset();
+                    outtakeState = OuttakeState.PUSH;
+                }
+                break;
+
+            case PUSH:
+                if (outtakeTimer.milliseconds() > PUSH_TIME_MS) {
+                    pusher.setPosition(RETRACT_POS);
+                    occupied[outtakeOrder[outtakePtr]] = false;
+                    slotColor[outtakeOrder[outtakePtr]] = BallColor.UNKNOWN;
+                    outtakeState = OuttakeState.ADVANCE;
+                }
+                break;
+
+            case ADVANCE:
+                outtakePtr++;
+                if (outtakePtr >= outtakeOrder.length)
+                    outtakeState = OuttakeState.FINISHED;
+                else
+                    outtakeState = OuttakeState.ROTATE_TO_OUTTAKE;
+                break;
+
+            case FINISHED:
+                motorShooter.setPower(0);
+                if (logicalIndex == 1){
+                    index--;
+                    logicalIndex = (index % 3 + 3) % 3;
+                }
+                if (logicalIndex == 2){
+                    index++;
+                    logicalIndex = (index % 3 + 3) % 3;
+                }
+                moveToIndexIntake(index);
+                autoEnabled = true;
+                outtakeState = OuttakeState.OUT_IDLE;
                 break;
         }
     }
 
+
     /* ================= DEBUG ================= */
 
-    public String getState() {
-        return state.name();
+    public String getIntakeState() {
+        return intakeState.name();
+    }
+
+    public String getOuttakeState() {
+        return outtakeState.name();
     }
 
     public int getIndex() {
@@ -258,7 +403,7 @@ public class CarouselSubsystem extends SubsystemBase {
     }
 
     public int getCurrentPosition() {
-        return motor.getCurrentPosition();
+        return motorCarousel.getCurrentPosition();
     }
 
     public boolean getOccupied(int i) {
