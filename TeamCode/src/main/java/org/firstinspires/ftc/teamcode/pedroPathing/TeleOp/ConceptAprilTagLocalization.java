@@ -69,7 +69,7 @@ import java.util.List;
 public class ConceptAprilTagLocalization extends LinearOpMode {
 
     private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
-
+    private boolean isStreaming = true;
     /**
      * Variables to store the position and orientation of the camera on the robot. Setting these
      * values requires a definition of the axes of the camera and robot:
@@ -128,10 +128,15 @@ public class ConceptAprilTagLocalization extends LinearOpMode {
             telemetry.update();
 
             // Save CPU resources; can resume streaming when needed.
-            if (gamepad1.dpad_down) {
-                visionPortal.stopStreaming();
-            } else if (gamepad1.dpad_up) {
-                visionPortal.resumeStreaming();
+            if (gamepad1.dpad_down && isStreaming) {
+                visionPortal.setProcessorEnabled(aprilTag, false);
+                //visionPortal.stopStreaming();
+                isStreaming = false;
+            }
+            if (gamepad1.dpad_up && !isStreaming) {
+                visionPortal.setProcessorEnabled(aprilTag, true);
+                //visionPortal.resumeStreaming();
+                isStreaming = true;
             }
 
             // Share the CPU.
@@ -218,6 +223,11 @@ public class ConceptAprilTagLocalization extends LinearOpMode {
     private void telemetryAprilTag() {
 
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        telemetry.addData("dpad up", gamepad1.dpad_up);
+        telemetry.addData("dpad down", gamepad1.dpad_down);
+        telemetry.addData("isStreaming", isStreaming);
+
+        telemetry.addData("visionPortal ENABLED", visionPortal.getProcessorEnabled(aprilTag));
         telemetry.addData("# AprilTags Detected", currentDetections.size());
 
         // Step through the list of detections and display info for each one.

@@ -46,6 +46,11 @@ public class TeleOpCarousel extends OpMode {
 
     private CarouselSubsystem carousel;
     private VisionSubsystem vision;
+
+    private boolean isProcessingVideo = true;
+    private int idAprilTag = 0;
+    private double cameraAngle = 0.0d;
+
     FtcDashboard dashboard = FtcDashboard.getInstance();
 
 
@@ -56,7 +61,7 @@ public class TeleOpCarousel extends OpMode {
 
         // Initialize subsystems
         carousel = new CarouselSubsystem(hardwareMap);
-        vision = new VisionSubsystem();
+        vision = new VisionSubsystem(hardwareMap);
         //vision = new VisionSubsystem(hardwareMap);
 
         // Register subsystems in the CommandScheduler
@@ -98,13 +103,31 @@ public class TeleOpCarousel extends OpMode {
         if (driver1.wasJustPressed(GamepadKeys.Button.B))
             carousel.startOuttake(CarouselSubsystem.OuttakePattern.GGP);
 
-        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
-            if (vision.isEnabled())
-                vision.disable();
-            else
-                vision.enable(hardwareMap);
+        // Save CPU resources; can resume streaming when needed.
+        if (gamepad1.dpad_down && isProcessingVideo) {
+            vision.disableProcesor();
+            isProcessingVideo = false;
+        }
+        if (gamepad1.dpad_up && !isProcessingVideo) {
+            vision.enableProcesor();
+            //visionPortal.setProcessorEnabled(aprilTag, true);
+            //visionPortal.resumeStreaming();
+            isProcessingVideo = true;
         }
 
+        idAprilTag = 0;
+        cameraAngle = 0.0d;
+        if (isProcessingVideo){
+            AprilTagDetection tag = vision.getBestDetection();
+            if (tag != null && tag.metadata != null) {
+                idAprilTag = tag.id;
+                if (idAprilTag == 20 || idAprilTag == 24) {
+                    cameraAngle = tag.ftcPose.bearing;
+                }
+            }
+
+
+        }
 
         // 6️⃣ Trimite datele la Dashboard (pentru grafic)
         TelemetryPacket packet = new TelemetryPacket();
@@ -125,17 +148,9 @@ public class TeleOpCarousel extends OpMode {
         packet.put("IntakeState", carousel.getIntakeState());
         packet.put("OuttakeState", carousel.getOuttakeState());
         packet.put("Distance", carousel.getDistance());
-
-        AprilTagDetection tag = vision.getBestDetection();
-        if (tag != null && tag.metadata != null) {
-            packet.put("Tag ID", tag.id);
-            packet.put("X", tag.robotPose.getPosition().x);
-            packet.put("Y", tag.robotPose.getPosition().y);
-            packet.put("Yaw",
-                    tag.robotPose.getOrientation().getYaw(AngleUnit.DEGREES));
-
-            packet.put("Unghi (Bearing): %.2f grade", tag.ftcPose.bearing);
-        }
+        packet.put("isProcessingVideo", isProcessingVideo);
+        packet.put("Tag ID", idAprilTag);
+        packet.put("Unghi (Bearing):", cameraAngle);
 
         dashboard.sendTelemetryPacket(packet);
     }

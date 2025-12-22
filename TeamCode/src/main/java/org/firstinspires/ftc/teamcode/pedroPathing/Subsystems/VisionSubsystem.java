@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
@@ -34,45 +35,26 @@ public class VisionSubsystem extends SubsystemBase {
 
     /* ================= CONSTRUCTOR ================= */
 
-    public VisionSubsystem() {
-        // ⚠️ NU atinge camera aici
-    }
-
-    /* ================= ENABLE / DISABLE ================= */
-
-    public void enable(HardwareMap hardwareMap) {
-        if (enabled) return;
-
+    public VisionSubsystem(HardwareMap hardwareMap) {
         aprilTag = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
                 .build();
-
         VisionPortal.Builder builder = new VisionPortal.Builder();
         builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
         builder.addProcessor(aprilTag);
-
         visionPortal = builder.build();
-
-        enabled = true;
     }
 
-    public void disable() {
-        if (!enabled) return;
-
-        visionPortal.close();   // 🔴 foarte important
-        visionPortal = null;
-        aprilTag = null;
-        enabled = false;
+    public void enableProcesor(){
+        visionPortal.setProcessorEnabled(aprilTag, true);
+    }
+    public void disableProcesor(){
+        visionPortal.setProcessorEnabled(aprilTag, false);
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /* ================= DATA ================= */
+      /* ================= DATA ================= */
 
     public List<AprilTagDetection> getDetections() {
-        if (!enabled || aprilTag == null) return Collections.emptyList();
         return aprilTag.getDetections();
     }
 
@@ -81,4 +63,6 @@ public class VisionSubsystem extends SubsystemBase {
         if (detections.isEmpty()) return null;
         return detections.get(0);
     }
+
+
 }
