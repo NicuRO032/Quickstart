@@ -11,8 +11,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+
 import java.util.function.Supplier;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
@@ -41,6 +45,7 @@ public class TeleOpCarousel extends OpMode {
 
 
     private CarouselSubsystem carousel;
+    private VisionSubsystem vision;
     FtcDashboard dashboard = FtcDashboard.getInstance();
 
 
@@ -51,13 +56,16 @@ public class TeleOpCarousel extends OpMode {
 
         // Initialize subsystems
         carousel = new CarouselSubsystem(hardwareMap);
+        vision = new VisionSubsystem();
+        //vision = new VisionSubsystem(hardwareMap);
+
         // Register subsystems in the CommandScheduler
         CommandScheduler.getInstance().registerSubsystem(carousel);
+        CommandScheduler.getInstance().registerSubsystem(vision);
     }
 
     @Override
     public void start() {
-
     }
 
     @Override
@@ -90,6 +98,13 @@ public class TeleOpCarousel extends OpMode {
         if (driver1.wasJustPressed(GamepadKeys.Button.B))
             carousel.startOuttake(CarouselSubsystem.OuttakePattern.GGP);
 
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
+            if (vision.isEnabled())
+                vision.disable();
+            else
+                vision.enable(hardwareMap);
+        }
+
 
         // 6️⃣ Trimite datele la Dashboard (pentru grafic)
         TelemetryPacket packet = new TelemetryPacket();
@@ -110,6 +125,17 @@ public class TeleOpCarousel extends OpMode {
         packet.put("IntakeState", carousel.getIntakeState());
         packet.put("OuttakeState", carousel.getOuttakeState());
         packet.put("Distance", carousel.getDistance());
+
+        AprilTagDetection tag = vision.getBestDetection();
+        if (tag != null && tag.metadata != null) {
+            packet.put("Tag ID", tag.id);
+            packet.put("X", tag.robotPose.getPosition().x);
+            packet.put("Y", tag.robotPose.getPosition().y);
+            packet.put("Yaw",
+                    tag.robotPose.getOrientation().getYaw(AngleUnit.DEGREES));
+
+            packet.put("Unghi (Bearing): %.2f grade", tag.ftcPose.bearing);
+        }
 
         dashboard.sendTelemetryPacket(packet);
     }
