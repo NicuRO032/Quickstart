@@ -75,10 +75,11 @@ public class CarouselSubsystem extends SubsystemBase {
     private boolean ballHandled = false;
     private boolean autoResumePending = false;
 
-    private int[] outtakeOrder;
+    public int[] outtakeOrder;
     private int outtakePtr = 0;
 
     public enum OuttakePattern { PGG, GPG, GGP }
+    private OuttakePattern pendingOuttakePattern = null;
 
     /* ================= TIMERS ================= */
 
@@ -120,6 +121,14 @@ public class CarouselSubsystem extends SubsystemBase {
             occupied[i] = false;
             slotColor[i] = BallColor.UNKNOWN;
         }
+        occupied[0] = true;
+        occupied[1] = true;
+        occupied[2] = true;
+        slotColor[0] = BallColor.PURPLE;
+        slotColor[1] = BallColor.GREEN;
+        slotColor[2] = BallColor.GREEN;
+
+
     }
 
     /* ================= DISTANCE SENSOR ================= */
@@ -414,6 +423,10 @@ public class CarouselSubsystem extends SubsystemBase {
 
     public BallColor getBallColor(){
         return detectBallColor();
+    }
+
+    public int getOuttakeOrder(int i){
+        return outtakeOrder[i];
     }
 
     public float getHue1(){

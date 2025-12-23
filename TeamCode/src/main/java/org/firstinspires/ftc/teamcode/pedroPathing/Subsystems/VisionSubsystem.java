@@ -18,32 +18,57 @@ import java.util.List;
 
 public class VisionSubsystem extends SubsystemBase {
 
-    /* ================= CAMERA POSE ================= */
-
-    private final Position cameraPosition = new Position(
-            DistanceUnit.INCH, 0, 0, 0, 0);
-
-    private final YawPitchRollAngles cameraOrientation =
-            new YawPitchRollAngles(AngleUnit.DEGREES, 0, -90, 0, 0);
-
-    /* ================= VISION ================= */
-
     private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;
 
-    private boolean enabled = false;
-
-    /* ================= CONSTRUCTOR ================= */
+    private int lastTagId = 0;
+    private double lastBearing = 0.0;
+    private boolean hasValidTag = false;
 
     public VisionSubsystem(HardwareMap hardwareMap) {
-        aprilTag = new AprilTagProcessor.Builder()
-                .setCameraPose(cameraPosition, cameraOrientation)
+        aprilTag = new AprilTagProcessor.Builder().build();
+
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .addProcessor(aprilTag)
                 .build();
-        VisionPortal.Builder builder = new VisionPortal.Builder();
-        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
-        builder.addProcessor(aprilTag);
-        visionPortal = builder.build();
     }
+
+    @Override
+    public void periodic() {
+        updateAprilTagData();
+    }
+
+    private void updateAprilTagData() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+
+        hasValidTag = false;
+        lastTagId = 0;
+        lastBearing = 0.0;
+
+        if (!detections.isEmpty()) {
+            AprilTagDetection tag = detections.get(0);
+
+            if (tag != null && tag.metadata != null) {
+                lastTagId = tag.id;
+                lastBearing = tag.ftcPose.bearing;
+                hasValidTag = true;
+            }
+        }
+    }
+
+    public int getLastTagId() {
+        return lastTagId;
+    }
+
+    public double getLastBearing() {
+        return lastBearing;
+    }
+
+    public boolean hasValidTag() {
+        return hasValidTag;
+    }
+
 
     public void enableProcesor(){
         visionPortal.setProcessorEnabled(aprilTag, true);

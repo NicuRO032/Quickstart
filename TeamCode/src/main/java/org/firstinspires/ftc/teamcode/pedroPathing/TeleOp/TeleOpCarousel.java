@@ -114,7 +114,7 @@ public class TeleOpCarousel extends OpMode {
             //visionPortal.resumeStreaming();
             isProcessingVideo = true;
         }
-
+/**
         idAprilTag = 0;
         cameraAngle = 0.0d;
         if (isProcessingVideo){
@@ -128,7 +128,7 @@ public class TeleOpCarousel extends OpMode {
 
 
         }
-
+**/
         // 6️⃣ Trimite datele la Dashboard (pentru grafic)
         TelemetryPacket packet = new TelemetryPacket();
         packet.put("Index", carousel.getIndex());
@@ -151,6 +151,12 @@ public class TeleOpCarousel extends OpMode {
         packet.put("isProcessingVideo", isProcessingVideo);
         packet.put("Tag ID", idAprilTag);
         packet.put("Unghi (Bearing):", cameraAngle);
+
+        packet.put("getLastTagId", vision.getLastTagId());
+        packet.put("getLastBearing", vision.getLastBearing());
+        packet.put("hasValidTag", vision.hasValidTag());
+
+
 
         dashboard.sendTelemetryPacket(packet);
     }
