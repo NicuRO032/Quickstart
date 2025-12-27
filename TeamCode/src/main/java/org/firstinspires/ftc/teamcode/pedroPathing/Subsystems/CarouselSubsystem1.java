@@ -58,6 +58,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
     public enum OuttakePattern { PGG, GPG, GGP }
+    private OuttakePattern activePattern = OuttakePattern.PGG;
 
     private final ElapsedTime intakeTimer = new ElapsedTime();
     private final ElapsedTime outtakeTimer = new ElapsedTime();
@@ -72,9 +73,17 @@ public class CarouselSubsystem1 extends SubsystemBase {
         pusher = hardwareMap.get(Servo.class, "pusher");
 
         motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // IMPORTANT: Întâi punem puterea 0, apoi resetăm
+        motorCarousel.setPower(0);
         motorCarousel.setTargetPosition(0);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // NU trece în RUN_TO_POSITION aici dacă vrei liniște totală.
+        // Treci în RUN_USING_ENCODER și activează RUN_TO_POSITION doar în resetForStart()
+        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
 
         for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
         pusher.setPosition(RETRACT_POS);
@@ -132,12 +141,49 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     /* ================= API CONTROL ================= */
+    public void resetForStart() {
+        // --- RESET HARDWARE ---
+        motorCarousel.setPower(0);
+        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorCarousel.setTargetPosition(0);
+        motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // --- RESET LOGICĂ ---
+        this.globalIndex = 0;
+        this.logicalIndex = 0;
+        this.targetPosition = 0;
+
+        // Asigurăm stările de repaus
+        this.intakeState = IntakeState.IDLE;
+        this.outtakeState = OuttakeState.OUT_IDLE;
+
+        // Resetăm flag-urile de control
+        this.autoEnabled = false; //incepem autonomia cu controlul la outtake, pentru teleop apelam activateIntake dupa resetForStart
+        this.ballHandled = false;
+        this.triggerReady = false;
+    }
+
+    public void activateIntake() {
+        autoEnabled = true;
+    }
+    public void deactivateIntake() {
+        autoEnabled = false;
+    }
+
     public void forcePreload(BallColor s0, BallColor s1, BallColor s2) {
         occupied[0] = true; slotColor[0] = s0;
         occupied[1] = true; slotColor[1] = s1;
         occupied[2] = true; slotColor[2] = s2;
-        autoEnabled = true;
+        //autoEnabled = false;
+        //this.intakeState = IntakeState.IDLE; // Ne asigurăm că nu pleacă singur la pornire
     }
+
+    // --- Creează o metodă pentru a seta pattern-ul din exterior ---
+    public void setActivePattern(OuttakePattern pattern) {
+        this.activePattern = pattern;
+    }
+
     public void prepareOuttake(OuttakePattern pattern) {
         if (outtakeState != OuttakeState.OUT_IDLE) return;
         outtakeOrder = buildFallbackOrder(pattern);
@@ -182,8 +228,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (outtakeState == OuttakeState.OUT_IDLE) handleIntake();
+        if ((outtakeState == OuttakeState.OUT_IDLE)&&autoEnabled) handleIntake();
         handleOuttake();
+
+        // TRANZIȚIE AUTOMATĂ: Folosește activePattern-ul salvat
+        if (allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
+            prepareOuttake(activePattern);
+        }
     }
 
     private void handleIntake() {
@@ -316,6 +367,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     /* ================= GETTERS ================= */
     public boolean isReadyToShoot() { return outtakeState == OuttakeState.PREPARE_READY && atTarget(); }
+    public OuttakePattern getActivePattern() {return this.activePattern;}
     public boolean atTarget() { return Math.abs(motorCarousel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE; }
     public boolean allSlotsOccupied() { return occupied[0] && occupied[1] && occupied[2]; }
     public String getIntakeState() { return intakeState.name(); }

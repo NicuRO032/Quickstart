@@ -19,30 +19,24 @@ public class PrepareOuttakeFromTagCommand extends CommandBase {
     public void initialize() {
         CarouselSubsystem1.OuttakePattern selectedPattern;
 
-        // Maparea ID-ului tag-ului la pattern-ul dorit
+        // 1. Decidem pattern-ul pe baza AprilTag-ului
         switch (tagId) {
-            case 21:
-                selectedPattern = CarouselSubsystem1.OuttakePattern.PGG;
-                break;
-            case 22:
-                selectedPattern = CarouselSubsystem1.OuttakePattern.GPG;
-                break;
-            case 23:
-                selectedPattern = CarouselSubsystem1.OuttakePattern.GGP;
-                break;
-            default:
-                // Fallback în cazul în care tag-ul nu a fost detectat corect
-                selectedPattern = CarouselSubsystem1.OuttakePattern.PGG;
-                break;
+            case 21: selectedPattern = CarouselSubsystem1.OuttakePattern.PGG; break;
+            case 22: selectedPattern = CarouselSubsystem1.OuttakePattern.GPG; break;
+            case 23: selectedPattern = CarouselSubsystem1.OuttakePattern.GGP; break;
+            default: selectedPattern = CarouselSubsystem1.OuttakePattern.PGG; break;
         }
 
-        // Apelăm logica de pregătire din subsistem
-        // Aceasta va seta motorul de shooter și va roti carouselul spre prima bilă
+        // 2. SALVĂM pattern-ul în subsistem (pentru colectările viitoare din timpul meciului)
+        carousel.setActivePattern(selectedPattern);
+
+        // 3. EXECUTĂM pregătirea imediată (pentru bilele deja aflate în carusel)
         carousel.prepareOuttake(selectedPattern);
     }
 
     @Override
     public boolean isFinished() {
-        return true; // Comanda se termină imediat ce a trimis instrucțiunea
+        // Se termină instantaneu, lăsând FSM-ul din subsistem să rotească motorul în fundal
+        return true;
     }
 }

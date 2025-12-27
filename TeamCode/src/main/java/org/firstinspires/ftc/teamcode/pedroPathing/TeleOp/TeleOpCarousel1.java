@@ -26,6 +26,9 @@ public class TeleOpCarousel1 extends OpMode {
     public void init() {
         driver1 = new GamepadEx(gamepad1);
         carousel = new CarouselSubsystem1(hardwareMap);
+        carousel.resetForStart();
+        carousel.activateIntake();
+
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel);
     }
@@ -46,17 +49,36 @@ public class TeleOpCarousel1 extends OpMode {
         if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) carousel.manualStepRight();
 
         // 2. PATTERN (X, Y, B)
-        if (driver1.wasJustPressed(GamepadKeys.Button.X)) selectedPattern = CarouselSubsystem1.OuttakePattern.PGG;
-        if (driver1.wasJustPressed(GamepadKeys.Button.Y)) selectedPattern = CarouselSubsystem1.OuttakePattern.GPG;
-        if (driver1.wasJustPressed(GamepadKeys.Button.B)) selectedPattern = CarouselSubsystem1.OuttakePattern.GGP;
+        if (driver1.wasJustPressed(GamepadKeys.Button.X)) {
+            selectedPattern = CarouselSubsystem1.OuttakePattern.PGG;
+            carousel.setActivePattern(selectedPattern);
+        }
+        if (driver1.wasJustPressed(GamepadKeys.Button.Y)) {
+            selectedPattern = CarouselSubsystem1.OuttakePattern.GPG;
+            carousel.setActivePattern(selectedPattern);
+        }
+        if (driver1.wasJustPressed(GamepadKeys.Button.B)) {
+            selectedPattern = CarouselSubsystem1.OuttakePattern.GGP;
+            carousel.setActivePattern(selectedPattern);
+        }
 
-        // 3. PREGĂTIRE
-        if ((carousel.allSlotsOccupied() || driver1.wasJustPressed(GamepadKeys.Button.DPAD_DOWN))
+
+        // 3. PREGĂTIRE MANUALĂ (DPAD_DOWN)
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)
                 && !outtakePrepared && carousel.getOuttakeState().equals("OUT_IDLE")) {
+            // Folosim selectedPattern (cel ales din butoanele X, Y, B)
             carousel.prepareOuttake(selectedPattern);
             outtakePrepared = true;
             hasRumbled = false;
         }
+
+        // Sincronizare flag pentru vibrație și stare
+        if (carousel.getOuttakeState().equals("PREPARE_READY")) {
+            outtakePrepared = true;
+        } else if (carousel.getOuttakeState().equals("OUT_IDLE")) {
+            outtakePrepared = false;
+        }
+
 
         // VIBRAȚIE READY
         if (carousel.isReadyToShoot() && !hasRumbled) {
