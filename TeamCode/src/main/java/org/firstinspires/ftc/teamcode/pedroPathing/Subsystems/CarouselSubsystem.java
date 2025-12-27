@@ -274,7 +274,7 @@ public class CarouselSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        /* ---------- OUTTAKE FSM ---------- */
+        /* ---------- INTAKE FSM ---------- */
         if (outtakeState == OuttakeState.OUT_IDLE) {
         switch (intakeState) {
 

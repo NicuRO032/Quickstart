@@ -1,9 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
@@ -11,14 +7,17 @@ import com.seattlesolvers.solverslib.command.InstantCommand;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
 import com.seattlesolvers.solverslib.command.WaitCommand;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.PrepareOuttakeFromTagCommand;
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.StartOuttakeFromStoredTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
-@Autonomous(name = "AUTO Vision1", group = "Pedro Pathing")
-public class AutoVision1 extends CommandOpMode {
+@Autonomous(name = "AUTO Vision11", group = "Pedro Pathing")
+public class AutoVision11 extends CommandOpMode {
     private VisionSubsystem vision;
-    private CarouselSubsystem carousel;
+    private CarouselSubsystem1 carousel;
 
     private int aprilTagFromInit = -1;
     private double correctionAngle = 0.0d;
@@ -28,10 +27,13 @@ public class AutoVision1 extends CommandOpMode {
     public void initialize() {
 
         vision = new VisionSubsystem(hardwareMap);
-        carousel = new CarouselSubsystem(hardwareMap);
+        carousel = new CarouselSubsystem1(hardwareMap);
 
         CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
+
+        // Setare bile preîncărcate chiar înainte de start
+        carousel.forcePreload(CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.GREEN);
 
         while (!isStarted() && !isStopRequested()) {
 
@@ -69,14 +71,8 @@ public class AutoVision1 extends CommandOpMode {
             telemetry.addData("START cu AprilTag", aprilTagFromInit);
             telemetry.update();
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
-                    new InstantCommand(() -> vision.disableProcesor()),
-                    new StartOuttakeFromStoredTagCommand(carousel, () -> aprilTagFromInit),
-                    new WaitCommand(5000),
-                    new InstantCommand(() -> vision.enableProcesor()),
-                    new WaitCommand(1000),
-                    new InstantCommand(() -> correctionAngle = vision.getLastBearing())
-
-
+                    new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                    new ShootAllBallsCommand(carousel)
             );
             schedule(autoSequence);
         }
