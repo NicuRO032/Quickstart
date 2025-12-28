@@ -61,7 +61,6 @@ public class AutoVision11 extends CommandOpMode {
             telemetry.addData("BearingAngle", vision.getLastBearing());
             telemetry.addData("AprilTag memorat", aprilTagFromInit);
             telemetry.update();
-            //return;
         }
 
         telemetry.addLine("INIT: caut AprilTag..x.");
