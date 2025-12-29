@@ -9,27 +9,46 @@ import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @TeleOp(name="TeleOpCarousel_Final_Robust")
 public class TeleOpCarousel1 extends OpMode {
 
     private GamepadEx driver1;
+    private GamepadEx driver2;
+
     private CarouselSubsystem1 carousel;
+    private TurretSubsystem turret;
+    private VisionSubsystem vision;
+
+
     private FtcDashboard dashboard;
 
     private CarouselSubsystem1.OuttakePattern selectedPattern = CarouselSubsystem1.OuttakePattern.PGG;
     private boolean outtakePrepared = false;
     private boolean hasRumbled = false;
 
+    private boolean isProcessingVideo = true;
+    private int idAprilTag = 0;
+    private double angleAprilTag = 0.0d;
+
     @Override
     public void init() {
         driver1 = new GamepadEx(gamepad1);
+        driver2 = new GamepadEx(gamepad2);
         carousel = new CarouselSubsystem1(hardwareMap);
+        turret = new TurretSubsystem(hardwareMap);
+        vision = new VisionSubsystem(hardwareMap);
         carousel.resetForStart();
         carousel.activateIntake();
 
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel);
+        CommandScheduler.getInstance().registerSubsystem(turret);
+        CommandScheduler.getInstance().registerSubsystem(vision);
+
         telemetry.addLine("INIT: gata de START...");
         telemetry.update();
     }
@@ -38,6 +57,9 @@ public class TeleOpCarousel1 extends OpMode {
     public void loop() {
         CommandScheduler.getInstance().run();
         driver1.readButtons();
+        driver2.readButtons();
+
+
 
         // MOD DE REALINIERE MANUALĂ: Ține apăsat LEFT_BUMPER pentru a activa
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
@@ -126,6 +148,68 @@ public class TeleOpCarousel1 extends OpMode {
         // RESET FLAG
         if (carousel.getOuttakeState().equals("OUT_IDLE")) outtakePrepared = false;
 
+// =======================================================
+        // --- LOGICA TURELEI (pe GAMEPAD 2) ---
+        // =======================================================
+
+        // MOD DE ȚINTIRE AUTOMATĂ: Ține apăsat RIGHT_BUMPER pentru a activa
+        if(driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
+            // Suprascrie controlul manual și cel presetat
+            if (idAprilTag == 20 || idAprilTag == 24) {
+                // Calculează noul unghi țintă
+                // Adunăm unghiul curent al turelei cu unghiul de corecție (bearing) de la AprilTag
+                // Inversăm bearing-ul deoarece, de obicei, un bearing pozitiv înseamnă că ținta e la dreapta,
+                // iar turela trebuie să se rotească spre un unghi mai mare.
+                // Dacă se mișcă invers, scoateți semnul minus de la `angleAprilTag`.
+                double unghiTintit = turret.getCurrentAngle() + angleAprilTag;
+                turret.setTargetAngle(unghiTintit);
+
+                // Feedback vizual pe controller-ul operatorului
+                driver2.gamepad.setLedColor(0, 1, 0, -1); // LED Verde
+            } else {
+                // Nu vedem un tag valid, LED-ul devine roșu
+                driver2.gamepad.setLedColor(1, 0, 0, -1);
+            }
+        } else {
+            // LOGICA NORMALĂ A TURELEI (când nu ținem apăsat RIGHT_BUMPER)
+
+            // Resetează culoarea LED-ului
+            driver2.gamepad.setLedColor(1, 1, 1, -1); // Alb
+
+            // Stick-ul drept de pe gamepad2 controlează manual turela (override)
+            turret.setManualControl(driver2.getRightX());
+
+            // Butoanele de pe D-Pad-ul operatorului setează unghiuri țintă presetate
+            if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
+                turret.setTargetAngle(0.0); // Țintește drept înainte
+            }
+            if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) {
+                turret.setTargetAngle(-90.0); // Țintește la 90 de grade spre stânga
+            }
+            if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
+                turret.setTargetAngle(90.0); // Țintește la 90 de grade spre dreapta
+            }
+            if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
+                turret.goHome(); // Revine la poziția de start (0 grade)
+            }
+        }
+
+
+        // --- LOGICA VISION---
+        // Acest cod preia datele din VisionSubsystem, care le actualizează în `periodic()`
+        idAprilTag = 0;
+        angleAprilTag = 0.0d;
+        if (isProcessingVideo){
+            AprilTagDetection tag = vision.getBestDetection();
+            if (tag != null && tag.metadata != null) {
+                idAprilTag = tag.id;
+                // Verificăm dacă tag-ul este unul relevant pentru țintire
+                if (idAprilTag == 20 || idAprilTag == 24) {
+                    angleAprilTag = tag.ftcPose.bearing;
+                }
+            }
+        }
+
 
 
         sendDashboardTelemetry();
@@ -147,7 +231,12 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("08.Slots Colors", carousel.getSlotsColorString());
         packet.put("09.Order", carousel.getOuttakeOrderString());
         packet.put("10.Ptr", carousel.getOuttakePtr());
-
+        packet.addLine("--- TURELA ---");
+        packet.put("Mod", turret.getControlMode());
+        packet.put("Unghi Curent", turret.getCurrentAngle());
+        packet.put("Unghi Țintă", turret.getTargetAngle());
+        packet.put("Tag ID", idAprilTag);
+        packet.put("Unghi (Bearing):", angleAprilTag);
         dashboard.sendTelemetryPacket(packet);
     }
 
@@ -164,6 +253,12 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("08.Slots Colors", carousel.getSlotsColorString());
         telemetry.addData("09.Order", carousel.getOuttakeOrderString());
         telemetry.addData("10.Ptr", carousel.getOuttakePtr());
+        telemetry.addLine("--- TURELA ---");
+        telemetry.addData("Mod", turret.getControlMode());
+        telemetry.addData("Unghi Curent", "%.1f", turret.getCurrentAngle());
+        telemetry.addData("Unghi Țintă", "%.1f", turret.getTargetAngle());
+        telemetry.addData("Tag ID", idAprilTag);
+        telemetry.addData("Unghi (Bearing):", angleAprilTag);
         telemetry.update();
     }
 
