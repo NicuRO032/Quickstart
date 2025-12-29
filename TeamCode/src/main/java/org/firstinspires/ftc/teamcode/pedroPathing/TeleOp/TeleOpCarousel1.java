@@ -36,6 +36,9 @@ public class TeleOpCarousel1 extends OpMode {
 
     @Override
     public void init() {
+        // --- SOLUȚIA: Asigură o stare curată la fiecare inițializare ---
+        CommandScheduler.getInstance().reset();
+
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
         carousel = new CarouselSubsystem1(hardwareMap);
