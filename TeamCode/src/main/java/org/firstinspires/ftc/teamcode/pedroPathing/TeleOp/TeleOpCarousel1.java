@@ -9,6 +9,7 @@ import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
+import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -22,6 +23,7 @@ public class TeleOpCarousel1 extends OpMode {
     private CarouselSubsystem1 carousel;
     private TurretSubsystem turret;
     private VisionSubsystem vision;
+    private IntakeSubsystem1 intake;
 
     private FtcDashboard dashboard;
 
@@ -29,14 +31,13 @@ public class TeleOpCarousel1 extends OpMode {
     private boolean outtakePrepared = false;
     private boolean hasRumbled = false;
 
-    // --- NOU: Mașină de stări pentru controlul turelei din TeleOp ---
+    // Mașină de stări pentru controlul turelei din TeleOp
     private enum TurretTeleOpState { MANUAL, SEMI_AUTO_SEARCHING, SEMI_AUTO_LOCKING }
     private TurretTeleOpState turretTeleOpState = TurretTeleOpState.MANUAL;
     private final ElapsedTime lockOnTimer = new ElapsedTime();
 
     @Override
     public void init() {
-        // --- SOLUȚIA: Asigură o stare curată la fiecare inițializare ---
         CommandScheduler.getInstance().reset();
 
         driver1 = new GamepadEx(gamepad1);
@@ -44,11 +45,13 @@ public class TeleOpCarousel1 extends OpMode {
         carousel = new CarouselSubsystem1(hardwareMap);
         turret = new TurretSubsystem(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
+        intake = new IntakeSubsystem1(hardwareMap);
+
         carousel.resetForStart();
         carousel.activateIntake();
 
         dashboard = FtcDashboard.getInstance();
-        CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision);
+        CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
 
         telemetry.addLine("INIT: gata de START...");
         telemetry.update();
@@ -67,6 +70,9 @@ public class TeleOpCarousel1 extends OpMode {
     }
 
     private void handleDriver1Controls() {
+        // --- Controlul motorului de admisie ---
+        intake.setPower(-driver1.getRightY()); // Axa Y este inversată
+
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
             gamepad1.setLedColor(0, 0, 1, -1);
             double jogPower = driver1.getRightX() * 0.1;
@@ -103,12 +109,12 @@ public class TeleOpCarousel1 extends OpMode {
             hasRumbled = true;
         }
 
-        //if (driver1.wasJustPressed(GamepadKeys.Button.A)) carousel.triggerShoot();
         if (carousel.getOuttakeState().equals("OUT_IDLE")) outtakePrepared = false;
     }
 
     private void handleDriver2Controls() {
         if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) carousel.triggerShoot();
+
         // --- Tranziții de Stare (Toggle) ---
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
@@ -139,7 +145,6 @@ public class TeleOpCarousel1 extends OpMode {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
                     driver2.gamepad.rumble(250); // Vibrație scurtă, unică, la detecție
                     lockOnTimer.reset();
-                    // NOU: Forțăm imediat preluarea controlului de către subsistem
                     turret.commandAutoAim(bestTag);
                 } else {
                     turret.setManualControl(driver2.getRightX());
@@ -153,25 +158,18 @@ public class TeleOpCarousel1 extends OpMode {
                     double bearingError = bestTag.ftcPose.bearing;
 
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
-                        // Suntem pe țintă. Verificăm de cât timp.
                         if (lockOnTimer.milliseconds() > 500) {
-                            // Suntem pe țintă de >500ms, deci vibrăm continuu.
                             driver2.gamepad.rumble(0.7, 0.7, 200);
                         }
-                        // Cât timp așteptăm cele 500ms, nu facem nimic (fără vibrații).
                     } else {
-                        // Nu suntem pe țintă, dar o vedem. Resetăm cronometrul și nu vibrăm.
                         lockOnTimer.reset();
                     }
                 } else {
-                    // Am pierdut ținta, revenim la căutare manuală.
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
                     turret.setManualControl(0);
                 }
                 break;
         }
-
-
     }
 
     private void sendTelemetry() {
