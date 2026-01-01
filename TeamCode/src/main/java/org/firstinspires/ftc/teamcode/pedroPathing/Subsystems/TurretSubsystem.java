@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 import com.seattlesolvers.solverslib.util.MathUtils;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -18,12 +19,14 @@ public class TurretSubsystem extends SubsystemBase {
     public static double TURRET_MAX_ANGLE = 180.0;
     public static double HOME_ANGLE = 0.0;
     public static double MANUAL_SPEED_MULTIPLIER = 1.0;
-    public static double AIMING_P_GAIN = 0.08;
+
+    // --- NOI PARAMETRI PENTRU CONTROLLER-UL PD ---
+    public static double AIMING_KP = 0.12; // Câștig proporțional
+    public static double AIMING_KD = 0.008; // Câștig derivativ (amortizare)
+
     public static double SWEEP_SPEED_DEG_PER_SEC = 30.0;
     public static double SWEEP_ENDPOINT_1 = -45.0;
     public static double SWEEP_ENDPOINT_2 = 45.0;
-
-    // --- NOU: Toleranța pentru a opri ajustările fine ---
     public static double AIMING_TOLERANCE_DEGREES = 2.0;
 
     public enum ControlState {
@@ -38,9 +41,14 @@ public class TurretSubsystem extends SubsystemBase {
     private double manualServoPosition;
     private double sweepDirection = 1.0;
 
+    // --- Câmpuri pentru controller-ul PD ---
+    private final ElapsedTime pdTimer = new ElapsedTime();
+    private double lastBearingError = 0.0;
+
     public TurretSubsystem(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(Servo.class, "turretServo");
         goHome();
+        pdTimer.reset();
     }
 
     public void commandAutoAim(AprilTagDetection bestTag) {
@@ -48,13 +56,20 @@ public class TurretSubsystem extends SubsystemBase {
             currentState = ControlState.TRACKING_TAG;
             double bearingError = bestTag.ftcPose.bearing;
 
-            // --- NOU: Ajustăm doar dacă eroarea este MAI MARE decât toleranța ---
-            if (Math.abs(bearingError) > AIMING_TOLERANCE_DEGREES) {
-                programTargetAngle = getCurrentAngle() + (bearingError * AIMING_P_GAIN);
-            }
-            // Altfel, nu facem nimic, menținând ultimul unghi țintă.
+            // --- NOU: Calcul PD ---
+            double dt = pdTimer.seconds();
+            pdTimer.reset();
 
+            double derivative = (dt > 0) ? (bearingError - lastBearingError) / dt : 0;
+            this.lastBearingError = bearingError;
+
+            double correction = (bearingError * AIMING_KP) + (derivative * AIMING_KD);
+
+            if (Math.abs(bearingError) > AIMING_TOLERANCE_DEGREES) {
+                programTargetAngle = getCurrentAngle() + correction;
+            }
         } else {
+            this.lastBearingError = 0; // Resetăm starea derivatei
             if (currentState != ControlState.SWEEPING_FOR_TAG && currentState != ControlState.TRACKING_TAG) {
                 currentState = ControlState.SWEEPING_FOR_TAG;
                 sweepDirection = (getCurrentAngle() < 0) ? 1.0 : -1.0;
