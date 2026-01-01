@@ -60,19 +60,57 @@ public class TeleOpCarousel1 extends OpMode {
         driver1.readButtons();
         driver2.readButtons();
 
-        handleCarouselControls();
-        handleTurretControls();
+        handleDriver1Controls();
+        handleDriver2Controls();
 
         sendTelemetry();
     }
 
-    private void handleCarouselControls() {
-        // ... (codul pentru carusel rămâne neschimbat)
+    private void handleDriver1Controls() {
+        if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
+            gamepad1.setLedColor(0, 0, 1, -1);
+            double jogPower = driver1.getRightX() * 0.1;
+            carousel.jogCarousel(jogPower);
+            if (driver1.wasJustPressed(GamepadKeys.Button.START)) {
+                carousel.confirmAlignment();
+                gamepad1.rumble(400);
+                gamepad1.setLedColor(0, 1, 0, 1500);
+            }
+            return;
+        }
+
+        if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {
+            carousel.abortAll();
+            outtakePrepared = false;
+            hasRumbled = false;
+        }
+
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) carousel.manualStepLeft();
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) carousel.manualStepRight();
+
+        if (driver1.wasJustPressed(GamepadKeys.Button.X)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PGG);
+        if (driver1.wasJustPressed(GamepadKeys.Button.Y)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.GPG);
+        if (driver1.wasJustPressed(GamepadKeys.Button.B)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.GGP);
+
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_DOWN) && !outtakePrepared) {
+            carousel.prepareOuttake(carousel.getActivePattern());
+            outtakePrepared = true;
+            hasRumbled = false;
+        }
+
+        if (carousel.isReadyToShoot() && !hasRumbled) {
+            gamepad1.rumble(500);
+            hasRumbled = true;
+        }
+
+        //if (driver1.wasJustPressed(GamepadKeys.Button.A)) carousel.triggerShoot();
+        if (carousel.getOuttakeState().equals("OUT_IDLE")) outtakePrepared = false;
     }
 
-    private void handleTurretControls() {
+    private void handleDriver2Controls() {
+        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) carousel.triggerShoot();
         // --- Tranziții de Stare (Toggle) ---
-        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
+        if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
                 turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
             } else {
@@ -130,6 +168,8 @@ public class TeleOpCarousel1 extends OpMode {
                 }
                 break;
         }
+
+
     }
 
     private void sendTelemetry() {
