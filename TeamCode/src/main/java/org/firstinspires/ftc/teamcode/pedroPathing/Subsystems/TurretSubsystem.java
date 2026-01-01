@@ -22,7 +22,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     // --- NOI PARAMETRI PENTRU CONTROLLER-UL PD ---
     public static double AIMING_KP = 0.12; // Câștig proporțional
-    public static double AIMING_KD = 0.008; // Câștig derivativ (amortizare)
+    public static double AIMING_KD = 0.012; // Câștig derivativ (amortizare)
 
     public static double SWEEP_SPEED_DEG_PER_SEC = 30.0;
     public static double SWEEP_ENDPOINT_1 = -45.0;

@@ -139,6 +139,8 @@ public class TeleOpCarousel1 extends OpMode {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
                     driver2.gamepad.rumble(250); // Vibrație scurtă, unică, la detecție
                     lockOnTimer.reset();
+                    // NOU: Forțăm imediat preluarea controlului de către subsistem
+                    turret.commandAutoAim(bestTag);
                 } else {
                     turret.setManualControl(driver2.getRightX());
                 }
