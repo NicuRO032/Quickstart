@@ -2,12 +2,16 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
+
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
@@ -17,6 +21,12 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 @TeleOp(name="TeleOp_Final_cu_Turela")
 public class TeleOpCarousel1 extends OpMode {
 
+    private Follower follower;
+    private boolean driveSystemWorking = false; // Flag pentru a ști dacă avem roți
+    public static Pose startingPose;
+    private boolean slowMode = false;
+    private double slowModeMultiplier = 0.5;
+/// //////////////////
     private GamepadEx driver1;
     private GamepadEx driver2;
 
@@ -40,6 +50,26 @@ public class TeleOpCarousel1 extends OpMode {
     public void init() {
         CommandScheduler.getInstance().reset();
 
+        // --- TRUCUL PENTRU TEST BENCH ---
+        try {
+            // Încercăm să creăm follower-ul (care caută motoarele rf, rr, lf, lr)
+            follower = Constants.createFollower(hardwareMap);
+
+            // Setăm o poziție de start (opțional, doar ca să nu fie null)
+            follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
+            follower.update();
+
+            driveSystemWorking = true; // Dacă am ajuns aici, avem motoare!
+            telemetry.addLine("Drive System: ONLINE");
+        } catch (Exception e) {
+            // Dacă apare orice eroare (ex: motoare lipsă), intrăm aici
+            driveSystemWorking = false;
+            follower = null;
+            telemetry.addLine("Drive System: OFFLINE (Test Bench Mode)");
+            // Nu dăm "throw", lăsăm codul să continue!
+        }
+        // -------------------------------
+
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
         carousel = new CarouselSubsystem1(hardwareMap);
@@ -58,7 +88,43 @@ public class TeleOpCarousel1 extends OpMode {
     }
 
     @Override
+    public void start() {
+        //The parameter controls whether the Follower should use break mode on the motors (using it is recommended).
+        //In order to use float mode, add .useBrakeModeInTeleOp(true); to your Drivetrain Constants in Constant.java (for Mecanum)
+        //If you don't pass anything in, it uses the default (false)
+        if (driveSystemWorking && follower != null) {
+            follower.startTeleopDrive();
+        }
+    }
+
+    @Override
     public void loop() {
+        // --- LOGICA DE MIȘCARE (Doar dacă sistemul e ONLINE) ---
+        if (driveSystemWorking && follower != null) {
+            follower.update(); // Pedro Pathing update loop
+
+            // Luăm input-urile de la gamepad (convertite pentru field centric sau robot centric)
+            if (!slowMode) follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    gamepad1.left_trigger - gamepad1.right_trigger,
+                    true // true = Robot Centric, false = Field Centric (dacă ai localizare)
+            );
+
+                //This is how it looks with slowMode on
+            else follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y * slowModeMultiplier,
+                    -gamepad1.left_stick_x * slowModeMultiplier,
+                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
+                    true // true = Robot Centric, false = Field Centric (dacă ai localizare)
+            );
+        }
+        //Slow Mode
+        if (gamepad1.rightBumperWasPressed()) {
+            slowMode = !slowMode;
+        }
+        // -------------------------------------------------------
+
         CommandScheduler.getInstance().run();
         driver1.readButtons();
         driver2.readButtons();
