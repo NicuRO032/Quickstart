@@ -44,7 +44,7 @@ public class AutoVision11 extends CommandOpMode {
         CommandScheduler.getInstance().registerSubsystem(carousel);
 
         // Setare bile preîncărcate chiar înainte de start
-        carousel.forcePreload(CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.GREEN);
+        carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
 
         while (!isStarted() && !isStopRequested()) {
 

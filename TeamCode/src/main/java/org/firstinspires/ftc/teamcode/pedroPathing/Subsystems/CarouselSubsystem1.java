@@ -55,8 +55,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private boolean triggerReady = false;
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
-    public enum OuttakePattern { PGG, GPG, GGP }
-    private OuttakePattern activePattern = OuttakePattern.PGG;
+    public enum OuttakePattern { GPP, PGP, PPG }
+    private OuttakePattern activePattern = OuttakePattern.GPP;
 
     private final ElapsedTime intakeTimer = new ElapsedTime();
     private final ElapsedTime outtakeTimer = new ElapsedTime();
@@ -301,9 +301,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
         List<Integer> result = new ArrayList<>();
         boolean[] used = new boolean[3];
         BallColor[] wanted;
-        if (pattern == OuttakePattern.PGG) wanted = new BallColor[]{BallColor.PURPLE, BallColor.GREEN, BallColor.GREEN};
-        else if (pattern == OuttakePattern.GPG) wanted = new BallColor[]{BallColor.GREEN, BallColor.PURPLE, BallColor.GREEN};
-        else wanted = new BallColor[]{BallColor.GREEN, BallColor.GREEN, BallColor.PURPLE};
+        if (pattern == OuttakePattern.GPP) wanted = new BallColor[]{BallColor.GREEN, BallColor.PURPLE, BallColor.PURPLE};
+        else if (pattern == OuttakePattern.PGP) wanted = new BallColor[]{BallColor.PURPLE, BallColor.GREEN, BallColor.PURPLE};
+        else wanted = new BallColor[]{BallColor.PURPLE, BallColor.PURPLE, BallColor.GREEN};
         for (BallColor w : wanted) {
             for (int i = 0; i < 3; i++) {
                 if (!used[i] && occupied[i] && slotColor[i] == w) {

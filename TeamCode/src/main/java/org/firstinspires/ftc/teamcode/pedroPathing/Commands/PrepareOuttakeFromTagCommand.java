@@ -21,10 +21,10 @@ public class PrepareOuttakeFromTagCommand extends CommandBase {
 
         // 1. Decidem pattern-ul pe baza AprilTag-ului
         switch (tagId) {
-            case 21: selectedPattern = CarouselSubsystem1.OuttakePattern.PGG; break;
-            case 22: selectedPattern = CarouselSubsystem1.OuttakePattern.GPG; break;
-            case 23: selectedPattern = CarouselSubsystem1.OuttakePattern.GGP; break;
-            default: selectedPattern = CarouselSubsystem1.OuttakePattern.PGG; break;
+            case 21: selectedPattern = CarouselSubsystem1.OuttakePattern.GPP; break;
+            case 22: selectedPattern = CarouselSubsystem1.OuttakePattern.PGP; break;
+            case 23: selectedPattern = CarouselSubsystem1.OuttakePattern.PPG; break;
+            default: selectedPattern = CarouselSubsystem1.OuttakePattern.GPP; break;
         }
 
         // 2. SALVĂM pattern-ul în subsistem (pentru colectările viitoare din timpul meciului)
