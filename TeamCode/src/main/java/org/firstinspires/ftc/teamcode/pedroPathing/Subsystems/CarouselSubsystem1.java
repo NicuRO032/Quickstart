@@ -21,7 +21,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
     public static final double POWER = 0.4;
     public static final int POSITION_TOLERANCE = 5;
-    public static final double SLOT_OCCUPIED_MM = 125.0;
+    public static final double SLOT_OCCUPIED_MM = 100.0;
     public static final long SENSOR_DELAY_MS = 200;
     public static final double PUSH_POS = 0.7;
     public static final double RETRACT_POS = 0.2;
@@ -61,6 +61,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final ElapsedTime intakeTimer = new ElapsedTime();
     private final ElapsedTime outtakeTimer = new ElapsedTime();
     private boolean timerRunning = false;
+
+    final float[] hsvValues1 = new float[3];
+    final float[] hsvValues2 = new float[3];
 
     public CarouselSubsystem1(HardwareMap hardwareMap) {
         motorCarousel = hardwareMap.get(DcMotorEx.class, "motorCarusel");
@@ -322,7 +325,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         Color.colorToHSV(c1.toColor(), hsv1);
         Color.colorToHSV(c2.toColor(), hsv2);
         float hue = Math.max(hsv1[0], hsv2[0]);
-        if (hue > 90 && hue < 170) return BallColor.GREEN;
+        if (hue > 90 && hue < 185) return BallColor.GREEN;
         if (hue > 200 && hue < 320) return BallColor.PURPLE;
         return BallColor.UNKNOWN;
     }
@@ -372,4 +375,24 @@ public class CarouselSubsystem1 extends SubsystemBase {
         return sb.append("]").toString();
     }
     public int getOuttakePtr() { return outtakePtr; }
+
+    public float getHue1(){
+        NormalizedRGBA colors = colorSensor1.getNormalizedColors();
+        Color.colorToHSV(colors.toColor(), hsvValues1);
+        return hsvValues1[0];
+    }
+
+    public float getHue2(){
+        NormalizedRGBA colors = colorSensor2.getNormalizedColors();
+        Color.colorToHSV(colors.toColor(), hsvValues2);
+        return hsvValues2[0];
+    }
+    public float getHueMax(){
+        return Math.max(hsvValues1[0] , hsvValues2[0]);
+    }
+
+    public double getDistance(){
+        return entrySensor.getDistance(DistanceUnit.MM);
+    }
+
 }

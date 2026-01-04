@@ -250,15 +250,24 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
-        packet.put("Global index", carousel.getGlobalIndex());
-        packet.put("logicalIndex", carousel.getLogicalIndex());
-        packet.put("CarouselTarget Position", carousel.getTargetPosition());
-        packet.put("Actual Position", carousel.getCurrentPosition());
-        packet.put("Turret TeleOp State", turretTeleOpState.name());
-        packet.put("Turret Subsystem State", turret.getControlState().name());
-        packet.put("Turret Target", turret.getTargetAngle());
-        packet.put("Turret Current", turret.getCurrentAngle());
-        packet.put("AprilTag Bearing", bearing);
+        packet.put("01.Global index", carousel.getGlobalIndex());
+        packet.put("02.LogicalIndex", carousel.getLogicalIndex());
+        packet.put("03.CarouselTarget Position", carousel.getTargetPosition());
+        packet.put("04.Actual Position", carousel.getCurrentPosition());
+        packet.put("05.Distance", carousel.getDistance());
+        packet.put("06.Occupied 0", carousel.getOccupied(0));
+        packet.put("07.Occupied 1", carousel.getOccupied(1));
+        packet.put("08.Occupied 2", carousel.getOccupied(2));
+        packet.put("09.Hue1", carousel.getHue1());
+        packet.put("10.Hue2", carousel.getHue2());
+        packet.put("11.HueMax", carousel.getHueMax());
+        packet.put("12.Slot colors", carousel.getSlotsColorString());
+        packet.put("13.Outtake order string", carousel.getOuttakeOrderString());
+        packet.put("14.Turret TeleOp State", turretTeleOpState.name());
+        packet.put("15.Turret Subsystem State", turret.getControlState().name());
+        packet.put("16.Turret Target", turret.getTargetAngle());
+        packet.put("17.Turret Current", turret.getCurrentAngle());
+        packet.put("18.AprilTag Bearing", bearing);
         dashboard.sendTelemetryPacket(packet);
     }
 }
