@@ -45,6 +45,7 @@ public class TeleOpCarousel1 extends OpMode {
     private enum TurretTeleOpState { MANUAL, SEMI_AUTO_SEARCHING, SEMI_AUTO_LOCKING }
     private TurretTeleOpState turretTeleOpState = TurretTeleOpState.MANUAL;
     private final ElapsedTime lockOnTimer = new ElapsedTime();
+    private boolean intakeIsOn = false;
 
     @Override
     public void init() {
@@ -102,16 +103,16 @@ public class TeleOpCarousel1 extends OpMode {
 
             // Luăm input-urile de la gamepad (convertite pentru field centric sau robot centric)
             if (!slowMode) follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y,
-                    -gamepad1.left_stick_x,
+                    -gamepad1.right_stick_y,
+                    -gamepad1.right_stick_x,
                     gamepad1.left_trigger - gamepad1.right_trigger,
                     true // true = Robot Centric, false = Field Centric (dacă ai localizare)
             );
 
                 //This is how it looks with slowMode on
             else follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y * slowModeMultiplier,
-                    -gamepad1.left_stick_x * slowModeMultiplier,
+                    -gamepad1.right_stick_y * slowModeMultiplier,
+                    -gamepad1.right_stick_x * slowModeMultiplier,
                     (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
                     true // true = Robot Centric, false = Field Centric (dacă ai localizare)
             );
@@ -133,8 +134,36 @@ public class TeleOpCarousel1 extends OpMode {
     }
 
     private void handleDriver1Controls() {
-        // --- Controlul motorului de admisie ---
-        intake.setPower(-driver1.getRightY()); // Axa Y este inversată
+        // --- Controlul motorului de intake ---
+        // --- Logica HIBRIDĂ de control pentru Intake ---    // Definim o "zonă moartă" pentru a ignora mișcările accidentale ale joystick-ului
+        final double STICK_DEADZONE = 0.1;
+
+        // Citim valoarea joystick-ului
+        double joystickPower = -driver1.getLeftY() * 0.75; // Axa Y este inversată
+
+        // 1. Prioritizăm controlul manual de la joystick
+        if (Math.abs(joystickPower) > STICK_DEADZONE) {
+            // Joystick-ul este mișcat, deci preia controlul.
+            intake.setPower(joystickPower);
+
+            // Când folosim joystick-ul, considerăm modul "automat" ca fiind oprit.
+            // Astfel, când eliberăm joystick-ul, motorul se va opri (dacă nu era deja în mod automat).
+            intakeIsOn = false;
+        } else {
+            // 2. Joystick-ul este în repaus, deci folosim logica de "toggle" (automat)
+            if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
+                // Inversăm starea modului automat
+                intakeIsOn = !intakeIsOn;
+            }
+
+            // Setăm puterea pe baza stării modului automat
+            if (intakeIsOn) {
+                intake.setPower(-0.5); // Viteză constantă în modul automat
+            } else {
+                intake.stop(); // Oprit
+            }
+        }
+
 
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
             gamepad1.setLedColor(0, 0, 1, -1);

@@ -19,10 +19,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE ================= */
     public static final float TICKS_PER_SLOT = 128.1666666f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
-    public static final double POWER = 0.4;
+    public static final double POWER = 0.6;
     public static final int POSITION_TOLERANCE = 5;
     public static final double SLOT_OCCUPIED_MM = 100.0;
-    public static final long SENSOR_DELAY_MS = 200;
+    public static final long SENSOR_DELAY_MS = 100;
     public static final double PUSH_POS = 0.7;
     public static final double RETRACT_POS = 0.2;
     public static final long PUSH_TIME_MS = 1000;
