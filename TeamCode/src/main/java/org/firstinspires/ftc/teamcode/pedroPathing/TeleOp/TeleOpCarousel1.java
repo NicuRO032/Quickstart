@@ -167,7 +167,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
             gamepad1.setLedColor(0, 0, 1, -1);
-            double jogPower = driver1.getRightX() * 0.1;
+            double jogPower = driver1.getLeftX() * 0.1;
             carousel.jogCarousel(jogPower);
             if (driver1.wasJustPressed(GamepadKeys.Button.START)) {
                 carousel.confirmAlignment();
