@@ -49,26 +49,24 @@ public class TeleOpCarousel1 extends OpMode {
     @Override
     public void init() {
         CommandScheduler.getInstance().reset();
-
-        // --- TRUCUL PENTRU TEST BENCH ---
-        try {
-            // Încercăm să creăm follower-ul (care caută motoarele rf, rr, lf, lr)
-            follower = Constants.createFollower(hardwareMap);
-
-            // Setăm o poziție de start (opțional, doar ca să nu fie null)
-            follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
-            follower.update();
-
-            driveSystemWorking = true; // Dacă am ajuns aici, avem motoare!
-            telemetry.addLine("Drive System: ONLINE");
-        } catch (Exception e) {
-            // Dacă apare orice eroare (ex: motoare lipsă), intrăm aici
-            driveSystemWorking = false;
-            follower = null;
-            telemetry.addLine("Drive System: OFFLINE (Test Bench Mode)");
-            // Nu dăm "throw", lăsăm codul să continue!
+// 1. Asigură-te că `startingPose` nu e null
+        if (startingPose == null) {
+            startingPose = new Pose(0, 0, 0); // Poziție de start default
         }
-        // -------------------------------
+
+        // 2. Construiește obiectul Follower. Acesta va inițializa hardware-ul.
+        follower = Constants.createFollower(hardwareMap);
+
+        // 3. DOAR DUPĂ construcție, setează poziția de start.
+        //    Acest apel este esențial pentru a sincroniza starea internă a bibliotecii
+        //    cu poziția ta dorită (fie cea din autonomie, fie cea default).
+        follower.setStartingPose(startingPose);
+
+        // 4. Apelează update() pentru a procesa starea inițială.
+        //    Este posibil ca acest apel să nu fie necesar aici, dar nu ar trebui să strice.
+        //    Dacă eroarea persistă, încearcă să comentezi linia de mai jos.
+        //follower.update();
+
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
@@ -92,16 +90,15 @@ public class TeleOpCarousel1 extends OpMode {
         //The parameter controls whether the Follower should use break mode on the motors (using it is recommended).
         //In order to use float mode, add .useBrakeModeInTeleOp(true); to your Drivetrain Constants in Constant.java (for Mecanum)
         //If you don't pass anything in, it uses the default (false)
-        if (driveSystemWorking && follower != null) {
-            follower.startTeleopDrive();
-        }
+        follower.startTeleopDrive();
+
     }
 
     @Override
     public void loop() {
         // --- LOGICA DE MIȘCARE (Doar dacă sistemul e ONLINE) ---
-        if (driveSystemWorking && follower != null) {
-            follower.update(); // Pedro Pathing update loop
+        follower.update(); // Pedro Pathing update loop
+        CommandScheduler.getInstance().run();
 
             // Luăm input-urile de la gamepad (convertite pentru field centric sau robot centric)
             if (!slowMode) follower.setTeleOpDrive(
@@ -118,14 +115,14 @@ public class TeleOpCarousel1 extends OpMode {
                     (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
                     true // true = Robot Centric, false = Field Centric (dacă ai localizare)
             );
-        }
+
         //Slow Mode
         if (gamepad1.rightBumperWasPressed()) {
             slowMode = !slowMode;
         }
         // -------------------------------------------------------
 
-        CommandScheduler.getInstance().run();
+       // CommandScheduler.getInstance().run();
         driver1.readButtons();
         driver2.readButtons();
 
@@ -253,6 +250,10 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
+        packet.put("Global index", carousel.getGlobalIndex());
+        packet.put("logicalIndex", carousel.getLogicalIndex());
+        packet.put("CarouselTarget Position", carousel.getTargetPosition());
+        packet.put("Actual Position", carousel.getCurrentPosition());
         packet.put("Turret TeleOp State", turretTeleOpState.name());
         packet.put("Turret Subsystem State", turret.getControlState().name());
         packet.put("Turret Target", turret.getTargetAngle());
