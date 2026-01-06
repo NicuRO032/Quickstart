@@ -17,6 +17,7 @@ public class IntakeSubsystem1 extends SubsystemBase {
         intakeMotor = hardwareMap.get(DcMotorEx.class, "motorIntake");
         //intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intakeMotor.setPower(0);
     }
 

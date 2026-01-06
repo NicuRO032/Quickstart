@@ -16,13 +16,20 @@ import java.util.List;
 
 public class CarouselSubsystem1 extends SubsystemBase {
 
+    // 🔧 Coeficienți reglabili prin FTC Dashboard
+    public static double P = 15.0;
+    public static double kP = 15.0;
+    public static double kI = 0;
+    public static double kD = 5.0;
+    public static double kF = 0;
+
     /* ================= CONSTANTE ================= */
     public static final float TICKS_PER_SLOT = 128.1666666f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
-    public static final double POWER = 0.6;
-    public static final int POSITION_TOLERANCE = 5;
+    public static final double POWER = 1;
+    public static final int POSITION_TOLERANCE = 4;
     public static final double SLOT_OCCUPIED_MM = 100.0;
-    public static final long SENSOR_DELAY_MS = 100;
+    public static final long SENSOR_DELAY_MS = 25;
     public static final double PUSH_POS = 0.7;
     public static final double RETRACT_POS = 0.2;
     public static final long PUSH_TIME_MS = 1000;
@@ -78,6 +85,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         motorCarousel.setTargetPosition(0);
         motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorCarousel.setVelocityPIDFCoefficients(kP,kI,kD,kF);
 
         for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
         pusher.setPosition(RETRACT_POS);
@@ -89,6 +97,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private void goToSlot(int targetSlot, boolean isOuttake) {
         if (motorCarousel.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
             motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            motorCarousel.setPositionPIDFCoefficients(P);
         }
 
         // Diferența logică de sloturi
@@ -122,6 +131,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motorCarousel.setTargetPosition(0);
         motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorCarousel.setPositionPIDFCoefficients(P);
 
         this.globalIndex = 0;
         this.logicalIndex = 0;
@@ -152,6 +162,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         // Setează imediat noua țintă la zero și comută pe menținerea poziției.
         motorCarousel.setTargetPosition(0);
         motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorCarousel.setPositionPIDFCoefficients(P);
 
         // Resetează logica internă pentru a se potrivi cu noul zero hardware.
         this.targetPosition = 0;

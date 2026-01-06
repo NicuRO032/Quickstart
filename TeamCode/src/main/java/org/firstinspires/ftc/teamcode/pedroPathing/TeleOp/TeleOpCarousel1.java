@@ -139,7 +139,7 @@ public class TeleOpCarousel1 extends OpMode {
         final double STICK_DEADZONE = 0.1;
 
         // Citim valoarea joystick-ului
-        double joystickPower = -driver1.getLeftY() * 0.75; // Axa Y este inversată
+        double joystickPower = -driver1.getLeftY() * 0.9; // Axa Y este inversată
 
         // 1. Prioritizăm controlul manual de la joystick
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
@@ -158,7 +158,7 @@ public class TeleOpCarousel1 extends OpMode {
 
             // Setăm puterea pe baza stării modului automat
             if (intakeIsOn) {
-                intake.setPower(-0.5); // Viteză constantă în modul automat
+                intake.setPower(-0.8); // Viteză constantă în modul automat
             } else {
                 intake.stop(); // Oprit
             }

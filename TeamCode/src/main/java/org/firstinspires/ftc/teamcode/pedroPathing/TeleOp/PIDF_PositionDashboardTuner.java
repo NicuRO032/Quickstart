@@ -52,11 +52,7 @@ public class PIDF_PositionDashboardTuner extends LinearOpMode {
         motor.setPositionPIDFCoefficients(P);
         //motor.setTargetPositionTolerance(tolerance);
 
-        // Inițializare senzor
-        magneticSensor = hardwareMap.get(DigitalChannel.class, "magneticSensor");
 
-        // Setăm ca INPUT (foarte important)
-        magneticSensor.setMode(DigitalChannel.Mode.INPUT);
 
 
 
@@ -98,30 +94,10 @@ public class PIDF_PositionDashboardTuner extends LinearOpMode {
             }
 
             motor.setTargetPosition(targetPosition);
-
-            if(gamepad1.b) {
-                //motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                //motor.setZeroPowerBehavior();
-                if (!magnetDetectat) {
-                    motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    motor.setPower(0.06);
-                } else {
-                    motor.setPower(0.0);
-                    index = 0;
-                    motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                    targetPosition = 0;
-                    motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    motor.setPower(pow);
-
-                }
-            }
-
-            if (!gamepad1.b) {
-                motor.setPower(pow);
-            }
+            motor.setPower(pow);
 
 
-            motor.setTargetPosition(targetPosition);
+
 
 
             // 5️⃣ Obține pozitia măsurată
@@ -142,11 +118,6 @@ public class PIDF_PositionDashboardTuner extends LinearOpMode {
             telemetry.addLine(String.format("P: %.2f  I: %.2f  D: %.2f  F: %.2f", kP, kI, kD, kF));
             **/
 
-            magnetDetectat = !magneticSensor.getState();
-
-            telemetry.addData("Magnet detectat", magnetDetectat ? "DA" : "NU");
-            telemetry.addData("Stare bruta", magneticSensor.getState());
-             telemetry.update();
 
             sleep(refresh);  // update rate
         }
