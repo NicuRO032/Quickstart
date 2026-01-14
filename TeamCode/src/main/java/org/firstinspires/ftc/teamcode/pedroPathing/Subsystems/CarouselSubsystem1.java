@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
 import android.graphics.Color;
+
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -13,7 +15,7 @@ import com.seattlesolvers.solverslib.command.SubsystemBase;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import java.util.ArrayList;
 import java.util.List;
-
+@Config
 public class CarouselSubsystem1 extends SubsystemBase {
 
     // 🔧 Coeficienți reglabili prin FTC Dashboard
@@ -26,14 +28,16 @@ public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE ================= */
     public static final float TICKS_PER_SLOT = 128.1666666f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
-    public static final double POWER = 1;
-    public static final int POSITION_TOLERANCE = 4;
+    public static final double POWER = 0.8;
+    public static final int POSITION_TOLERANCE = 6;
+    public static long AT_TARGET_STABILITY_MS = 100; // Timpul de stabilitate
+
     public static final double SLOT_OCCUPIED_MM = 100.0;
     public static final long SENSOR_DELAY_MS = 25;
-    public static final double PUSH_POS = 0.7;
-    public static final double RETRACT_POS = 0.2;
-    public static final long PUSH_TIME_MS = 1000;
-    public static final long RETRACT_TIME_MS = 1000;
+    public static final double PUSH_POS = 0.2;
+    public static final double RETRACT_POS = 0.5;
+    public static  long PUSH_TIME_MS = 400;
+    public static  long RETRACT_TIME_MS = 200;
 
     /* ================= HARDWARE ================= */
     private final DcMotorEx motorCarousel, motorShooter;
@@ -52,6 +56,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private int globalIndex = 0; // Pentru telemetrie
     private int logicalIndex = 0;
     private int targetPosition = 0;
+    private final ElapsedTime atTargetTimer = new ElapsedTime(); //Cronometru pentru atTarget
 
     private final boolean[] occupied = new boolean[3];
     private final BallColor[] slotColor = new BallColor[3];
@@ -351,7 +356,19 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public boolean isReadyToShoot() { return outtakeState == OuttakeState.PREPARE_READY && atTarget(); }
     public OuttakePattern getActivePattern() { return this.activePattern; }
-    public boolean atTarget() { return Math.abs(motorCarousel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE; }
+    public boolean atTarget() {
+        // Verificăm dacă poziția curentă este în intervalul de toleranță
+        boolean isWithinTolerance = Math.abs(motorCarousel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE;
+
+        if (isWithinTolerance) {
+            // Motorul este în toleranță. Verificăm dacă a trecut suficient timp.
+            return atTargetTimer.milliseconds() >= AT_TARGET_STABILITY_MS;
+        } else {
+            // Motorul a ieșit din toleranță. Resetăm cronometrul.
+            atTargetTimer.reset();
+            return false;
+        }
+    }
     public boolean allSlotsOccupied() { return occupied[0] && occupied[1] && occupied[2]; }
     public String getIntakeState() { return intakeState.name(); }
     public String getOuttakeState() { return outtakeState.name(); }

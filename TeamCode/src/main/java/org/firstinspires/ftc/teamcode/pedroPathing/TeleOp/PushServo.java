@@ -43,9 +43,9 @@ public class PushServo extends LinearOpMode {
     private FtcDashboard dashboard;
 
     private Servo servo;
-    public static double servoRetractedPos = 0.9;
-    public static double servoPushedPos = 0.65;
-    public static int waitTimeMs = 500;
+    public static double servoRetractedPos = 0.5;
+    public static double servoPushedPos = 0.2;
+    public static int waitTimeMs = 300;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -69,6 +69,15 @@ public class PushServo extends LinearOpMode {
                 // Return to initial position
                 servo.setPosition(servoRetractedPos);
             }
+            if (gamepad1.x) {
+                // Go to pushed position
+                servo.setPosition(servoPushedPos);
+            }
+            if (gamepad1.b) {
+                // Go to pushed position
+                servo.setPosition(servoRetractedPos);
+            }
+
 
             // You can still adjust positions from the dashboard in real-time.
             // The new values will be used the next time you press the button.
