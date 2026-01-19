@@ -84,6 +84,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         telemetry.addLine("INIT: gata de START...");
         telemetry.update();
+        carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS);
     }
 
     @Override
@@ -166,8 +167,9 @@ public class TeleOpCarousel1 extends OpMode {
 
 
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
+            carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS);
             gamepad1.setLedColor(0, 0, 1, -1);
-            double jogPower = driver1.getLeftX() * 0.1;
+            double jogPower = Math.abs(driver1.getLeftX()) * -0.25;
             carousel.jogCarousel(jogPower);
             if (driver1.wasJustPressed(GamepadKeys.Button.START)) {
                 carousel.confirmAlignment();
@@ -175,6 +177,9 @@ public class TeleOpCarousel1 extends OpMode {
                 gamepad1.setLedColor(0, 1, 0, 1500);
             }
             return;
+        }
+        else{
+            carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS);
         }
 
         if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {

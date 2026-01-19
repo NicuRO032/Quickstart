@@ -38,12 +38,15 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double RETRACT_POS = 0.5;
     public static  long PUSH_TIME_MS = 400;
     public static  long RETRACT_TIME_MS = 200;
+    public static final double JOG_ON_POS = 0.25;
+    public static final double JOG_OFF_POS = 0.0;
 
     /* ================= HARDWARE ================= */
     private final DcMotorEx motorCarousel, motorShooter;
     private final DistanceSensor entrySensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final Servo pusher;
+    private final Servo jogServo;
 
     /* ================= STATES ================= */
     public enum IntakeState { IDLE, CHECK_SLOT, ROTATE_TO_SLOT, STORE_AND_ADVANCE, MANUAL_MOVE }
@@ -84,6 +87,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
         pusher = hardwareMap.get(Servo.class, "pusher");
+        jogServo = hardwareMap.get(Servo.class, "jogServo");
 
         motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorCarousel.setPower(0);
@@ -153,6 +157,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
             motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
         motorCarousel.setPower(power);
+    }
+
+    public void jogServoPos(double pos){
+        jogServo.setPosition(pos);
     }
 
     /**
