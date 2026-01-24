@@ -35,6 +35,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "PushServo", group = "TeleOp")
@@ -43,14 +44,19 @@ public class PushServo extends LinearOpMode {
     private FtcDashboard dashboard;
 
     private Servo servo;
+    private DcMotorEx motor;
     public static double servoRetractedPos = 0.5;
     public static double servoPushedPos = 0.2;
     public static int waitTimeMs = 300;
+    public static double power = 0.5;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         servo = hardwareMap.get(Servo.class, "pusher");  // numele din configuration
+        motor = hardwareMap.get(DcMotorEx.class, "motorShooter");
+        motor.setDirection(DcMotorEx.Direction.REVERSE);
         dashboard = FtcDashboard.getInstance();
 
         // Set initial position
@@ -59,6 +65,7 @@ public class PushServo extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
+            motor.setPower(power);
 
             // Check if button 'a' on gamepad 1 is pressed
             if (gamepad1.a) {

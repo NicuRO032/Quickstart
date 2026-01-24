@@ -34,7 +34,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public static final double SLOT_OCCUPIED_MM = 100.0;
     public static final long SENSOR_DELAY_MS = 25;
-    public static final double PUSH_POS = 0.2;
+    public static final double PUSH_POS = 0.1;
     public static final double RETRACT_POS = 0.5;
     public static  long PUSH_TIME_MS = 400;
     public static  long RETRACT_TIME_MS = 200;
@@ -88,6 +88,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
         pusher = hardwareMap.get(Servo.class, "pusher");
         jogServo = hardwareMap.get(Servo.class, "jogServo");
+
+        motorShooter.setDirection(DcMotorEx.Direction.REVERSE);
 
         motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorCarousel.setPower(0);
@@ -206,7 +208,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         autoEnabled = false;
         outtakePtr = 0;
         triggerReady = false;
-        motorShooter.setPower(0.5);
+        motorShooter.setPower(POWER);
         outtakeState = OuttakeState.PREPARE_READY;
     }
 

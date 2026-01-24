@@ -22,11 +22,10 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 public class TeleOpCarousel1 extends OpMode {
 
     private Follower follower;
-    private boolean driveSystemWorking = false; // Flag pentru a ști dacă avem roți
     public static Pose startingPose;
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
-/// //////////////////
+
     private GamepadEx driver1;
     private GamepadEx driver2;
 
@@ -37,11 +36,9 @@ public class TeleOpCarousel1 extends OpMode {
 
     private FtcDashboard dashboard;
 
-    // Stări pentru carusel
     private boolean outtakePrepared = false;
     private boolean hasRumbled = false;
 
-    // Mașină de stări pentru controlul turelei din TeleOp
     private enum TurretTeleOpState { MANUAL, SEMI_AUTO_SEARCHING, SEMI_AUTO_LOCKING }
     private TurretTeleOpState turretTeleOpState = TurretTeleOpState.MANUAL;
     private final ElapsedTime lockOnTimer = new ElapsedTime();
@@ -50,24 +47,12 @@ public class TeleOpCarousel1 extends OpMode {
     @Override
     public void init() {
         CommandScheduler.getInstance().reset();
-// 1. Asigură-te că `startingPose` nu e null
         if (startingPose == null) {
-            startingPose = new Pose(0, 0, 0); // Poziție de start default
+            startingPose = new Pose(0, 0, 0);
         }
 
-        // 2. Construiește obiectul Follower. Acesta va inițializa hardware-ul.
         follower = Constants.createFollower(hardwareMap);
-
-        // 3. DOAR DUPĂ construcție, setează poziția de start.
-        //    Acest apel este esențial pentru a sincroniza starea internă a bibliotecii
-        //    cu poziția ta dorită (fie cea din autonomie, fie cea default).
         follower.setStartingPose(startingPose);
-
-        // 4. Apelează update() pentru a procesa starea inițială.
-        //    Este posibil ca acest apel să nu fie necesar aici, dar nu ar trebui să strice.
-        //    Dacă eroarea persistă, încearcă să comentezi linia de mai jos.
-        //follower.update();
-
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
@@ -89,42 +74,31 @@ public class TeleOpCarousel1 extends OpMode {
 
     @Override
     public void start() {
-        //The parameter controls whether the Follower should use break mode on the motors (using it is recommended).
-        //In order to use float mode, add .useBrakeModeInTeleOp(true); to your Drivetrain Constants in Constant.java (for Mecanum)
-        //If you don't pass anything in, it uses the default (false)
         follower.startTeleopDrive();
-
     }
 
     @Override
     public void loop() {
-        // --- LOGICA DE MIȘCARE (Doar dacă sistemul e ONLINE) ---
-        follower.update(); // Pedro Pathing update loop
+        follower.update();
         CommandScheduler.getInstance().run();
 
-            // Luăm input-urile de la gamepad (convertite pentru field centric sau robot centric)
-            if (!slowMode) follower.setTeleOpDrive(
-                    -gamepad1.right_stick_y,
-                    -gamepad1.right_stick_x,
-                    gamepad1.left_trigger - gamepad1.right_trigger,
-                    true // true = Robot Centric, false = Field Centric (dacă ai localizare)
-            );
+        if (!slowMode) follower.setTeleOpDrive(
+                -gamepad1.right_stick_y,
+                -gamepad1.right_stick_x,
+                gamepad1.left_trigger - gamepad1.right_trigger,
+                true
+        );
+        else follower.setTeleOpDrive(
+                -gamepad1.right_stick_y * slowModeMultiplier,
+                -gamepad1.right_stick_x * slowModeMultiplier,
+                (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
+                true
+        );
 
-                //This is how it looks with slowMode on
-            else follower.setTeleOpDrive(
-                    -gamepad1.right_stick_y * slowModeMultiplier,
-                    -gamepad1.right_stick_x * slowModeMultiplier,
-                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
-                    true // true = Robot Centric, false = Field Centric (dacă ai localizare)
-            );
-
-        //Slow Mode
         if (gamepad1.rightBumperWasPressed()) {
             slowMode = !slowMode;
         }
-        // -------------------------------------------------------
 
-       // CommandScheduler.getInstance().run();
         driver1.readButtons();
         driver2.readButtons();
 
@@ -135,36 +109,22 @@ public class TeleOpCarousel1 extends OpMode {
     }
 
     private void handleDriver1Controls() {
-        // --- Controlul motorului de intake ---
-        // --- Logica HIBRIDĂ de control pentru Intake ---    // Definim o "zonă moartă" pentru a ignora mișcările accidentale ale joystick-ului
         final double STICK_DEADZONE = 0.1;
+        double joystickPower = -driver1.getLeftY() * 0.9;
 
-        // Citim valoarea joystick-ului
-        double joystickPower = -driver1.getLeftY() * 0.9; // Axa Y este inversată
-
-        // 1. Prioritizăm controlul manual de la joystick
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
-            // Joystick-ul este mișcat, deci preia controlul.
             intake.setPower(joystickPower);
-
-            // Când folosim joystick-ul, considerăm modul "automat" ca fiind oprit.
-            // Astfel, când eliberăm joystick-ul, motorul se va opri (dacă nu era deja în mod automat).
             intakeIsOn = false;
         } else {
-            // 2. Joystick-ul este în repaus, deci folosim logica de "toggle" (automat)
             if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
-                // Inversăm starea modului automat
                 intakeIsOn = !intakeIsOn;
             }
-
-            // Setăm puterea pe baza stării modului automat
             if (intakeIsOn) {
-                intake.setPower(-0.8); // Viteză constantă în modul automat
+                intake.setPower(-0.8);
             } else {
-                intake.stop(); // Oprit
+                intake.stop();
             }
         }
-
 
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
             carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS);
@@ -177,8 +137,7 @@ public class TeleOpCarousel1 extends OpMode {
                 gamepad1.setLedColor(0, 1, 0, 1500);
             }
             return;
-        }
-        else{
+        } else {
             carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS);
         }
 
@@ -190,11 +149,9 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) carousel.manualStepLeft();
         if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) carousel.manualStepRight();
-
         if (driver1.wasJustPressed(GamepadKeys.Button.X)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.GPP);
         if (driver1.wasJustPressed(GamepadKeys.Button.Y)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PGP);
         if (driver1.wasJustPressed(GamepadKeys.Button.B)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PPG);
-
         if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_DOWN) && !outtakePrepared) {
             carousel.prepareOuttake(carousel.getActivePattern());
             outtakePrepared = true;
@@ -210,25 +167,32 @@ public class TeleOpCarousel1 extends OpMode {
     }
 
     private void handleDriver2Controls() {
+        // --- Shooter Angle Control ---
+        turret.setManualShooterAngle(driver2.getLeftY());
+
+        if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.7); // Unghi pentru distanță
+        if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi mediu/home
+        if(driver2.wasJustPressed(GamepadKeys.Button.A)) turret.setShooterAngle(0.3); // Unghi pentru aproape
+
+
+        // --- Turret Rotation and Outtake ---
         if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) carousel.triggerShoot();
 
-        // --- Tranziții de Stare (Toggle) ---
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
                 turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
             } else {
                 turretTeleOpState = TurretTeleOpState.MANUAL;
-                turret.setManualControl(0); // Forțează ieșirea din orice mod auto al subsistemului
+                turret.setManualControl(0);
             }
         }
 
-        // --- Acțiuni pe Baza Stării ---
         AprilTagDetection bestTag = vision.getBestDetection();
         boolean hasValidTarget = (bestTag != null && bestTag.metadata != null && (bestTag.id == 20 || bestTag.id == 24));
 
         switch (turretTeleOpState) {
             case MANUAL:
-                driver2.gamepad.setLedColor(0, 1, 0, -1); // LED Verde solid
+                driver2.gamepad.setLedColor(0, 1, 0, -1);
                 turret.setManualControl(driver2.getRightX());
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_UP)) turret.setTargetAngle(0.0);
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) turret.setTargetAngle(-90.0);
@@ -237,10 +201,10 @@ public class TeleOpCarousel1 extends OpMode {
                 break;
 
             case SEMI_AUTO_SEARCHING:
-                driver2.gamepad.setLedColor(1, 0, 0, -1); // LED Roșu
+                driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if (hasValidTarget) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
-                    driver2.gamepad.rumble(250); // Vibrație scurtă, unică, la detecție
+                    driver2.gamepad.rumble(250);
                     lockOnTimer.reset();
                     turret.commandAutoAim(bestTag);
                 } else {
@@ -249,7 +213,7 @@ public class TeleOpCarousel1 extends OpMode {
                 break;
 
             case SEMI_AUTO_LOCKING:
-                driver2.gamepad.setLedColor(1, 0, 0, -1); // LED Roșu
+                driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if (hasValidTarget) {
                     turret.commandAutoAim(bestTag);
                     double bearingError = bestTag.ftcPose.bearing;
@@ -279,15 +243,32 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("Target Angle", "%.1f", turret.getTargetAngle());
         telemetry.addData("Current Angle", "%.1f", turret.getCurrentAngle());
         telemetry.addData("AprilTag Bearing", "%.1f", bearing);
+        telemetry.addLine("\n--- SHOOTER ANGLE ---");
+        telemetry.addData("Angle Control Mode", turret.getAngleControlState());
+        telemetry.addData("Shooter Angle Position", "%.2f", turret.getShooterAnglePosition());
         telemetry.addLine("\n--- CARUSEL ---");
         telemetry.addData("Outtake State", carousel.getOuttakeState());
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
+        /**
+        packet.put("01. Turret TeleOp State", turretTeleOpState.name());
+        packet.put("02. Turret Subsystem State", turret.getControlState().name());
+        packet.put("03. Turret Target", turret.getTargetAngle());
+        packet.put("04. Turret Current", turret.getCurrentAngle());
+        packet.put("05. AprilTag Bearing", bearing);
+        packet.put("06. Shooter Angle Mode", turret.getAngleControlState());
+        packet.put("07. Shooter Angle Pos", turret.getShooterAnglePosition());
+        packet.put("08. Global index", carousel.getGlobalIndex());
+        packet.put("09. LogicalIndex", carousel.getLogicalIndex());
+        packet.put("10. Outtake State", carousel.getOuttakeState());
+**/
+        packet.put("00. Intake State", carousel.getIntakeState());
+        packet.put("10. Outtake State", carousel.getOuttakeState());
         packet.put("01.Global index", carousel.getGlobalIndex());
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
         packet.put("03.CarouselTarget Position", carousel.getTargetPosition());
-        packet.put("04.Actual Position", carousel.getCurrentPosition());
+        packet.put("04.CarouselActual Position", carousel.getCurrentPosition());
         packet.put("05.Distance", carousel.getDistance());
         packet.put("06.Occupied 0", carousel.getOccupied(0));
         packet.put("07.Occupied 1", carousel.getOccupied(1));
@@ -297,11 +278,13 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("11.HueMax", carousel.getHueMax());
         packet.put("12.Slot colors", carousel.getSlotsColorString());
         packet.put("13.Outtake order string", carousel.getOuttakeOrderString());
+/**
         packet.put("14.Turret TeleOp State", turretTeleOpState.name());
         packet.put("15.Turret Subsystem State", turret.getControlState().name());
         packet.put("16.Turret Target", turret.getTargetAngle());
         packet.put("17.Turret Current", turret.getCurrentAngle());
         packet.put("18.AprilTag Bearing", bearing);
+**/
         dashboard.sendTelemetryPacket(packet);
     }
 }
