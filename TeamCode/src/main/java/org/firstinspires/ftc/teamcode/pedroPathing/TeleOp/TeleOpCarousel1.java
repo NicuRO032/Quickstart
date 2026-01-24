@@ -82,18 +82,24 @@ public class TeleOpCarousel1 extends OpMode {
         follower.update();
         CommandScheduler.getInstance().run();
 
-        if (!slowMode) follower.setTeleOpDrive(
-                -gamepad1.right_stick_y,
-                -gamepad1.right_stick_x,
-                gamepad1.left_trigger - gamepad1.right_trigger,
-                true
-        );
-        else follower.setTeleOpDrive(
-                -gamepad1.right_stick_y * slowModeMultiplier,
-                -gamepad1.right_stick_x * slowModeMultiplier,
-                (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
-                true
-        );
+        if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
+            follower.setTeleOpDrive(
+                    0,0,0,true
+            );
+        }else {
+            if (!slowMode) follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    gamepad1.left_trigger - gamepad1.right_trigger,
+                    true
+            );
+            else follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y * slowModeMultiplier,
+                    -gamepad1.left_stick_x * slowModeMultiplier,
+                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
+                    true
+            );
+        }
 
         if (gamepad1.rightBumperWasPressed()) {
             slowMode = !slowMode;
@@ -110,13 +116,13 @@ public class TeleOpCarousel1 extends OpMode {
 
     private void handleDriver1Controls() {
         final double STICK_DEADZONE = 0.1;
-        double joystickPower = -driver1.getLeftY() * 0.9;
+        double joystickPower = driver1.getRightY() * 0.9;
 
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
             intake.setPower(joystickPower);
             intakeIsOn = false;
         } else {
-            if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
+            if (driver1.wasJustPressed(GamepadKeys.Button.A)) {
                 intakeIsOn = !intakeIsOn;
             }
             if (intakeIsOn) {
@@ -168,7 +174,7 @@ public class TeleOpCarousel1 extends OpMode {
 
     private void handleDriver2Controls() {
         // --- Shooter Angle Control ---
-        turret.setManualShooterAngle(driver2.getLeftY());
+        turret.setManualShooterAngle(-driver2.getLeftY());
 
         if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
         if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi inaltime medie
@@ -193,7 +199,7 @@ public class TeleOpCarousel1 extends OpMode {
         switch (turretTeleOpState) {
             case MANUAL:
                 driver2.gamepad.setLedColor(0, 1, 0, -1);
-                turret.setManualControl(driver2.getRightX());
+                turret.setManualControl(-driver2.getRightX());
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_UP)) turret.setTargetAngle(0.0);
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) turret.setTargetAngle(-90.0);
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) turret.setTargetAngle(90.0);
@@ -208,7 +214,7 @@ public class TeleOpCarousel1 extends OpMode {
                     lockOnTimer.reset();
                     turret.commandAutoAim(bestTag);
                 } else {
-                    turret.setManualControl(driver2.getRightX());
+                    turret.setManualControl(-driver2.getRightX());
                 }
                 break;
 
