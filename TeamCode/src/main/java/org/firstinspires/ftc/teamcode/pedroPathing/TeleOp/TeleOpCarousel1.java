@@ -170,9 +170,9 @@ public class TeleOpCarousel1 extends OpMode {
         // --- Shooter Angle Control ---
         turret.setManualShooterAngle(driver2.getLeftY());
 
-        if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.7); // Unghi pentru distanță
-        if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi mediu/home
-        if(driver2.wasJustPressed(GamepadKeys.Button.A)) turret.setShooterAngle(0.3); // Unghi pentru aproape
+        if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
+        if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi inaltime medie
+        if(driver2.wasJustPressed(GamepadKeys.Button.A)) turret.setShooterAngle(0.0); // Unghi pentru inaltime mare
 
 
         // --- Turret Rotation and Outtake ---
