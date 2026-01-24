@@ -248,6 +248,9 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("Shooter Angle Position", "%.2f", turret.getShooterAnglePosition());
         telemetry.addLine("\n--- CARUSEL ---");
         telemetry.addData("Outtake State", carousel.getOuttakeState());
+        telemetry.addLine("\n--- SHOOTER VELOCITY ---");
+        telemetry.addData("Target Velo", "%.2f", carousel.getShooterTargetVelocity());
+        telemetry.addData("Current Velo", "%.2f", carousel.getShooterCurrentVelocity());
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
@@ -278,6 +281,11 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("11.HueMax", carousel.getHueMax());
         packet.put("12.Slot colors", carousel.getSlotsColorString());
         packet.put("13.Outtake order string", carousel.getOuttakeOrderString());
+
+        // Adaugă telemetria pentru viteza shooter-ului aici
+        packet.put("Shooter Target Velocity", carousel.getShooterTargetVelocity());
+        packet.put("Shooter Current Velocity", carousel.getShooterCurrentVelocity());
+
 /**
         packet.put("14.Turret TeleOp State", turretTeleOpState.name());
         packet.put("15.Turret Subsystem State", turret.getControlState().name());

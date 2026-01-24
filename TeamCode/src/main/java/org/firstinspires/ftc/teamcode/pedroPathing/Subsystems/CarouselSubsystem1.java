@@ -18,18 +18,26 @@ import java.util.List;
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
 
-    // 🔧 Coeficienți reglabili prin FTC Dashboard
+    // PIDF pentru motorul caruselului
     public static double P = 15.0;
     public static double kP = 15.0;
     public static double kI = 0;
     public static double kD = 5.0;
     public static double kF = 0;
 
+    // PIDF pentru motorul shooter-ului
+    public static double SHOOTER_P = 10.0;
+    public static double SHOOTER_I = 0.0;
+    public static double SHOOTER_D = 0.0;
+    public static double SHOOTER_F = 13.5;
+    public static double SHOOTER_TARGET_VELOCITY = 2000;
+
+
     /* ================= CONSTANTE ================= */
     public static final float TICKS_PER_SLOT = 128.1666666f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
-    public static final double POWER = 0.8;
-    public static final int POSITION_TOLERANCE = 6;
+    public static  double POWER_CAROUSEL = 0.8;
+    public static final int POSITION_TOLERANCE = 8;
     public static long AT_TARGET_STABILITY_MS = 100; // Timpul de stabilitate
 
     public static final double SLOT_OCCUPIED_MM = 100.0;
@@ -68,6 +76,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private int[] outtakeOrder = new int[0];
     private int outtakePtr = 0;
     private boolean triggerReady = false;
+    private double currentTargetVelocity = 0.0;
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
     public enum OuttakePattern { GPP, PGP, PPG }
@@ -90,6 +99,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         jogServo = hardwareMap.get(Servo.class, "jogServo");
 
         motorShooter.setDirection(DcMotorEx.Direction.REVERSE);
+        motorShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorShooter.setVelocityPIDFCoefficients(SHOOTER_P, SHOOTER_I, SHOOTER_D, SHOOTER_F);
 
         motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorCarousel.setPower(0);
@@ -102,40 +113,26 @@ public class CarouselSubsystem1 extends SubsystemBase {
         pusher.setPosition(RETRACT_POS);
     }
 
-    /**
-     * Metoda de poziționare originală, bazată pe indexul global (globalIndex).
-     */
     private void goToSlot(int targetSlot, boolean isOuttake) {
         if (motorCarousel.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
             motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motorCarousel.setPositionPIDFCoefficients(P);
         }
-
-        // Diferența logică de sloturi
         int currentLogicalAt12 = (globalIndex % 3 + 3) % 3;
         int diff = targetSlot - currentLogicalAt12;
-
-        // Normalizare pentru cea mai scurtă cale
         if (diff > 1) diff -= 3;
         else if (diff < -1) diff += 3;
-
-        // Actualizăm indexul global
         globalIndex += diff;
-
-        // Calculăm tick-urile finale
         float totalSlotsToMove = (float)globalIndex;
         if (isOuttake) {
             totalSlotsToMove -= OUTTAKE_OFFSET_SLOTS;
         }
-
         targetPosition = Math.round(totalSlotsToMove * TICKS_PER_SLOT);
         motorCarousel.setTargetPosition(targetPosition);
-        motorCarousel.setPower(POWER);
-
+        motorCarousel.setPower(POWER_CAROUSEL);
         logicalIndex = targetSlot;
     }
 
-    /* ================= API CONTROL ================= */
     public void resetForStart() {
         motorCarousel.setPower(0);
         motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -143,7 +140,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
         motorCarousel.setTargetPosition(0);
         motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorCarousel.setPositionPIDFCoefficients(P);
-
         this.globalIndex = 0;
         this.logicalIndex = 0;
         this.targetPosition = 0;
@@ -165,25 +161,16 @@ public class CarouselSubsystem1 extends SubsystemBase {
         jogServo.setPosition(pos);
     }
 
-    /**
-     * Resetare hardware și software. Setează poziția curentă ca fiind noul "zero".
-     */
     public void confirmAlignment() {
-        // Secvență mai robustă pentru a încerca resetarea encoderului
         motorCarousel.setPower(0);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER); // Oprește menținerea poziției
+        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        // Setează imediat noua țintă la zero și comută pe menținerea poziției.
         motorCarousel.setTargetPosition(0);
         motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorCarousel.setPositionPIDFCoefficients(P);
-
-        // Resetează logica internă pentru a se potrivi cu noul zero hardware.
         this.targetPosition = 0;
         this.logicalIndex = 0;
         this.globalIndex = 0;
-
         this.intakeState = IntakeState.IDLE;
         this.outtakeState = OuttakeState.OUT_IDLE;
         this.triggerReady = false;
@@ -208,7 +195,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         autoEnabled = false;
         outtakePtr = 0;
         triggerReady = false;
-        motorShooter.setPower(POWER);
+        currentTargetVelocity = SHOOTER_TARGET_VELOCITY;
+        motorShooter.setVelocity(currentTargetVelocity);
         outtakeState = OuttakeState.PREPARE_READY;
     }
 
@@ -217,7 +205,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void abortAll() {
         outtakeState = OuttakeState.OUT_IDLE;
         intakeState = IntakeState.IDLE;
-        motorShooter.setPower(0);
+        currentTargetVelocity = 0.0;
+        motorShooter.setVelocity(currentTargetVelocity);
         pusher.setPosition(RETRACT_POS);
         autoEnabled = true;
         triggerReady = false;
@@ -240,6 +229,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     @Override
     public void periodic() {
+        //motorShooter.setVelocityPIDFCoefficients(SHOOTER_P, SHOOTER_I, SHOOTER_D, SHOOTER_F);
+        //currentTargetVelocity = SHOOTER_TARGET_VELOCITY;
+        //motorShooter.setVelocity(currentTargetVelocity);
+
         if ((outtakeState == OuttakeState.OUT_IDLE) && autoEnabled) handleIntake();
         handleOuttake();
         if (allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
@@ -315,7 +308,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 }
                 break;
             case FINISHED:
-                motorShooter.setPower(0);
+                currentTargetVelocity = 0.0;
+                motorShooter.setVelocity(currentTargetVelocity);
                 triggerReady = false;
                 goToSlot(0, false);
                 if (atTarget()) {
@@ -367,14 +361,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public boolean isReadyToShoot() { return outtakeState == OuttakeState.PREPARE_READY && atTarget(); }
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {
-        // Verificăm dacă poziția curentă este în intervalul de toleranță
         boolean isWithinTolerance = Math.abs(motorCarousel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE;
-
         if (isWithinTolerance) {
-            // Motorul este în toleranță. Verificăm dacă a trecut suficient timp.
             return atTargetTimer.milliseconds() >= AT_TARGET_STABILITY_MS;
         } else {
-            // Motorul a ieșit din toleranță. Resetăm cronometrul.
             atTargetTimer.reset();
             return false;
         }
@@ -413,6 +403,14 @@ public class CarouselSubsystem1 extends SubsystemBase {
         return sb.append("]").toString();
     }
     public int getOuttakePtr() { return outtakePtr; }
+
+    public double getShooterCurrentVelocity() {
+        return motorShooter.getVelocity();
+    }
+
+    public double getShooterTargetVelocity() {
+        return currentTargetVelocity;
+    }
 
     public float getHue1(){
         NormalizedRGBA colors = colorSensor1.getNormalizedColors();
