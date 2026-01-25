@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
+import static org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1.velocityBeforePush;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
@@ -42,7 +44,7 @@ public class TeleOpCarousel1 extends OpMode {
     private enum TurretTeleOpState { MANUAL, SEMI_AUTO_SEARCHING, SEMI_AUTO_LOCKING }
     private TurretTeleOpState turretTeleOpState = TurretTeleOpState.MANUAL;
     private final ElapsedTime lockOnTimer = new ElapsedTime();
-    private boolean intakeIsOn = false;
+    public static boolean intakeIsOn = false;
 
     @Override
     public void init() {
@@ -162,6 +164,7 @@ public class TeleOpCarousel1 extends OpMode {
             carousel.prepareOuttake(carousel.getActivePattern());
             outtakePrepared = true;
             hasRumbled = false;
+            intakeIsOn = false;
         }
 
         if (carousel.isReadyToShoot() && !hasRumbled) {
@@ -291,6 +294,10 @@ public class TeleOpCarousel1 extends OpMode {
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetVelocity());
         packet.put("Shooter Current Velocity", carousel.getShooterCurrentVelocity());
+        packet.put("Velocity before push", velocityBeforePush);
+        packet.put("Color 1", carousel.slotColor[0].name());
+        packet.put("Color 2", carousel.slotColor[1].name());
+        packet.put("Color 3", carousel.slotColor[2].name());
 
 /**
         packet.put("14.Turret TeleOp State", turretTeleOpState.name());
