@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1.velocityBeforePush;
+//import static org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1.velocityBeforePush;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -257,9 +257,9 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("Shooter Angle Position", "%.2f", turret.getShooterAnglePosition());
         telemetry.addLine("\n--- CARUSEL ---");
         telemetry.addData("Outtake State", carousel.getOuttakeState());
-        telemetry.addLine("\n--- SHOOTER VELOCITY ---");
-        telemetry.addData("Target Velo", "%.2f", carousel.getShooterTargetVelocity());
-        telemetry.addData("Current Velo", "%.2f", carousel.getShooterCurrentVelocity());
+        telemetry.addLine("\n--- SHOOTER VELOCITY RPM---");
+        telemetry.addData("Target Velo", "%.2f", carousel.getShooterTargetRPM());
+        telemetry.addData("Current Velo", "%.2f", carousel.getShooterCurrentRPM());
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
@@ -292,9 +292,9 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("13.Outtake order string", carousel.getOuttakeOrderString());
 
         // Adaugă telemetria pentru viteza shooter-ului aici
-        packet.put("Shooter Target Velocity", carousel.getShooterTargetVelocity());
-        packet.put("Shooter Current Velocity", carousel.getShooterCurrentVelocity());
-        packet.put("Velocity before push", velocityBeforePush);
+        packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
+        packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
+        packet.put("Velocity before push", carousel.getRpmBeforePush());
         packet.put("Color 1", carousel.slotColor[0].name());
         packet.put("Color 2", carousel.slotColor[1].name());
         packet.put("Color 3", carousel.slotColor[2].name());

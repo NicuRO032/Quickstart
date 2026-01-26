@@ -5,6 +5,7 @@ import android.graphics.Color;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import static org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1.intakeIsOn;
 
+import com.seattlesolvers.solverslib.controller.PIDController;
+
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
 
@@ -27,20 +30,22 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double kD = 7.0;
     public static double kF = 0;
 
-    // PIDF pentru motorul shooter-ului
-    public static double SHOOTER_P = 10.0;
-    public static double SHOOTER_I = 0.0;
-    public static double SHOOTER_D = 0.0;
-    public static double SHOOTER_F = 13.5;
-    public static double SHOOTER_TARGET_VELOCITY = 2000;
+    // shooter
+    public static double SHOOTER_kP = 0.001;
+    public static double SHOOTER_kI = 0.0;
+    public static double SHOOTER_kD = 0.000001;
+    public static double SHOOTER_kF = 0.00045;
 
-    // Constante pentru detectia aruncarii
+    public static final double SHOOTER_MOTOR_CPR = 28.0;
+    public static double DEFAULT_SHOOTER_RPM = 2000.0;
+    public static double SHOT_CONFIRM_DIP_PERCENT = 0.05; // Acum se aplică la RPM
+    private double rpmBeforePush = 0.0;
     private boolean shotWasDetected = false;
-    public static double velocityBeforePush = 0.0; // Viteza shooter-ului chiar înainte de a împinge bila
-    // Procentul din viteza țintă cu care trebuie să scadă viteza pentru a confirma
-    public static double SHOT_CONFIRM_DIP_PERCENT = 0.05; // 12.5%
-    // Timp maxim de așteptare pentru confirmare (ms)
-    //public static long SHOT_CONFIRM_TIMEOUT_MS = 1000;
+    private final PIDController shooterController;
+    private double currentTargetRPM = 0.0; // Ținta pentru shooter, în RPM
+
+
+
 
     /* ================= CONSTANTE ================= */
     public static final float TICKS_PER_SLOT = 128.1666666f;
@@ -59,7 +64,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double JOG_OFF_POS = 0.0;
 
     /* ================= HARDWARE ================= */
-    private final DcMotorEx motorCarousel, motorShooter;
+    private final DcMotorEx motorCarousel, shooterMotor;
     private final DistanceSensor entrySensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final Servo pusher;
@@ -100,16 +105,17 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public CarouselSubsystem1(HardwareMap hardwareMap) {
         motorCarousel = hardwareMap.get(DcMotorEx.class, "motorCarusel");
-        motorShooter = hardwareMap.get(DcMotorEx.class, "motorShooter");
+        shooterMotor = hardwareMap.get(DcMotorEx.class, "motorShooter");
         entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
         pusher = hardwareMap.get(Servo.class, "pusher");
         jogServo = hardwareMap.get(Servo.class, "jogServo");
 
-        motorShooter.setDirection(DcMotorEx.Direction.REVERSE);
-        motorShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorShooter.setVelocityPIDFCoefficients(SHOOTER_P, SHOOTER_I, SHOOTER_D, SHOOTER_F);
+        shooterMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        shooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterController = new PIDController(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
 
         motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorCarousel.setPower(0);
@@ -120,6 +126,20 @@ public class CarouselSubsystem1 extends SubsystemBase {
         for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
         pusher.setPosition(RETRACT_POS);
     }
+
+    // --- Funcții de conversie pentru shooter ---
+    private double rpmToTicksPerSecond(double rpm) {
+        return (rpm / 60.0) * SHOOTER_MOTOR_CPR;
+    }
+    private double ticksPerSecondToRpm(double ticksPerSecond) {
+        return (ticksPerSecond / SHOOTER_MOTOR_CPR) * 60.0;
+    }
+
+    // --- Settere și Gettere ---
+    public void setShooterTargetRPM(double rpm) { this.currentTargetRPM = rpm; }// Metodă publică pentru a seta viteza shooter-ului din exterior
+    public double getShooterTargetRPM() { return this.currentTargetRPM; }
+    public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor.getVelocity()); }
+    public double getRpmBeforePush() { return rpmBeforePush; }
 
     private void goToSlot(int targetSlot, boolean isOuttake) {
         if (motorCarousel.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
@@ -200,8 +220,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         autoEnabled = false;
         outtakePtr = 0;
         triggerReady = false;
-        currentTargetVelocity = SHOOTER_TARGET_VELOCITY;
-        motorShooter.setVelocity(currentTargetVelocity);
+        setShooterTargetRPM(DEFAULT_SHOOTER_RPM);
         outtakeState = OuttakeState.PREPARE_READY;
     }
 
@@ -210,8 +229,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void abortAll() {
         outtakeState = OuttakeState.OUT_IDLE;
         intakeState = IntakeState.IDLE;
-        currentTargetVelocity = 0.0;
-        motorShooter.setVelocity(currentTargetVelocity);
+        setShooterTargetRPM(0.0);
         pusher.setPosition(RETRACT_POS);
         autoEnabled = true;
         triggerReady = false;
@@ -232,21 +250,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
         intakeState = IntakeState.MANUAL_MOVE;
     }
 
-    @Override
-    public void periodic() {
-        motorCarousel.setVelocityPIDFCoefficients(kP, kI, kD, kF);
-        
-        // Asigură-te că shooter-ul primește comanda de viteză în mod constant
-        motorShooter.setVelocity(currentTargetVelocity);
-
-        // Mașinile de stări
-        if ((outtakeState == OuttakeState.OUT_IDLE) && autoEnabled) handleIntake();
-        handleOuttake();
-        if (allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
-            prepareOuttake(activePattern);
-            intakeIsOn = false;
-        }
-    }
 
     private void handleIntake() {
         switch (intakeState) {
@@ -299,9 +302,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
                 // Așteptăm ca totul să fie pregătit: caruselul la țintă și comanda de la pilot
                 if (atTarget() && triggerReady) {
-                    velocityBeforePush = motorShooter.getVelocity(); // Salvăm viteza exact înainte de a acționa pusher-ul
+                    rpmBeforePush = getShooterCurrentRPM();
                     shotWasDetected = false; // Resetăm flag-ul de detecție pentru noua aruncare
-
                     pusher.setPosition(PUSH_POS);
                     outtakeTimer.reset();
                     outtakeState = OuttakeState.PUSH;
@@ -311,10 +313,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
             case PUSH:
                 // În timp ce pusher-ul este extins, monitorizăm pentru scăderea de viteză
                 if (!shotWasDetected) { // Verificăm doar dacă nu am detectat deja
-                    boolean dipOccurred = motorShooter.getVelocity() < (velocityBeforePush * (1.0 - SHOT_CONFIRM_DIP_PERCENT));
+                    boolean dipOccurred = getShooterCurrentRPM() < (rpmBeforePush * (1.0 - SHOT_CONFIRM_DIP_PERCENT));
                     if (dipOccurred) {
                         shotWasDetected = true; // Am detectat aruncarea!
-                        velocityBeforePush = 0;
+                        rpmBeforePush = 0;
                     }
                 }
 
@@ -325,8 +327,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     outtakeState = OuttakeState.WAIT_RETRACT;
                 }
 
-                if(motorShooter.getVelocity() > velocityBeforePush)
-                    velocityBeforePush = motorShooter.getVelocity();
                 break;
 
             // STAREA CONFIRM_SHOT ESTE ELIMINATĂ
@@ -357,7 +357,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                         // Ne întoarcem direct pentru a reîncerca să aruncăm ACEEAȘI bilă.
                         if (atTarget()) {
                             // Suntem deja aliniați, doar re-încercăm push-ul
-                            velocityBeforePush = motorShooter.getVelocity();
+                            rpmBeforePush = getShooterCurrentRPM();
                             shotWasDetected = false;
                             pusher.setPosition(PUSH_POS);
                             outtakeTimer.reset();
@@ -374,7 +374,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
             case ADVANCE:
                 // Așteptăm ca următorul slot să ajungă la poziție
                 if (atTarget()) {
-                    velocityBeforePush = motorShooter.getVelocity(); // Salvăm viteza pentru aruncarea în lanț
+                    rpmBeforePush = getShooterCurrentRPM(); // Salvăm viteza pentru aruncarea în lanț
                     shotWasDetected = false; // Resetăm flag-ul
                     pusher.setPosition(PUSH_POS);
                     outtakeTimer.reset();
@@ -385,7 +385,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
             case FINISHED:
                 // Oprim shooter-ul și ne întoarcem la poziția de start
-                currentTargetVelocity = 0.0;
+                setShooterTargetRPM(0.0);
                 triggerReady = false;
                 goToSlot(0, false);
                 if (atTarget()) {
@@ -480,13 +480,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
     public int getOuttakePtr() { return outtakePtr; }
 
-    public double getShooterCurrentVelocity() {
-        return motorShooter.getVelocity();
-    }
 
-    public double getShooterTargetVelocity() {
-        return currentTargetVelocity;
-    }
 
     public float getHue1(){
         NormalizedRGBA colors = colorSensor1.getNormalizedColors();
@@ -505,6 +499,30 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public double getDistance(){
         return entrySensor.getDistance(DistanceUnit.MM);
+    }
+
+    @Override
+    public void periodic() {
+        motorCarousel.setVelocityPIDFCoefficients(kP, kI, kD, kF);
+
+        // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
+        //setShooterTargetRPM(DEFAULT_SHOOTER_RPM);//va trebui eliminata
+
+        shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
+        double currentShooterVelo = shooterMotor.getVelocity(); // În ticks/sec
+        double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
+        double pidCorrection = shooterController.calculate(currentShooterVelo,targetShooterVelo);
+        double feedforward = targetShooterVelo * SHOOTER_kF;
+        double shooterPower = feedforward + pidCorrection;
+        shooterMotor.setPower(shooterPower);
+
+        // Mașinile de stări
+        if ((outtakeState == OuttakeState.OUT_IDLE) && autoEnabled) handleIntake();
+        handleOuttake();
+        if (allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
+            prepareOuttake(activePattern);
+            intakeIsOn = false;
+        }
     }
 
 }
