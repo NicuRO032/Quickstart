@@ -281,6 +281,7 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
         packet.put("03.CarouselTarget Position", carousel.getTargetPosition());
         packet.put("04.CarouselActual Position", carousel.getCurrentPosition());
+        packet.put("041.Carousel PID Error", carousel.getPIDError());
         packet.put("05.Distance", carousel.getDistance());
         packet.put("06.Occupied 0", carousel.getOccupied(0));
         packet.put("07.Occupied 1", carousel.getOccupied(1));

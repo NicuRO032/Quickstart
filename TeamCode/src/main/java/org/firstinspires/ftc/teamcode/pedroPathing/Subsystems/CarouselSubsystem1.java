@@ -19,16 +19,29 @@ import java.util.List;
 import static org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1.intakeIsOn;
 
 import com.seattlesolvers.solverslib.controller.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDFController;
 
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
 
     // PIDF pentru motorul caruselului
-    public static double P = 15.0;
-    public static double kP = 15.0;
-    public static double kI = 0.5;
-    public static double kD = 7.0;
-    public static double kF = 0;
+    // Variabile pentru PID-ul nostru manual
+    private double integralSum = 0.0;
+    private double lastError = 0.0;
+    private int currentError = 0;
+    private final ElapsedTime pidTimer = new ElapsedTime();
+
+// --- COEFICIENȚI PENTRU MIȘCĂRI MARI (eroare > 0.8 sloturi) ---
+    public static double kP_COARSE = 0.0001; // kP mai mic pentru a preveni oscilațiile
+    public static double kD_COARSE = 0.00001;     // Oprește kD când suntem departe
+
+    // --- COEFICIENȚI PENTRU MIȘCĂRI FINE (eroare < 0.8 sloturi) ---
+    public static double kP_FINE = 0.0005; // kP mai mare pentru precizie (similar cu ce aveai)
+    public static double kD_FINE = 0.00002; // kD pentru a opri overshoot-ul la final
+
+    // kI și kF sunt refolosiți
+    public static double kI = 0.0;
+    public static double kF = 0.0;
 
     // shooter
     public static double SHOOTER_kP = 0.001;
@@ -42,13 +55,14 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private double rpmBeforePush = 0.0;
     private boolean shotWasDetected = false;
     private final PIDController shooterController;
+    //private final PIDController carouselController;
     private double currentTargetRPM = 0.0; // Ținta pentru shooter, în RPM
 
 
 
 
     /* ================= CONSTANTE ================= */
-    public static final float TICKS_PER_SLOT = 128.1666666f;
+    public static final float TICKS_PER_SLOT = 8192/3f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
     public static double POWER_CAROUSEL = 0.8;
     public static int POSITION_TOLERANCE = 10;
@@ -65,6 +79,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     /* ================= HARDWARE ================= */
     private final DcMotorEx motorCarousel, shooterMotor;
+    private final DcMotorEx encoderCarusel; // <--ENCODERUL EXTERN
     private final DistanceSensor entrySensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final Servo pusher;
@@ -90,6 +105,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private int[] outtakeOrder = new int[0];
     private int outtakePtr = 0;
     private boolean triggerReady = false;
+
+    private boolean isCarouselPidActive = true;
     private double currentTargetVelocity = 0.0;
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
@@ -104,6 +121,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     final float[] hsvValues2 = new float[3];
 
     public CarouselSubsystem1(HardwareMap hardwareMap) {
+
+
         motorCarousel = hardwareMap.get(DcMotorEx.class, "motorCarusel");
         shooterMotor = hardwareMap.get(DcMotorEx.class, "motorShooter");
         entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
@@ -111,6 +130,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
         pusher = hardwareMap.get(Servo.class, "pusher");
         jogServo = hardwareMap.get(Servo.class, "jogServo");
+        encoderCarusel = hardwareMap.get(DcMotorEx.class, "encoderCarusel"); // Folosim DcMotorEx pentru a citi encoderul
+
+        encoderCarusel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderCarusel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         shooterMotor.setDirection(DcMotorEx.Direction.REVERSE);
         shooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -119,9 +142,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
         motorCarousel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorCarousel.setPower(0);
-        motorCarousel.setTargetPosition(0);
-        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorCarousel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        //carouselController = new PIDController(kP, kI, kD);
 
         for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
         pusher.setPosition(RETRACT_POS);
@@ -141,10 +163,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor.getVelocity()); }
     public double getRpmBeforePush() { return rpmBeforePush; }
 
+
     private void goToSlot(int targetSlot, boolean isOuttake) {
-        if (motorCarousel.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
-            motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        }
         int currentLogicalAt12 = (globalIndex % 3 + 3) % 3;
         int diff = targetSlot - currentLogicalAt12;
         if (diff > 1) diff -= 3;
@@ -155,20 +175,18 @@ public class CarouselSubsystem1 extends SubsystemBase {
             totalSlotsToMove -= OUTTAKE_OFFSET_SLOTS;
         }
         targetPosition = Math.round(totalSlotsToMove * TICKS_PER_SLOT);
-        motorCarousel.setTargetPosition(targetPosition);
-        motorCarousel.setPower(POWER_CAROUSEL);
         logicalIndex = targetSlot;
+        integralSum = 0.0;
+        lastError = 0.0;
+        pidTimer.reset();
     }
 
     public void resetForStart() {
         motorCarousel.setPower(0);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorCarousel.setTargetPosition(0);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        encoderCarusel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        this.targetPosition = 0;
         this.globalIndex = 0;
         this.logicalIndex = 0;
-        this.targetPosition = 0;
         this.intakeState = IntakeState.IDLE;
         this.outtakeState = OuttakeState.OUT_IDLE;
         this.autoEnabled = false;
@@ -177,9 +195,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     public void jogCarousel(double power) {
-        if (motorCarousel.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
-            motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        }
+        // 1. Dezactivează bucla PID din periodic()
+        this.isCarouselPidActive = false;
+
+        // 2. Aplică direct puterea la motor.
+        // Motorul este deja în RUN_WITHOUT_ENCODER, deci nu trebuie schimbat modul.
         motorCarousel.setPower(power);
     }
 
@@ -188,14 +208,25 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     public void confirmAlignment() {
+        // 1. Oprim orice putere manuală rămasă de la jog.
         motorCarousel.setPower(0);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorCarousel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorCarousel.setTargetPosition(0);
-        motorCarousel.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // 2. RESETĂM ENCODERUL EXTERN - stabilește noul zero fizic.
+        encoderCarusel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // 3. Actualizăm variabilele software pentru a reflecta noul zero.
         this.targetPosition = 0;
         this.logicalIndex = 0;
         this.globalIndex = 0;
+
+        // 4. REACTIVĂM PID-ul. La următoarea rulare a lui periodic(),
+        // PID-ul va vedea target=0, actual=0 și va menține ferm poziția.
+        integralSum = 0.0;
+        lastError = 0.0;
+        pidTimer.reset();
+        this.isCarouselPidActive = true;
+
+        // Resetăm și stările mașinilor de stări.
         this.intakeState = IntakeState.IDLE;
         this.outtakeState = OuttakeState.OUT_IDLE;
         this.triggerReady = false;
@@ -243,10 +274,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
         intakeState = IntakeState.MANUAL_MOVE;
     }
 
-    public void manualStepRight() {
+    public void manualStepRight() {////////////Aici trebuie refacut true-->false si logivalIndex+1
         autoEnabled = false;
-        int nextSlot = (logicalIndex + 1) % 3;
-        goToSlot(nextSlot, false);
+        int nextSlot = (logicalIndex ) % 3;
+        goToSlot(nextSlot, true);
         intakeState = IntakeState.MANUAL_MOVE;
     }
 
@@ -290,7 +321,14 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 }
                 break;
 
-            // Am eliminat starea CHECK_SLOT, deoarece logica ei a fost integrată în IDLE.
+            case MANUAL_MOVE:
+                // După o mișcare manuală, pur și simplu așteptăm să ajungă la țintă
+                // și apoi ne întoarcem la IDLE pentru a fi gata de acțiuni automate.
+                if (atTarget()) {
+                    autoEnabled = true;
+                    intakeState = IntakeState.IDLE;
+                }
+                break;
         }
     }
 
@@ -437,7 +475,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public boolean isReadyToShoot() { return outtakeState == OuttakeState.PREPARE_READY && atTarget(); }
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {
-        boolean isWithinTolerance = Math.abs(motorCarousel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE;
+        boolean isWithinTolerance = Math.abs(encoderCarusel.getCurrentPosition() - targetPosition) < POSITION_TOLERANCE;
         if (isWithinTolerance) {
             return atTargetTimer.milliseconds() >= AT_TARGET_STABILITY_MS;
         } else {
@@ -451,7 +489,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public int getLogicalIndex() { return logicalIndex; }
     public int getGlobalIndex() { return globalIndex; }
     public int getTargetPosition() { return targetPosition; }
-    public int getCurrentPosition() { return motorCarousel.getCurrentPosition(); }
+    public int getCurrentPosition() { return encoderCarusel.getCurrentPosition(); }
+    public double getPIDError() { return this.currentError;}
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }
     public String getSlotsColorString() {
@@ -503,11 +542,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     @Override
     public void periodic() {
-        motorCarousel.setVelocityPIDFCoefficients(kP, kI, kD, kF);
-
-        // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
-        //setShooterTargetRPM(DEFAULT_SHOOTER_RPM);//va trebui eliminata
-
+                // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
+        //setShooterTargetRPM(DEFAULT_SHOOTER_RPM);//doar pentru tuning,va trebui eliminata
         shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
         double currentShooterVelo = shooterMotor.getVelocity(); // În ticks/sec
         double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
@@ -515,6 +551,52 @@ public class CarouselSubsystem1 extends SubsystemBase {
         double feedforward = targetShooterVelo * SHOOTER_kF;
         double shooterPower = feedforward + pidCorrection;
         shooterMotor.setPower(shooterPower);
+
+        // --- BUCLA DE CONTROL CU GAIN SCHEDULING (două seturi de coeficienți) ---
+        if (isCarouselPidActive) {
+            double dt = pidTimer.seconds();
+            pidTimer.reset();
+
+            int currentPosition = encoderCarusel.getCurrentPosition();
+            int error = targetPosition - currentPosition;
+            this.currentError = error;
+
+            // --- MODIFICARE CHEIE: Selectarea dinamică a coeficienților ---
+            double kP_actual;
+            double kD_actual;
+
+            // Când eroarea e mai mare de 1.1 dintr-un slot, folosim coeficienți slabi.
+            if (Math.abs(error) > TICKS_PER_SLOT * 1.1) {
+                kP_actual = kP_COARSE;
+                kD_actual = kD_COARSE;
+            } else {
+                // Când suntem aproape, folosim coeficienții agresivi pentru blocare fermă.
+                kP_actual = kP_FINE;
+                kD_actual = kD_FINE;
+            }
+            // ----------------------------------------------------------------
+
+            // Se calculează PID-ul folosind coeficienții aleși
+            double p_term = kP_actual * error;
+            integralSum += error * dt; // Chiar dacă kI e 0, lăsăm asta
+            double i_term = kI * integralSum;
+
+
+            double derivative = (dt > 0 && lastError != 0) ? (error - lastError) / dt : 0; // <-- ADAUGĂ `&& lastError != 0`
+            double d_term = kD_actual * derivative;
+
+            // --- Puterea totală ---
+            double motorPower = p_term + i_term + d_term + kF;
+
+            // Plafonarea finală a puterii
+            motorPower = Math.max(-POWER_CAROUSEL, Math.min(motorPower, POWER_CAROUSEL));
+
+            motorCarousel.setPower(motorPower);
+
+            // Salvăm eroarea REALĂ pentru calculul derivatei
+            lastError = error;
+        }
+
 
         // Mașinile de stări
         if ((outtakeState == OuttakeState.OUT_IDLE) && autoEnabled) handleIntake();

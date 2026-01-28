@@ -28,6 +28,7 @@ dependencies {
     implementation "org.solverslib:core:0.3.3" // core
     implementation "org.solverslib:pedroPathing:0.3.3"
     implementation 'com.google.firebase:firebase-crashlytics-buildtools:3.0.6'// pedroPathing
+    //implementation 'org.openftc:rev-extensions-2:1.7.2'
 }
 
 repositories {
