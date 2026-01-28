@@ -89,8 +89,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public enum IntakeState { IDLE, CHECK_SLOT, ROTATE_TO_SLOT, STORE_AND_ADVANCE, MANUAL_MOVE }
     private IntakeState intakeState = IntakeState.IDLE;
 
-    public enum OuttakeState { OUT_IDLE, PREPARE_READY, PUSH, CONFIRM_SHOT, WAIT_RETRACT, ADVANCE, FINISHED }
-    private OuttakeState outtakeState = OuttakeState.OUT_IDLE;
+    public enum OuttakeState { OUT_IDLE, PREPARE_READY, ALIGNING_FOR_SHOT, PUSH, CONFIRM_SHOT, WAIT_RETRACT, ADVANCE, FINISHED }    private OuttakeState outtakeState = OuttakeState.OUT_IDLE;
 
     /* ================= LOGIC ================= */
     private int globalIndex = 0; // Pentru telemetrie
@@ -334,15 +333,24 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     private void handleOuttake() {
         switch (outtakeState) {
+            // STARE NOUĂ: Doar comandă mișcarea și trece mai departe
             case PREPARE_READY:
-                // Ne aliniem cu slotul corect
+                // 1. Comandăm mișcarea caruselului (acest apel resetează timer-ul și erorile PID)
                 goToSlot(outtakeOrder[outtakePtr], true);
 
-                // Așteptăm ca totul să fie pregătit: caruselul la țintă și comanda de la pilot
+                // 2. Trecem IMEDIAT la o stare dedicată de așteptare.
+                // Astfel, în următoarea buclă, PID-ul va porni corect, cu un 'dt' normal.
+                outtakeState = OuttakeState.ALIGNING_FOR_SHOT;
+                break;
+
+            // STARE NOUĂ: Așteaptă alinierea și comanda de la pilot
+            case ALIGNING_FOR_SHOT:
+                // Așteptăm ca și caruselul să ajungă la țintă ȘI pilotul să apese pe trăgaci
                 if (atTarget() && triggerReady) {
-                    rpmBeforePush = getShooterCurrentRPM();
-                    shotWasDetected = false; // Resetăm flag-ul de detecție pentru noua aruncare
-                    pusher.setPosition(PUSH_POS);
+                    // Când ambele condiții sunt îndeplinite, suntem gata de aruncare
+                    rpmBeforePush = getShooterCurrentRPM(); // Salvăm RPM-ul exact înainte de a împinge
+                    shotWasDetected = false; // Resetăm flag-ul de detecție
+                    pusher.setPosition(PUSH_POS); // Împingem bila
                     outtakeTimer.reset();
                     outtakeState = OuttakeState.PUSH;
                 }
@@ -350,11 +358,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
             case PUSH:
                 // În timp ce pusher-ul este extins, monitorizăm pentru scăderea de viteză
-                if (!shotWasDetected) { // Verificăm doar dacă nu am detectat deja
+                if (!shotWasDetected) {
                     boolean dipOccurred = getShooterCurrentRPM() < (rpmBeforePush * (1.0 - SHOT_CONFIRM_DIP_PERCENT));
                     if (dipOccurred) {
                         shotWasDetected = true; // Am detectat aruncarea!
-                        rpmBeforePush = 0;
                     }
                 }
 
@@ -364,15 +371,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     outtakeTimer.reset();
                     outtakeState = OuttakeState.WAIT_RETRACT;
                 }
-
                 break;
-
-            // STAREA CONFIRM_SHOT ESTE ELIMINATĂ
 
             case WAIT_RETRACT:
                 // Așteptăm retragerea completă a pusher-ului
                 if (outtakeTimer.milliseconds() > RETRACT_TIME_MS) {
-
                     if (shotWasDetected) {
                         // SUCCES! Aruncarea a fost detectată.
                         // Marcăm slotul ca gol și avansăm la următoarea bilă.
@@ -381,36 +384,28 @@ public class CarouselSubsystem1 extends SubsystemBase {
                         outtakePtr++; // Trecem la următoarea bilă din secvență
 
                         if (outtakePtr >= outtakeOrder.length) {
-                            // Dacă am terminat toate bilele, încheiem secvența
+                            // Am terminat toate bilele, încheiem secvența
                             outtakeState = OuttakeState.FINISHED;
                         } else {
                             // Altfel, avansăm caruselul la următorul slot
                             goToSlot(outtakeOrder[outtakePtr], true);
                             outtakeState = OuttakeState.ADVANCE;
                         }
-
                     } else {
                         // EȘEC! Aruncarea NU a fost detectată.
-                        // Nu avansăm pointer-ul (outtakePtr).
-                        // Ne întoarcem direct pentru a reîncerca să aruncăm ACEEAȘI bilă.
-                        if (atTarget()) {
-                            // Suntem deja aliniați, doar re-încercăm push-ul
-                            rpmBeforePush = getShooterCurrentRPM();
-                            shotWasDetected = false;
-                            pusher.setPosition(PUSH_POS);
-                            outtakeTimer.reset();
-                            outtakeState = OuttakeState.PUSH;
-                        } else {
-                            // Dacă din greșeală caruselul s-a mișcat, ne realiniem
-                            goToSlot(outtakeOrder[outtakePtr], true);
-                            outtakeState = OuttakeState.PREPARE_READY;
-                        }
+                        // Nu avansăm pointer-ul (outtakePtr) și reîncercăm.
+                        // Suntem deja aliniați, deci doar re-încercăm push-ul
+                        rpmBeforePush = getShooterCurrentRPM();
+                        shotWasDetected = false;
+                        pusher.setPosition(PUSH_POS);
+                        outtakeTimer.reset();
+                        outtakeState = OuttakeState.PUSH;
                     }
                 }
                 break;
 
             case ADVANCE:
-                // Așteptăm ca următorul slot să ajungă la poziție
+                // Așteptăm ca următorul slot să ajungă la poziție (pentru aruncările în lanț)
                 if (atTarget()) {
                     rpmBeforePush = getShooterCurrentRPM(); // Salvăm viteza pentru aruncarea în lanț
                     shotWasDetected = false; // Resetăm flag-ul
@@ -425,8 +420,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 // Oprim shooter-ul și ne întoarcem la poziția de start
                 setShooterTargetRPM(0.0);
                 triggerReady = false;
-                goToSlot(0, false);
-                if (atTarget()) {
+                goToSlot(0, false); // Comandăm întoarcerea la slotul 0
+                // Așteptăm să ajungă fizic la 0 înainte de a încheia complet
+                if (Math.abs(targetPosition - getCurrentPosition()) < POSITION_TOLERANCE * 2) {
                     autoEnabled = true; // Permitem din nou funcționarea intake-ului automat
                     outtakeState = OuttakeState.OUT_IDLE;
                 }
