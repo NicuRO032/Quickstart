@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
 //import static org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1.velocityBeforePush;
 
+import android.annotation.SuppressLint;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
@@ -22,6 +24,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @TeleOp(name="TeleOp_Final_cu_Turela")
 public class TeleOpCarousel1 extends OpMode {
+    // Adaugă aceste variabile la începutul clasei TeleOpCarousel1
 
     private Follower follower;
     public static Pose startingPose;
@@ -52,7 +55,7 @@ public class TeleOpCarousel1 extends OpMode {
         if (startingPose == null) {
             startingPose = new Pose(0, 0, 0);
         }
-
+        intakeIsOn = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
 
@@ -242,6 +245,7 @@ public class TeleOpCarousel1 extends OpMode {
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private void sendTelemetry() {
         AprilTagDetection bestTag = vision.getBestDetection();
         double bearing = (bestTag != null && bestTag.ftcPose != null) ? bestTag.ftcPose.bearing : 0.0;
@@ -282,7 +286,10 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("03.CarouselTarget Position", carousel.getTargetPosition());
         packet.put("04.CarouselActual Position", carousel.getCurrentPosition());
         packet.put("041.Carousel PID Error", carousel.getPIDError());
-        packet.put("05.Distance", carousel.getDistance());
+        packet.put("050. Main Distance (mm)", carousel.getMainDistance());
+        packet.put("051. Color1 Distance (mm)", String.format("%.3f", carousel.getColor1Distance()));
+        packet.put("052. Color2 Distance (mm)", String.format("%.3f", carousel.getColor2Distance()));
+        packet.put("053. Entry Slot Has Ball", carousel.entrySlotHasBall());
         packet.put("06.Occupied 0", carousel.getOccupied(0));
         packet.put("07.Occupied 1", carousel.getOccupied(1));
         packet.put("08.Occupied 2", carousel.getOccupied(2));
