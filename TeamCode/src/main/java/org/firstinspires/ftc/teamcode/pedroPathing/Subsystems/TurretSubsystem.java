@@ -17,7 +17,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Turret rotation constants
     public static double GEAR_RATIO = 2.0;
-    public static double SERVO_RANGE_DEGREES = 2100.0;
+    public static double SERVO_RANGE_DEGREES = 360.0;
     public static double TURRET_MIN_ANGLE = -180.0;
     public static double TURRET_MAX_ANGLE = 180.0;
     public static double HOME_ANGLE = 0.0;
