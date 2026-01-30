@@ -24,8 +24,9 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @TeleOp(name="TeleOp_Final_cu_Turela")
 public class TeleOpCarousel1 extends OpMode {
-    // Adaugă aceste variabile la începutul clasei TeleOpCarousel1
-
+    // VARIABILE  PENTRU ALINIERE AUTOMATĂ
+    private final ElapsedTime alignTimer = new ElapsedTime();
+    private boolean aligningCarousel = false;
     private Follower follower;
     public static Pose startingPose;
     private boolean slowMode = false;
@@ -67,12 +68,12 @@ public class TeleOpCarousel1 extends OpMode {
         intake = new IntakeSubsystem1(hardwareMap);
 
         carousel.resetForStart();
-        carousel.activateIntake();
+        //carousel.activateIntake();
 
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
 
-        telemetry.addLine("INIT: gata de START...");
+        telemetry.addLine("INIT: gata de START...Alinierea va porni automat.");
         telemetry.update();
         carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS);
     }
@@ -80,42 +81,80 @@ public class TeleOpCarousel1 extends OpMode {
     @Override
     public void start() {
         follower.startTeleopDrive();
+        // -- PORNEȘTE ALINIEREA AUTOMATĂ --
+        carousel.deactivateIntake(); // O siguranță în plus. Setează autoEnabled = false.
+        carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS); // Activează servo-ul de blocare
+
+        aligningCarousel = true; // Activează flag-ul pentru loop()
+        alignTimer.reset(); // Pornește cronometrul
     }
 
     @Override
     public void loop() {
-        follower.update();
         CommandScheduler.getInstance().run();
+        // --- SECVENȚĂ DE ALINIERE AUTOMATĂ LA START ---
+        if (aligningCarousel) {
+            // Oprește complet șasiul pe durata alinierii
+            follower.setTeleOpDrive(0, 0, 0, true);
 
-        if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
-            follower.setTeleOpDrive(
-                    0,0,0,true
-            );
-        }else {
-            if (!slowMode) follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y,
-                    -gamepad1.left_stick_x,
-                    gamepad1.left_trigger - gamepad1.right_trigger,
-                    true
-            );
-            else follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y * slowModeMultiplier,
-                    -gamepad1.left_stick_x * slowModeMultiplier,
-                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
-                    true
-            );
+            double alignTime = alignTimer.seconds();
+
+            // Rotește motorul doar în primele 1.5 secunde
+            if (alignTime < 1.5) {
+                // Dă putere constantă caruselului pentru a-l împinge în opritorul fizic
+                carousel.jogCarousel(-0.1);
+            }
+
+            // Etapa 1: Finalizarea alinierii (după 1.5 secunde)
+            if (alignTime >= 1.5) {
+                carousel.jogCarousel(0); // Oprește puterea manuală
+                //carousel.confirmAlignment(); // Resetează encoderul ȘI reactivează automatizarea
+            }
+
+            // Etapa 2: Eliberarea servo-ului și finalizarea (după 1.7 secunde)
+            if (alignTime >= 1.7) {
+                carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS); // Eliberează servo-ul
+                carousel.confirmAlignment();
+                aligningCarousel = false; // Termină secvența de aliniere
+
+                // Notificare pentru șofer
+                gamepad1.rumble(0.8, 0.8, 400);
+                gamepad1.setLedColor(0, 1, 0, -1);
+            }
         }
+        if (!aligningCarousel) {
+            follower.update();
 
-        if (gamepad1.rightBumperWasPressed()) {
-            slowMode = !slowMode;
+
+            if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
+                follower.setTeleOpDrive(
+                        0, 0, 0, true
+                );
+            } else {
+                if (!slowMode) follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y,
+                        -gamepad1.left_stick_x,
+                        gamepad1.left_trigger - gamepad1.right_trigger,
+                        true
+                );
+                else follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y * slowModeMultiplier,
+                        -gamepad1.left_stick_x * slowModeMultiplier,
+                        (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
+                        true
+                );
+            }
+
+            if (gamepad1.rightBumperWasPressed()) {
+                slowMode = !slowMode;
+            }
+
+            driver1.readButtons();
+            driver2.readButtons();
+
+            handleDriver1Controls();
+            handleDriver2Controls();
         }
-
-        driver1.readButtons();
-        driver2.readButtons();
-
-        handleDriver1Controls();
-        handleDriver2Controls();
-
         sendTelemetry();
     }
 
@@ -137,20 +176,7 @@ public class TeleOpCarousel1 extends OpMode {
             }
         }
 
-        if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
-            carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS);
-            gamepad1.setLedColor(0, 0, 1, -1);
-            double jogPower = Math.abs(driver1.getLeftX()) * -0.25;
-            carousel.jogCarousel(jogPower);
-            if (driver1.wasJustPressed(GamepadKeys.Button.START)) {
-                carousel.confirmAlignment();
-                gamepad1.rumble(400);
-                gamepad1.setLedColor(0, 1, 0, 1500);
-            }
-            return;
-        } else {
-            carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS);
-        }
+
 
         if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {
             carousel.abortAll();

@@ -23,7 +23,6 @@ import com.seattlesolvers.solverslib.controller.PIDFController;
 
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
-
     // PIDF pentru motorul caruselului
     // Variabile pentru PID-ul nostru manual
     private double integralSum = 0.0;
@@ -507,7 +506,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         double color1Distance = ((DistanceSensor) colorSensor1).getDistance(DistanceUnit.MM);
         double color2Distance = ((DistanceSensor) colorSensor2).getDistance(DistanceUnit.MM);
 
-        // Pasul 2: Verificăm condiția "brută" (tratează și NaN-urile implicit)
+        // Pasul 2: Verificăm condiția "brută"
         boolean color1SeesBall = color1Distance < COLOR_SENSOR_OCCUPIED_MM;
         boolean color2SeesBall = color2Distance < COLOR_SENSOR_OCCUPIED_MM;
 
