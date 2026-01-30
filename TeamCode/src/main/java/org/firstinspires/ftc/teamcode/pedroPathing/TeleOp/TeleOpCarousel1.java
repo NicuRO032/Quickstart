@@ -235,7 +235,15 @@ public class TeleOpCarousel1 extends OpMode {
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_UP)) turret.setTargetAngle(0.0);
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) turret.setTargetAngle(-90.0);
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) turret.setTargetAngle(90.0);
-                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) turret.goHome();
+                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
+                    AprilTagDetection currentTag = vision.getBestDetection();
+                    // Verificăm dacă avem o țintă validă înainte de a comanda mișcarea
+                    if (currentTag != null && currentTag.metadata != null) {
+                        // Calculăm unghiul final: poziția curentă + corecția necesară
+                        double targetAngle = turret.getCurrentAngle() + currentTag.ftcPose.bearing;
+                        turret.setTargetAngle(targetAngle);
+                    }
+                }
                 break;
 
             case SEMI_AUTO_SEARCHING:
