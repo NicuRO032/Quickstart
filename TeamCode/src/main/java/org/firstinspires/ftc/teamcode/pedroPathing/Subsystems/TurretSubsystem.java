@@ -75,7 +75,7 @@ public class TurretSubsystem extends SubsystemBase {
             this.lastBearingError = bearingError;
             double correction = (bearingError * AIMING_KP) + (derivative * AIMING_KD);
             if (Math.abs(bearingError) > AIMING_TOLERANCE_DEGREES) {
-                programTargetAngle = getCurrentAngle() + correction;
+                programTargetAngle = getCurrentAngle() - correction;//camera e cu susul in jos => corectia e invers(cu - nu cu +)
             }
         } else {
             this.lastBearingError = 0;
@@ -127,6 +127,10 @@ public class TurretSubsystem extends SubsystemBase {
             this.currentShooterAnglePos += positionChange;
             this.currentShooterAnglePos = MathUtils.clamp(currentShooterAnglePos, ANGLE_MIN_POS, ANGLE_MAX_POS);
         }
+    }
+
+    public double getCurrentShooterAngle(){
+        return currentShooterAnglePos;
     }
 
     @Override

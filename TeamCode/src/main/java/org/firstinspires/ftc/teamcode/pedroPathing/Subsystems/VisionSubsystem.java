@@ -31,7 +31,7 @@ public class VisionSubsystem extends SubsystemBase {
     private AprilTagProcessor aprilTag;
 
     private int lastTagId = 0;
-    private double lastBearing = 0.0;
+    private double lastBearing = 0.0, lastX = 0.0, lastY = 0.0, lastDistance = 0.0;
     private boolean hasValidTag = false;
 
     public VisionSubsystem(HardwareMap hardwareMap) {
@@ -96,6 +96,9 @@ public class VisionSubsystem extends SubsystemBase {
 
             if (tag != null && tag.metadata != null) {
                 lastTagId = tag.id;
+                lastX = tag.ftcPose.x;
+                lastY = tag.ftcPose.y;
+                lastDistance = Math.sqrt(lastX * lastX + lastY * lastY);
                 lastBearing = tag.ftcPose.bearing;
                 hasValidTag = true;
             }
@@ -113,6 +116,12 @@ public class VisionSubsystem extends SubsystemBase {
     public boolean hasValidTag() {
         return hasValidTag;
     }
+
+    public double getLastX(){return lastX;};
+
+    public double getLastY(){return lastY;};
+
+    public double getDistance(){return lastDistance;}
 
 
     public void enableProcesor(){

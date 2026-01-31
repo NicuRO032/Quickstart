@@ -125,7 +125,6 @@ public class TeleOpCarousel1 extends OpMode {
         if (!aligningCarousel) {
             follower.update();
 
-
             if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
                 follower.setTeleOpDrive(
                         0, 0, 0, true
@@ -250,7 +249,7 @@ public class TeleOpCarousel1 extends OpMode {
                 driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if (hasValidTarget) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
-                    driver2.gamepad.rumble(250);
+                    driver2.gamepad.rumble(50);//am miscorat valoarea ca sa nu blochez sistemul
                     lockOnTimer.reset();
                     turret.commandAutoAim(bestTag);
                 } else {
@@ -332,14 +331,15 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("11.HueMax", carousel.getHueMax());
         packet.put("12.Slot colors", carousel.getSlotsColorString());
         packet.put("13.Outtake order string", carousel.getOuttakeOrderString());
+        packet.put("14.Distance: ", vision.getDistance());
+        packet.put("15.X:", vision.getLastX());
+        packet.put("16.Y:", vision.getLastY());
+        packet.put("17.Angle:", turret.getCurrentShooterAngle());
 
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
         packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
         packet.put("Velocity before push", carousel.getRpmBeforePush());
-        packet.put("Color 1", carousel.slotColor[0].name());
-        packet.put("Color 2", carousel.slotColor[1].name());
-        packet.put("Color 3", carousel.slotColor[2].name());
 
 /**
         packet.put("14.Turret TeleOp State", turretTeleOpState.name());

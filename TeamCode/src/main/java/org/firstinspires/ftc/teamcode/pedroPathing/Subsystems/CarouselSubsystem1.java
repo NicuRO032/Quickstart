@@ -612,7 +612,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
     @Override
     public void periodic() {
                 // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
-        //setShooterTargetRPM(DEFAULT_SHOOTER_RPM);//doar pentru tuning,va trebui eliminata
         shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
         double currentShooterVelo = shooterMotor.getVelocity(); // În ticks/sec
         double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
