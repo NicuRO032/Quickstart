@@ -121,8 +121,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
     final float[] hsvValues2 = new float[3];
 
     public CarouselSubsystem1(HardwareMap hardwareMap) {
-
-
         motorCarousel = hardwareMap.get(DcMotorEx.class, "motorCarusel");
         shooterMotor = hardwareMap.get(DcMotorEx.class, "motorShooter");
         entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
@@ -553,6 +551,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public int getCurrentPosition() { return encoderCarusel.getCurrentPosition(); }
     public double getPIDError() { return this.currentError;}
     public boolean getOccupied(int i) { return occupied[i]; }
+
+    public boolean canChangeVelocity() { return outtakeState == OuttakeState.PUSH || outtakeState == OuttakeState.WAIT_RETRACT; }
     public BallColor getBallColor(int i) { return slotColor[i]; }
     public String getSlotsColorString() {
         StringBuilder sb = new StringBuilder("[");

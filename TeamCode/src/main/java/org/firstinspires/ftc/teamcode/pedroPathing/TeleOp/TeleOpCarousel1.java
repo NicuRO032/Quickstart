@@ -83,17 +83,29 @@ public class TeleOpCarousel1 extends OpMode {
         follower.startTeleopDrive();
         // -- PORNEȘTE ALINIEREA AUTOMATĂ --
         carousel.deactivateIntake(); // O siguranță în plus. Setează autoEnabled = false.
-        carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS); // Activează servo-ul de blocare
+        //carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS); // Activează servo-ul de blocare
+        carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS); // Am scos reglarea automata de la inceput
 
         aligningCarousel = true; // Activează flag-ul pentru loop()
         alignTimer.reset(); // Pornește cronometrul
     }
 
+    public double shooterVelocity(double distance){
+        return carousel.DEFAULT_SHOOTER_RPM;
+    }
+
+    public double angleShooter(double distance){
+        return turret.getShooterAnglePosition();
+    }
+
+
     @Override
     public void loop() {
         CommandScheduler.getInstance().run();
         // --- SECVENȚĂ DE ALINIERE AUTOMATĂ LA START ---
-        if (aligningCarousel) {
+        // --- logica de mai jos provoaca un comportament ciudat la miscarea robotului(lag) ---
+        // am preferat sa il opresc momentan
+        if (false) {
             // Oprește complet șasiul pe durata alinierii
             follower.setTeleOpDrive(0, 0, 0, true);
 
@@ -122,7 +134,7 @@ public class TeleOpCarousel1 extends OpMode {
                 gamepad1.setLedColor(0, 1, 0, -1);
             }
         }
-        if (!aligningCarousel) {
+        if (true) {
             follower.update();
 
             if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
@@ -214,6 +226,11 @@ public class TeleOpCarousel1 extends OpMode {
 
         // --- Turret Rotation and Outtake ---
         if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) carousel.triggerShoot();
+
+        if(carousel.canChangeVelocity()){
+            carousel.setShooterTargetRPM(shooterVelocity(vision.getDistance()));
+            turret.setManualControl(angleShooter(vision.getDistance()));
+        }
 
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
