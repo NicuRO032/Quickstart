@@ -1,8 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.pedropathing.follower.Follower;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -40,23 +39,23 @@ public class AutoVision11 extends CommandOpMode {
     private boolean autoStarted = false;
     double coarseTurretShootingAngle = 0.0;
     public static PathConstraints FAST_CONSTRAINTS = new PathConstraints(
-            0.9,  // 90% din viteza maximă
+            0.1,  // 90% din viteza maximă
             100,  // Accelerație mare
             1.3,  // Viteză angulară mare
             1.0);
 
     public static PathConstraints SLOW_CONSTRAINTS = new PathConstraints(
-            0.4,  // 40% din viteza maximă
-            50,   // Accelerație mai mică, pentru mișcări line
-            1.0,  // Viteză angulară mai mică
-            1.0);
+            0.1,  // 40% din viteza maximă
+            10,   // Accelerație mai mică, pentru mișcări line
+            0.1,  // Viteză angulară mai mică
+            0.1);
 
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(21, 123, Math.toRadians(143));
-    private final Pose SCORE_POSE = new Pose(54,83,Math.toRadians(143));
+    private final Pose SCORE_POSE = new Pose(54, 83, Math.toRadians(135));
     private final Pose PARK_POSE  = new Pose(60, 100, Math.toRadians(90));
-    private final Pose GRAB1_START_POSE  = new Pose(37, 84, Math.toRadians(143));
-    private final Pose GRAB1_END_POSE  = new Pose(22, 84, Math.toRadians(143));
+    private final Pose GRAB1_START_POSE  = new Pose(50, 83, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE  = new Pose(48, 83, Math.toRadians(180));
     private final Pose GRAB2_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB2_END_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
@@ -79,13 +78,13 @@ public class AutoVision11 extends CommandOpMode {
                 .build();
 
         // 2. Traiectoria de colectare 1 (de la SCOR la zona de colectare)
-       grab1Path = follower.pathBuilder()
+        grab1Path = follower.pathBuilder()
                 .addPath(new BezierLine(SCORE_POSE, GRAB1_START_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_START_POSE.getHeading())
+                .addPoseCallback(GRAB1_START_POSE, () -> intake.setPower(-1), 5)
                 .setConstraints(SLOW_CONSTRAINTS)
                 .addPath(new BezierLine(GRAB1_START_POSE, GRAB1_END_POSE))
                 .setLinearHeadingInterpolation(GRAB1_START_POSE.getHeading(), GRAB1_END_POSE.getHeading())
-                .addPoseCallback(GRAB1_START_POSE, () -> intake.setPower(0.8), 0.5)
                 .build();
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
@@ -136,9 +135,6 @@ public class AutoVision11 extends CommandOpMode {
 
     @Override
     public void initialize() {
-
-        //CommandScheduler.getInstance().reset();
-
         dashboard = FtcDashboard.getInstance();
         follower = Constants.createFollower(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
@@ -159,7 +155,6 @@ public class AutoVision11 extends CommandOpMode {
 
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        //carousel.setShooterTargetRPM(3000);
         carousel.setShooterForAutoRPM(3500);
 
         while (!isStarted() && !isStopRequested()) {
@@ -214,39 +209,42 @@ public class AutoVision11 extends CommandOpMode {
             telemetry.update();
 
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
-                    // score preload
-                   // new WaitCommand(3000),
-                   // new FollowPathCommand(follower, scorePreloadPath, true, 0.5),
+                    //--- CICLUL 1: SCOR PRELOAD ---
                     new ParallelCommandGroup(
+                            // Pregătește caruselul pentru outtake și pornește shooter-ul
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
-                            new FollowPathCommand(follower, scorePreloadPath, true, 0.3),
-                            new InstantCommand(() -> turret.setTargetAngle(coarseTurretShootingAngle))
-                    ),
-                    new ParallelRaceGroup(
                             new AutoAimTurretCommand(turret, vision),
-                            new WaitCommand(1000)
+                            // Viteză rezonabilă de 50% pentru a ajunge la locație
+                            // HOLONOMIC = false: Așteaptă oprirea completă la destinație
+                            new FollowPathCommand(follower, scorePreloadPath, false, 0.5)
                     ),
+                    // Acum, comandă tragerea
                     new ShootAllBallsCommand(carousel),
+                    new InstantCommand(() -> intake.setPower(1)),
 
-                  //  Prima colectare
+                    //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab1Path, false, 0.7),
+                            // Viteză mai mică (30%) pentru o colectare precisă
+                            // HOLONOMIC = false: Asigură-te că ajunge și stă la capătul traiectoriei
+                            new FollowPathCommand(follower, grab1Path, false, 0.1),
+                            // Așteaptă până când caruselul se umple
                             new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new WaitCommand(5000)
+                            // Timeout de siguranță de 4 secunde
+                            new WaitCommand(4000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new ParallelCommandGroup(
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
-                            new FollowPathCommand(follower, score1Path, true, 0.7),
-                            new InstantCommand(() -> turret.setTargetAngle(coarseTurretShootingAngle))
+                            // Viteză rezonabilă de 50% pentru a reveni la scor
+                            // HOLONOMIC = false: Asigură-te că ajunge și stă la tablă
+                            new FollowPathCommand(follower, score1Path, false, 0.1)
                     ),
-                    new ParallelRaceGroup(
-                            new AutoAimTurretCommand(turret, vision),
-                            new WaitCommand(2000)
-                    ),
+                    // Așteaptă din nou pentru stabilizare și viteză shooter
+                    new WaitCommand(1000), // Pauză de 1 secundă
+                    // Trage din nou
                     new ShootAllBallsCommand(carousel)
 
-                  /*  // A doua colectare
+                    /*  // A doua colectare (comentat)
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false, 0.9),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
@@ -255,18 +253,12 @@ public class AutoVision11 extends CommandOpMode {
                     new InstantCommand(() -> intake.setPower(0)),
                     new ParallelCommandGroup(
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
-                            new FollowPathCommand(follower, score2Path, true, 0.9),
-                            new InstantCommand(() -> turret.setTargetAngle(coarseTurretShootingAngle))
+                            new FollowPathCommand(follower, score2Path, true, 0.5)
                     ),
-                    new ParallelRaceGroup(
-                            new AutoAimTurretCommand(turret, vision),
-                            new WaitCommand(2000)
-                    ),
-                    new ShootAllBallsCommand(carousel),
-
-                    // Parcare
-                    new FollowPathCommand(follower, parkPath, true, 0.7)
-            */);
+                    new WaitCommand(1000),
+                    new ShootAllBallsCommand(carousel)
+                    */
+            );
             schedule(autoSequence);
         }
     }

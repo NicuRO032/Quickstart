@@ -95,7 +95,7 @@ public class TeleOpCarousel1 extends OpMode {
         // --- SECVENȚĂ DE ALINIERE AUTOMATĂ LA START ---
         if (aligningCarousel) {
             // Oprește complet șasiul pe durata alinierii
-            follower.setTeleOpDrive(0, 0, 0, true);
+            //follower.setTeleOpDrive(0, 0, 0, true);
 
             double alignTime = alignTimer.seconds();
 
@@ -122,6 +122,7 @@ public class TeleOpCarousel1 extends OpMode {
                 gamepad1.setLedColor(0, 1, 0, -1);
             }
         }
+
         if (!aligningCarousel) {
             follower.update();
 
@@ -153,6 +154,12 @@ public class TeleOpCarousel1 extends OpMode {
 
             handleDriver1Controls();
             handleDriver2Controls();
+
+            if(carousel.canChangeRPM()){
+                double x = vision.getDistance();
+                carousel.setShooterTargetRPM(0.0213958 * x * x * x -2.8156 * x * x +141.16011 * x +1208.49315);
+                turret.setShooterAngle(-0.000220701 * x * x +0.0261492 * x -0.516634);
+            }
         }
         sendTelemetry();
     }
@@ -205,7 +212,7 @@ public class TeleOpCarousel1 extends OpMode {
 
     private void handleDriver2Controls() {
         // --- Shooter Angle Control ---
-        turret.setManualShooterAngle(-driver2.getLeftY());
+        //turret.setManualShooterAngle(-driver2.getLeftY());
 
         if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
         if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi inaltime medie

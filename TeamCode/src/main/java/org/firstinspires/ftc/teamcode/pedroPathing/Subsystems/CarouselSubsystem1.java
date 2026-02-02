@@ -480,6 +480,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
         return result.stream().mapToInt(i -> i).toArray();
     }
 
+    public boolean canChangeRPM(){
+        return outtakeState != OuttakeState.OUT_IDLE;
+    }
+
     private BallColor detectBallColor() {
         NormalizedRGBA c1 = colorSensor1.getNormalizedColors();
         NormalizedRGBA c2 = colorSensor2.getNormalizedColors();
