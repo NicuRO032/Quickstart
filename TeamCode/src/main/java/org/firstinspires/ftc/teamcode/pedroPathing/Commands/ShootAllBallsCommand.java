@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 
 public class ShootAllBallsCommand extends SequentialCommandGroup {
 
-    public static final long SHOOTER_TIMEOUT_MS = 2000; // Timp maxim de așteptare: 3 secunde
+    public static final long SHOOTER_TIMEOUT_MS = 250; // Timp maxim de așteptare: 3 secunde
 
     public ShootAllBallsCommand(CarouselSubsystem1 carousel) {
         addCommands(
