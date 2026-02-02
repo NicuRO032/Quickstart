@@ -49,7 +49,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double SHOOTER_kF = 0.00045;
 
     public static final double SHOOTER_MOTOR_CPR = 28.0;
-    public static double DEFAULT_SHOOTER_RPM = 2000.0;
+    public static double DEFAULT_SHOOTER_RPM = 3000.0;
     public static double SHOT_CONFIRM_DIP_PERCENT = 0.05; // Acum se aplică la RPM
     private double rpmBeforePush = 0.0;
     private boolean shotWasDetected = false;
@@ -159,6 +159,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     // --- Settere și Gettere ---
     public void setShooterTargetRPM(double rpm) { this.currentTargetRPM = rpm; }// Metodă publică pentru a seta viteza shooter-ului din exterior
+    public void setShooterForAutoRPM(double rpm) {this.DEFAULT_SHOOTER_RPM = rpm;}
     public double getShooterTargetRPM() { return this.currentTargetRPM; }
     public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor.getVelocity()); }
     public double getRpmBeforePush() { return rpmBeforePush; }
