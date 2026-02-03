@@ -220,7 +220,12 @@ public class TeleOpCarousel1 extends OpMode {
 
 
         // --- Turret Rotation and Outtake ---
-        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) carousel.triggerShoot();
+        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)){
+            if(carousel.canSkipShoot()){
+                carousel.skipTrow();
+            }else
+                carousel.triggerShoot();
+        }
 
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {

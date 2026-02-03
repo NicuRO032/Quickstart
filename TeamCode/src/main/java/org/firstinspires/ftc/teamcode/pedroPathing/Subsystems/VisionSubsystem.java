@@ -40,7 +40,7 @@ public class VisionSubsystem extends SubsystemBase {
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .addProcessor(aprilTag)
-                .setCameraResolution(new Size(1280, 720))
+                .setCameraResolution(new Size(800, 600))
                 .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
                 .build();
         // ▼▼▼ ADAUGĂ ACEST APEL ▼▼▼

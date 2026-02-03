@@ -364,6 +364,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     private void handleOuttake() {
+        double RPMdif = Math.abs(getShooterCurrentRPM() - Math.min(getShooterTargetRPM(), 6000));
+        double RPMallowedDif = 200;
         switch (outtakeState) {
             // STARE NOUĂ: Doar comandă mișcarea și trece mai departe
             case PREPARE_READY:
@@ -378,7 +380,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
             // STARE NOUĂ: Așteaptă alinierea și comanda de la pilot
             case ALIGNING_FOR_SHOT:
                 // Așteptăm ca și caruselul să ajungă la țintă ȘI pilotul să apese pe trăgaci
-                if (atTarget() && triggerReady) {
+                if (atTarget() && triggerReady && RPMdif <= RPMallowedDif) {
+                    //Am adaugat conditia ca Shooterul sa fie la viteza potrivita
                     // Când ambele condiții sunt îndeplinite, suntem gata de aruncare
                     rpmBeforePush = getShooterCurrentRPM(); // Salvăm RPM-ul exact înainte de a împinge
                     shotWasDetected = false; // Resetăm flag-ul de detecție
@@ -438,7 +441,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
             case ADVANCE:
                 // Așteptăm ca următorul slot să ajungă la poziție (pentru aruncările în lanț)
-                if (atTarget()) {
+                if (atTarget() && RPMdif <= RPMallowedDif) {
                     rpmBeforePush = getShooterCurrentRPM(); // Salvăm viteza pentru aruncarea în lanț
                     shotWasDetected = false; // Resetăm flag-ul
                     pusher.setPosition(PUSH_POS);
@@ -462,6 +465,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
     }
 
+    public void skipTrow(){
+        shotWasDetected = true;
+    }
+
     private int[] buildFallbackOrder(OuttakePattern pattern) {
         List<Integer> result = new ArrayList<>();
         boolean[] used = new boolean[3];
@@ -482,6 +489,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public boolean canChangeRPM(){
         return outtakeState != OuttakeState.OUT_IDLE;
+    }
+
+    public boolean canSkipShoot(){
+        return triggerReady;
     }
 
     private BallColor detectBallColor() {
