@@ -64,7 +64,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final float TICKS_PER_SLOT = 8192/3f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
     public static double POWER_CAROUSEL = 1;
-    public static int POSITION_TOLERANCE = 100;
+    public static int POSITION_TOLERANCE = 140;
     public static long AT_TARGET_STABILITY_MS = 50; // Timpul de stabilitate
 
     public static final double SLOT_OCCUPIED_MM = 100.0;

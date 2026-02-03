@@ -26,8 +26,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
-@Autonomous(name = "AUTO.big.blue", group = "Pedro Pathing")
-public class AutoVision11 extends CommandOpMode {
+@Autonomous(name = "AUTO.big.RED", group = "Pedro Pathing")
+public class AutoVision12 extends CommandOpMode {
     private Follower follower;
     private CarouselSubsystem1 carousel;
     private TurretSubsystem turret;
@@ -39,7 +39,7 @@ public class AutoVision11 extends CommandOpMode {
     private boolean autoStarted = false;
     double coarseTurretShootingAngle = 0.0;
 
-   public static PathConstraints FAST_CONSTRAINTS = new PathConstraints(
+    public static PathConstraints FAST_CONSTRAINTS = new PathConstraints(
             0.1,  // 90% din viteza maximă
             100,  // Accelerație mare
             1.3,  // Viteză angulară mare
@@ -52,15 +52,15 @@ public class AutoVision11 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(47.5, 133.5, Math.toRadians(49));
-    private final Pose SCORE_POSE = new Pose(54, 83, Math.toRadians(137));
-    private final Pose PARK_POSE  = new Pose(60, 100, Math.toRadians(90));
-    private final Pose GRAB1_START_POSE  = new Pose(39, 83, Math.toRadians(180));
-    private final Pose GRAB1_END_POSE  = new Pose(35, 83, Math.toRadians(180));
-    private final Pose GRAB2_START_POSE  = new Pose(47, 70, Math.toRadians(180));
-    private final Pose GRAB2_END_POSE  = new Pose(35, 70, Math.toRadians(180));
-    private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
-    private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
+    private final Pose START_POSE = new Pose(96, 133, Math.toRadians(135));
+    private final Pose SCORE_POSE = new Pose(100, 84, Math.toRadians(45));
+    private final Pose PARK_POSE  = new Pose(60, 100, Math.toRadians(0));
+    private final Pose GRAB1_START_POSE  = new Pose(95,84, Math.toRadians(0));
+    private final Pose GRAB1_END_POSE  = new Pose(122.5, 84, Math.toRadians(0));
+    private final Pose GRAB2_START_POSE  = new Pose(95, 60, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE  = new Pose(125.5, 60, Math.toRadians(0));
+  //  private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(0));
+  //  private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(0));
 
     private PathChain scorePreloadPath;
     private PathChain parkPath;
@@ -69,7 +69,7 @@ public class AutoVision11 extends CommandOpMode {
     private PathChain grab3Path;
     private PathChain score1Path;
     private PathChain score2Path;
-    private PathChain score3Path;
+  //  private PathChain score3Path;
 
     public void buildPaths() {
         // 1. De la START la SCOR (Preload)
@@ -98,7 +98,7 @@ public class AutoVision11 extends CommandOpMode {
         grab2Path = follower.pathBuilder()
                 .addPath(new BezierLine(SCORE_POSE, GRAB2_START_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_START_POSE.getHeading())
-                .addPoseCallback(GRAB2_START_POSE, () -> intake.setPower(-1), 10) // Corectat din GRAB1_START_POSE
+                .addPoseCallback(GRAB2_START_POSE, () -> intake.setPower(-1), 7) // Corectat din GRAB1_START_POSE
 
                 // .setConstraints(SLOW_CONSTRAINTS)
                 .addPath(new BezierLine(GRAB2_START_POSE, GRAB2_END_POSE))
@@ -159,7 +159,7 @@ public class AutoVision11 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(3500);
-        turret.setTargetAngle(-20);
+        turret.setTargetAngle(20);
 
         while (!isStarted() && !isStopRequested()) {
             CommandScheduler.getInstance().run();
@@ -226,13 +226,13 @@ public class AutoVision11 extends CommandOpMode {
                     // Acum, comandă tragerea
                     new ShootAllBallsCommand(carousel),
                     new InstantCommand(() -> intake.setPower(-1)),
-                    new InstantCommand(() -> follower.setMaxPower(0.3)),
+                    new InstantCommand(() -> follower.setMaxPower(0.5)),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1Path, false),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new WaitCommand(6000)
+                            new WaitCommand(4000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
@@ -245,9 +245,9 @@ public class AutoVision11 extends CommandOpMode {
                     new ShootAllBallsCommand(carousel),
 
                     //--- CICLUL 2: A doua colectare si scor ---
-            new InstantCommand(() -> follower.setMaxPower(0.3)),
+                    new InstantCommand(() -> follower.setMaxPower(1)),
                     // Acum, comandă tragerea
-                   // new InstantCommand(() -> follower.setMaxPower(0.3)),
+                    // new InstantCommand(() -> follower.setMaxPower(0.3)),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new ParallelRaceGroup(
