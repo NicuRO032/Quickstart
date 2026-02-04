@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 @Config
 public class VisionSubsystem extends SubsystemBase {
-    public static int EXPOSURE_MS = 6;
-    public static int GAIN = 100;
+    public static int EXPOSURE_MS = 2;
+    public static int GAIN = 255;
     public static double FOCUS = 0.0;
 
     private VisionPortal visionPortal;
@@ -80,7 +80,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        //setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
+        setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
         updateAprilTagData();
     }
 
