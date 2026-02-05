@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Config
 public class VisionSubsystem extends SubsystemBase {
     public static int EXPOSURE_MS = 2;
-    public static int GAIN = 255;
+    public static int GAIN = 230;
     public static double FOCUS = 0.0;
 
     private VisionPortal visionPortal;
@@ -40,7 +40,7 @@ public class VisionSubsystem extends SubsystemBase {
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .addProcessor(aprilTag)
-                .setCameraResolution(new Size(800, 600))
+                .setCameraResolution(new Size(960, 720))
                 .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
                 .build();
         // ▼▼▼ ADAUGĂ ACEST APEL ▼▼▼

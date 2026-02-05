@@ -5,6 +5,7 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 import android.annotation.SuppressLint;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -23,6 +24,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @TeleOp(name="TeleOp_Final_cu_Turela")
+@Config
 public class TeleOpCarousel1 extends OpMode {
     // VARIABILE  PENTRU ALINIERE AUTOMATĂ
     private final ElapsedTime alignTimer = new ElapsedTime();
@@ -49,6 +51,8 @@ public class TeleOpCarousel1 extends OpMode {
     private TurretTeleOpState turretTeleOpState = TurretTeleOpState.MANUAL;
     private final ElapsedTime lockOnTimer = new ElapsedTime();
     public static boolean intakeIsOn = false;
+
+    public static double SHOOT_RPM = 3000, ANGLE_SHOOT = 0;
 
     @Override
     public void init() {
@@ -157,7 +161,7 @@ public class TeleOpCarousel1 extends OpMode {
             handleDriver2Controls();
 
         }
-        //sendTelemetry();
+        sendTelemetry();
     }
 
     private void handleDriver1Controls() {
@@ -259,12 +263,12 @@ public class TeleOpCarousel1 extends OpMode {
                 driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if(carousel.canChangeRPM()){
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(0.0213958 * x * x * x -2.8156 * x * x +141.16011 * x +1208.49315);
-                    turret.setShooterAngle(-0.000220701 * x * x +0.0261492 * x -0.516634);
+                    carousel.setShooterTargetRPM(-0.000448864 * x * x * x * x + 0.110883 * x * x * x -9.63445 * x * x + 365.88518 * x -1501.91142);
+                    turret.setShooterAngle(0.00156549 * x + 0.0828528);
                 }
                 if (hasValidTarget) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
-                    driver2.gamepad.rumble(50);//am miscorat valoarea ca sa nu blochez sistemul
+                    driver2.gamepad.rumble(50); //am miscorat valoarea ca sa nu blochez sistemul
                     lockOnTimer.reset();
                     turret.commandAutoAim(bestTag);
                 } else {
@@ -276,8 +280,8 @@ public class TeleOpCarousel1 extends OpMode {
                 driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if(carousel.canChangeRPM()){
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(0.0213958 * x * x * x -2.8156 * x * x +141.16011 * x +1208.49315);
-                    turret.setShooterAngle(-0.000220701 * x * x +0.0261492 * x -0.516634);
+                    carousel.setShooterTargetRPM(-0.000448864 * x * x * x * x + 0.110883 * x * x * x -9.63445 * x * x + 365.88518 * x -1501.91142);
+                    turret.setShooterAngle(0.00156549 * x + 0.0828528);
                 }
                 if (hasValidTarget) {
                     turret.commandAutoAim(bestTag);
@@ -296,6 +300,7 @@ public class TeleOpCarousel1 extends OpMode {
                 }
                 break;
         }
+
     }
 
     @SuppressLint("DefaultLocale")

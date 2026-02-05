@@ -52,13 +52,13 @@ public class AutoVision11 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(47.5, 133.5, Math.toRadians(49));
-    private final Pose SCORE_POSE = new Pose(54, 83, Math.toRadians(137));
+    private final Pose START_POSE = new Pose(47.5, 133.5, Math.toRadians(45));
+    private final Pose SCORE_POSE = new Pose(55, 83, Math.toRadians(137));
     private final Pose PARK_POSE  = new Pose(60, 100, Math.toRadians(90));
     private final Pose GRAB1_START_POSE  = new Pose(39, 83, Math.toRadians(180));
     private final Pose GRAB1_END_POSE  = new Pose(35, 83, Math.toRadians(180));
-    private final Pose GRAB2_START_POSE  = new Pose(47, 70, Math.toRadians(180));
-    private final Pose GRAB2_END_POSE  = new Pose(35, 70, Math.toRadians(180));
+    private final Pose GRAB2_START_POSE  = new Pose(39, 65, Math.toRadians(180));
+    private final Pose GRAB2_END_POSE  = new Pose(25, 65, Math.toRadians(180));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
 
@@ -66,6 +66,7 @@ public class AutoVision11 extends CommandOpMode {
     private PathChain parkPath;
     private PathChain grab1Path;
     private PathChain grab2Path;
+    private PathChain grab2APath;
     private PathChain grab3Path;
     private PathChain score1Path;
     private PathChain score2Path;
@@ -98,9 +99,11 @@ public class AutoVision11 extends CommandOpMode {
         grab2Path = follower.pathBuilder()
                 .addPath(new BezierLine(SCORE_POSE, GRAB2_START_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_START_POSE.getHeading())
-                .addPoseCallback(GRAB2_START_POSE, () -> intake.setPower(-1), 10) // Corectat din GRAB1_START_POSE
-
+                .addPoseCallback(GRAB2_START_POSE, () -> intake.setPower(-1), 7) // Corectat din GRAB1_START_POSE
                 // .setConstraints(SLOW_CONSTRAINTS)
+                .build();
+
+        grab2APath = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB2_START_POSE, GRAB2_END_POSE))
                 .setLinearHeadingInterpolation(GRAB2_START_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .build();
@@ -158,7 +161,7 @@ public class AutoVision11 extends CommandOpMode {
 
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        carousel.setShooterForAutoRPM(3500);
+        carousel.setShooterForAutoRPM(3450);
         turret.setTargetAngle(-20);
 
         while (!isStarted() && !isStopRequested()) {
@@ -240,20 +243,20 @@ public class AutoVision11 extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
                             new FollowPathCommand(follower, score1Path, true)
                     ),
-                    new WaitCommand(500),
                     new AutoAimTurretCommand(turret, vision),
                     new ShootAllBallsCommand(carousel),
 
                     //--- CICLUL 2: A doua colectare si scor ---
-            new InstantCommand(() -> follower.setMaxPower(0.3)),
+                    new InstantCommand(() -> follower.setMaxPower(0.5)),
                     // Acum, comandă tragerea
                    // new InstantCommand(() -> follower.setMaxPower(0.3)),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new ParallelRaceGroup(
+                    new InstantCommand(() -> intake.setPower(1)),
+                    new SequentialCommandGroup(
                             new FollowPathCommand(follower, grab2Path, false),
-                            new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new WaitCommand(4000)
+                            new FollowPathCommand(follower, grab2APath, true),
+                            new WaitUntilCommand(carousel::allSlotsOccupied)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
@@ -261,7 +264,6 @@ public class AutoVision11 extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
                             new FollowPathCommand(follower, score2Path, true)
                     ),
-                    new WaitCommand(500),
                     new AutoAimTurretCommand(turret, vision),
                     new ShootAllBallsCommand(carousel)
 

@@ -24,8 +24,8 @@ public class TurretSubsystem extends SubsystemBase {
     public static double TURRET_MAX_ANGLE = 180.0;
     public static double HOME_ANGLE = 0.0;
     public static double MANUAL_SPEED_MULTIPLIER = 1.0;
-    public static double AIMING_KP = 0.12;
-    public static double AIMING_KD = 0.012;
+    public static double AIMING_KP = 0.25;
+    public static double AIMING_KD = 0.028;
     public static double SWEEP_SPEED_DEG_PER_SEC = 30.0;
     public static double SWEEP_ENDPOINT_1 = -45.0;
     public static double SWEEP_ENDPOINT_2 = 45.0;
