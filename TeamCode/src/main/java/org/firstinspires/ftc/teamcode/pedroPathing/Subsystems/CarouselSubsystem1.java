@@ -31,11 +31,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final ElapsedTime pidTimer = new ElapsedTime();
 
 // --- COEFICIENȚI PENTRU MIȘCĂRI MARI (eroare > 0.8 sloturi) ---
-    public static double kP_COARSE = 0.0001; // kP mai mic pentru a preveni oscilațiile
-    public static double kD_COARSE = 0.00001;     // Oprește kD când suntem departe
+    public static double kP_COARSE = 0.00003; // kP mai mic pentru a preveni oscilațiile
+    public static double kD_COARSE = 0.000002;     // Oprește kD când suntem departe
 
     // --- COEFICIENȚI PENTRU MIȘCĂRI FINE (eroare < 0.8 sloturi) ---
-    public static double kP_FINE = 0.0004; // kP mai mare pentru precizie (similar cu ce aveai)
+    public static double kP_FINE = 0.0002; // kP mai mare pentru precizie (similar cu ce aveai)
     public static double kD_FINE = 0.00002; // kD pentru a opri overshoot-ul la final
 
     // kI și kF sunt refolosiți
@@ -63,7 +63,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE ================= */
     public static final float TICKS_PER_SLOT = 8192/3f;
     public static final float OUTTAKE_OFFSET_SLOTS = 1.5f;
-    public static double POWER_CAROUSEL = 1;
+    public static double POWER_CAROUSEL = 0.8;
     public static int POSITION_TOLERANCE = 140;
     public static long AT_TARGET_STABILITY_MS = 50; // Timpul de stabilitate
 

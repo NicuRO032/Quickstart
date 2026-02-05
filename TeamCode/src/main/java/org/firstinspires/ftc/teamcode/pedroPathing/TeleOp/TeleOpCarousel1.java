@@ -162,6 +162,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         }
         sendTelemetry();
+
     }
 
     private void handleDriver1Controls() {
@@ -263,8 +264,10 @@ public class TeleOpCarousel1 extends OpMode {
                 driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if(carousel.canChangeRPM()){
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(-0.000448864 * x * x * x * x + 0.110883 * x * x * x -9.63445 * x * x + 365.88518 * x -1501.91142);
-                    turret.setShooterAngle(0.00156549 * x + 0.0828528);
+                    carousel.setShooterTargetRPM(-0.0302055 * x * x  + 30.9530 * x + 2400.77337);
+                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x -0.184169);
+//                    carousel.setShooterTargetRPM(SHOOT_RPM);
+//                    turret.setShooterAngle(ANGLE_SHOOT);
                 }
                 if (hasValidTarget) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
@@ -280,8 +283,10 @@ public class TeleOpCarousel1 extends OpMode {
                 driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if(carousel.canChangeRPM()){
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(-0.000448864 * x * x * x * x + 0.110883 * x * x * x -9.63445 * x * x + 365.88518 * x -1501.91142);
-                    turret.setShooterAngle(0.00156549 * x + 0.0828528);
+                    carousel.setShooterTargetRPM(-0.0302055 * x * x  + 30.9530 * x + 2400.77337);
+                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x -0.184169);
+//                    carousel.setShooterTargetRPM(SHOOT_RPM);
+//                    turret.setShooterAngle(ANGLE_SHOOT);
                 }
                 if (hasValidTarget) {
                     turret.commandAutoAim(bestTag);
@@ -300,7 +305,7 @@ public class TeleOpCarousel1 extends OpMode {
                 }
                 break;
         }
-
+        sendTelemetry();
     }
 
     @SuppressLint("DefaultLocale")
