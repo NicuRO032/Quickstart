@@ -47,7 +47,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double kP_FINE = 0.0002; // kP mai mare pentru precizie (similar cu ce aveai)
     public static double kD_FINE = 0.00002; // kD pentru a opri overshoot-ul la final
 
-    
+
     public static double kI = 0.0002;
     public static int I_ZONE_MAX = 200;
     public static int I_ZONE_MIN = 90;
@@ -86,7 +86,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double RETRACT_POS = 0.5;
     public static long PUSH_TIME_MS = 350;
     public static long RETRACT_TIME_MS = 175;
-    public static  double JOG_ON_POS = 0.25;
+    public static int MAX_SHOT_RETRIES = 1; // Permitem o singură reîncercare suplimentară
+    private int shotRetryCounter = 0;
+    public static  double JOG_ON_POS = 0.3;
     public static final double JOG_OFF_POS = 0.0;
 
     /* ================= HARDWARE ================= */
@@ -401,6 +403,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     shotWasDetected = false; // Resetăm flag-ul de detecție
                     pusher.setPosition(PUSH_POS); // Împingem bila
                     outtakeTimer.reset();
+                    shotRetryCounter = 0;
                     outtakeState = OuttakeState.PUSH;
                 }
                 break;
@@ -441,14 +444,31 @@ public class CarouselSubsystem1 extends SubsystemBase {
                             outtakeState = OuttakeState.ADVANCE;
                         }
                     } else {
+
+                        if (shotRetryCounter < MAX_SHOT_RETRIES) {
+                            // Mai avem încercări, reîncercăm
+                            shotRetryCounter++;
+                            rpmBeforePush = getShooterCurrentRPM();
+                            shotWasDetected = false;
+                            pusher.setPosition(PUSH_POS);
+                            outtakeTimer.reset();
+                            outtakeState = OuttakeState.PUSH;
+
+                        } else {
+                            // Nu mai avem încercări, renunțăm și consideram aruncarea reusita
+                            shotWasDetected = true;
+                        }
+
+
+
                         // EȘEC! Aruncarea NU a fost detectată.
                         // Nu avansăm pointer-ul (outtakePtr) și reîncercăm.
                         // Suntem deja aliniați, deci doar re-încercăm push-ul
-                        rpmBeforePush = getShooterCurrentRPM();
-                        shotWasDetected = false;
-                        pusher.setPosition(PUSH_POS);
-                        outtakeTimer.reset();
-                        outtakeState = OuttakeState.PUSH;
+                        //rpmBeforePush = getShooterCurrentRPM();
+                        //shotWasDetected = false;
+                        //pusher.setPosition(PUSH_POS);
+                        //outtakeTimer.reset();
+                        //outtakeState = OuttakeState.PUSH;
                     }
                 }
                 break;

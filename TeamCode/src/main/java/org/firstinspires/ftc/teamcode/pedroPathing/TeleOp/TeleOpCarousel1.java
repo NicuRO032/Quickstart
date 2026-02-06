@@ -161,7 +161,7 @@ public class TeleOpCarousel1 extends OpMode {
             handleDriver2Controls();
 
         }
-        sendTelemetry();
+        //sendTelemetry();
 
     }
 
@@ -305,7 +305,7 @@ public class TeleOpCarousel1 extends OpMode {
                 }
                 break;
         }
-        sendTelemetry();
+        //sendTelemetry();
     }
 
     @SuppressLint("DefaultLocale")
