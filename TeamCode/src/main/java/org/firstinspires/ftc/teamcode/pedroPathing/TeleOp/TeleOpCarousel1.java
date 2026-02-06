@@ -342,6 +342,9 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("09. LogicalIndex", carousel.getLogicalIndex());
         packet.put("10. Outtake State", carousel.getOuttakeState());
 **/
+        packet.put("0. Current Voltage", carousel.getCurrentVoltage());
+        packet.put("0. Putere carusel necompensata", carousel.getCurrentCarouselPower());
+        packet.put("0. Putere carusel compensata", carousel.getCurrentCarouselCompensatedPower());
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
         packet.put("01.Global index", carousel.getGlobalIndex());

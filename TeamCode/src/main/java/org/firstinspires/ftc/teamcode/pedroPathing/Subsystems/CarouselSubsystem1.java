@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -21,6 +22,9 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1
 import com.seattlesolvers.solverslib.controller.PIDController;
 import com.seattlesolvers.solverslib.controller.PIDFController;
 
+//import com.qualcomm.robotcore.hardware.VoltageSensor;
+import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
+
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
     // PIDF pentru motorul caruselului
@@ -29,10 +33,15 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private double lastError = 0.0;
     private int currentError = 0;
     private final ElapsedTime pidTimer = new ElapsedTime();
+    private double motorPower = 0.0;
+    private double compensatedPower = 0.0;
+
+
+    public static double NOMINAL_VOLTAGE = 12.8;
 
 // --- COEFICIENȚI PENTRU MIȘCĂRI MARI (eroare > 0.8 sloturi) ---
-    public static double kP_COARSE = 0.00003; // kP mai mic pentru a preveni oscilațiile
-    public static double kD_COARSE = 0.000002;     // Oprește kD când suntem departe
+    public static double kP_COARSE = 0.00015; // kP mai mic pentru a preveni oscilațiile
+    public static double kD_COARSE = 0.0;     // Oprește kD când suntem departe
 
     // --- COEFICIENȚI PENTRU MIȘCĂRI FINE (eroare < 0.8 sloturi) ---
     public static double kP_FINE = 0.0002; // kP mai mare pentru precizie (similar cu ce aveai)
@@ -74,7 +83,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double RETRACT_POS = 0.5;
     public static long PUSH_TIME_MS = 350;
     public static long RETRACT_TIME_MS = 175;
-    public static final double JOG_ON_POS = 0.25;
+    public static  double JOG_ON_POS = 0.25;
     public static final double JOG_OFF_POS = 0.0;
 
     /* ================= HARDWARE ================= */
@@ -84,6 +93,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final Servo pusher;
     private final Servo jogServo;
+    private final VoltageSensor batteryVoltageSensor;
 
     /* ================= STATES ================= */
     public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE}
@@ -131,6 +141,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         pusher = hardwareMap.get(Servo.class, "pusher");
         jogServo = hardwareMap.get(Servo.class, "jogServo");
         encoderCarusel = hardwareMap.get(DcMotorEx.class, "encoderCarusel"); // Folosim DcMotorEx pentru a citi encoderul
+        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
 
         encoderCarusel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoderCarusel.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -625,6 +636,17 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public double getColor2Distance() {
         return ((DistanceSensor) colorSensor2).getDistance(DistanceUnit.MM);
     }
+
+    public double getCurrentVoltage() {
+        return (batteryVoltageSensor.getVoltage());
+    }
+    public double getCurrentCarouselPower() {
+        return (this.motorPower);
+    }
+    public double getCurrentCarouselCompensatedPower() {
+        return (this.compensatedPower);
+    }
+
     @Override
     public void periodic() {
                 // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
@@ -670,12 +692,27 @@ public class CarouselSubsystem1 extends SubsystemBase {
             double d_term = kD_actual * derivative;
 
             // --- Puterea totală ---
-            double motorPower = p_term + i_term + d_term + kF;
+            motorPower = p_term + i_term + d_term + kF;
 
             // Plafonarea finală a puterii
             motorPower = Math.max(-POWER_CAROUSEL, Math.min(motorPower, POWER_CAROUSEL));
 
-            motorCarousel.setPower(motorPower);
+            // 1. Citim tensiunea actuală a bateriei folosind VoltageSensor.
+            double currentVoltage = batteryVoltageSensor.getVoltage();
+
+            // Asigurăm o valoare sigură în caz că citirea eșuează sau este 0.
+            if (currentVoltage <= 0) currentVoltage = NOMINAL_VOLTAGE;
+
+            // 2. Calculăm factorul de compensare.
+            double voltageCompensation = NOMINAL_VOLTAGE / currentVoltage;
+
+            // 3. Aplicăm compensarea la puterea calculată de PID.
+            compensatedPower = motorPower * voltageCompensation;
+
+            // 4. Setăm puterea compensată la motor.
+            motorCarousel.setPower(compensatedPower);
+
+            //motorCarousel.setPower(motorPower);
 
             // Salvăm eroarea REALĂ pentru calculul derivatei
             lastError = error;
