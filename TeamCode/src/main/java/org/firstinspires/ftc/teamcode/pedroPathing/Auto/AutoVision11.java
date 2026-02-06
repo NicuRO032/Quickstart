@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;import com.pedropathing.follower.Follower;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -26,7 +27,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
-@Autonomous(name = "AUTO.big.blue", group = "Pedro Pathing")
+@Autonomous(name = "AUTO.big.BLUE", group = "Pedro Pathing")
 public class AutoVision11 extends CommandOpMode {
     private Follower follower;
     private CarouselSubsystem1 carousel;
@@ -57,9 +58,9 @@ public class AutoVision11 extends CommandOpMode {
     private final Pose SCORE_POSE = new Pose(55, 83, Math.toRadians(137));
     private final Pose PARK_POSE  = new Pose(53, 80, Math.toRadians(137));
     private final Pose GRAB1_START_POSE  = new Pose(45, 85, Math.toRadians(180));
-    private final Pose GRAB1_END_POSE  = new Pose(25, 83, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE  = new Pose(23, 83, Math.toRadians(180));
     private final Pose GRAB2_START_POSE  = new Pose(43, 66, Math.toRadians(180));
-    private final Pose GRAB2_END_POSE  = new Pose(10, 64, Math.toRadians(180));
+    private final Pose GRAB2_END_POSE  = new Pose(8, 64, Math.toRadians(180));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
 
@@ -262,16 +263,16 @@ public class AutoVision11 extends CommandOpMode {
                             new AutoAimTurretCommand(turret, vision)
                     ),
                     new ShootAllBallsCommand(carousel),
-                    //--- CICLUL 2: A doua colectare si scor ---
+                    //--- CICLUL 3: A doua colectare si scor ---
                     new InstantCommand(() -> follower.setMaxPower(1)),
 
-                    //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new InstantCommand(() -> intake.setPower(1)),
-                    new SequentialCommandGroup(
-                            new FollowPathCommand(follower, grab2Path, false),
-                            new InstantCommand(() -> follower.setMaxPower(0.4)),
+                    new FollowPathCommand(follower, grab2Path, false),
+                    new InstantCommand(() -> follower.setMaxPower(0.4)),
+                    new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2APath, true),
-                            new WaitUntilCommand(carousel::allSlotsOccupied)
+                            new WaitUntilCommand(carousel::allSlotsOccupied),
+                            new WaitCommand(6000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
@@ -288,6 +289,7 @@ public class AutoVision11 extends CommandOpMode {
                     new ShootAllBallsCommand(carousel),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
+
                     /*  // A doua colectare (comentat)
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false, 0.9),

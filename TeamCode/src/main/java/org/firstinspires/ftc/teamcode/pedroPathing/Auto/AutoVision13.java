@@ -54,10 +54,10 @@ public class AutoVision13 extends CommandOpMode {
 
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(48, 8, Math.toRadians(90));
-    private final Pose SCORE_POSE = new Pose(48, 9, Math.toRadians(110));
-    private final Pose PARK_POSE  = new Pose(60, 100, Math.toRadians(0));
-    private final Pose GRAB1_START_POSE  = new Pose(99, 84, Math.toRadians(0));
-    private final Pose GRAB1_END_POSE  = new Pose(125, 84, Math.toRadians(0));
+    private final Pose SCORE_POSE = new Pose(48, 9, Math.toRadians(112));
+    private final Pose PARK_POSE  = new Pose(35, 13, Math.toRadians(110));
+    private final Pose GRAB1_START_POSE  = new Pose(41, 30, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE  = new Pose(15, 36, Math.toRadians(180));
     private final Pose GRAB2_START_POSE  = new Pose(104, 63, Math.toRadians(0));
     private final Pose GRAB2_END_POSE  = new Pose(130, 63, Math.toRadians(0));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
@@ -133,13 +133,13 @@ public class AutoVision13 extends CommandOpMode {
         score3Path = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB3_END_POSE, SCORE_POSE))
                 .setLinearHeadingInterpolation(GRAB3_END_POSE.getHeading(), SCORE_POSE.getHeading())
-                .build();
+                .build();*/
 
         // Traiectoria de parcare
         parkPath = follower.pathBuilder()
                 .addPath(new BezierLine(SCORE_POSE, PARK_POSE))
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), PARK_POSE.getHeading())
-                .build();*/
+                .build();
     }
 
 
@@ -166,8 +166,8 @@ public class AutoVision13 extends CommandOpMode {
 
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        carousel.setShooterForAutoRPM(4400);
-        turret.setTargetAngle(0);
+        carousel.setShooterForAutoRPM(4600);
+        turret.setTargetAngle(-5);
         turret.setShooterAngle(0.3);
 
 
@@ -239,20 +239,23 @@ public class AutoVision13 extends CommandOpMode {
                             new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
                     ),
-                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+4)),
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
                     // Acum, comandă tragerea
-                    new WaitCommand(3000),
-                    new ShootAllBallsCommand(carousel)
-                    //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    /*new InstantCommand(() -> intake.setPower(-1)),
+                    new WaitCommand(1500),
+                    new ShootAllBallsCommand(carousel),
+
+
                     new InstantCommand(() -> follower.setMaxPower(1)),
 
+                    //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
+                    new InstantCommand(() -> intake.setPower(-1)),
+
                     new FollowPathCommand(follower, grab1Path, true),
-                    new InstantCommand(() -> follower.setMaxPower(0.5)),
+                    new InstantCommand(() -> follower.setMaxPower(0.3)),
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new WaitCommand(6000)
+                            new WaitCommand(8000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
@@ -261,11 +264,13 @@ public class AutoVision13 extends CommandOpMode {
                             new FollowPathCommand(follower, score1Path, false)
                     ),
                     new ParallelRaceGroup(
-                            new WaitCommand(750),
+                            new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
                     ),
-                    new ShootAllBallsCommand(carousel)
-                    //--- CICLUL 2: A doua colectare si scor ---
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
+                    new ShootAllBallsCommand(carousel),
+                    new FollowPathCommand(follower, parkPath, false)
+                  /*  //--- CICLUL 2: A doua colectare si scor ---
                     /*new InstantCommand(() -> follower.setMaxPower(0.7)),
                     // Acum, comandă tragerea
                     // new InstantCommand(() -> follower.setMaxPower(0.3)),
