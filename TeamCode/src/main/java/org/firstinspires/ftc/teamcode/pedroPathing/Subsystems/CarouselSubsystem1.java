@@ -47,8 +47,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double kP_FINE = 0.0002; // kP mai mare pentru precizie (similar cu ce aveai)
     public static double kD_FINE = 0.00002; // kD pentru a opri overshoot-ul la final
 
-    // kI și kF sunt refolosiți
-    public static double kI = 0.0;
+    
+    public static double kI = 0.0002;
+    public static int I_ZONE_MAX = 200;
+    public static int I_ZONE_MIN = 90;
+
     public static double kF = 0.0;
 
     // shooter
@@ -684,9 +687,18 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
             // Se calculează PID-ul folosind coeficienții aleși
             double p_term = kP_actual * error;
-            integralSum += error * dt; // Chiar dacă kI e 0, lăsăm asta
-            double i_term = kI * integralSum;
+            //integralSum += error * dt; // Chiar dacă kI e 0, lăsăm asta
+            //double i_term = kI * integralSum;
 
+            // --- Logica Termenului Integral (cu "I_ZONE") ---
+            if (((Math.abs(error) <= I_ZONE_MAX))&& ((Math.abs(error) >= I_ZONE_MIN))){
+                // Acumulăm eroarea doar dacă suntem aproape de țintă
+                integralSum += error * dt*3; // Folosim 'dt' calculat la început
+            } else {
+                // Resetăm suma dacă suntem departe, pentru a preveni "integral windup"
+                integralSum = 0.0;
+            }
+            double i_term = kI * integralSum;
 
             double derivative = (dt > 0 && lastError != 0) ? (error - lastError) / dt : 0; // <-- ADAUGĂ `&& lastError != 0`
             double d_term = kD_actual * derivative;
