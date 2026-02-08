@@ -55,7 +55,7 @@ public class AutoVision13 extends CommandOpMode {
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(48, 8, Math.toRadians(90));
     private final Pose SCORE_POSE = new Pose(48, 9, Math.toRadians(112));
-    private final Pose PARK_POSE  = new Pose(35, 13, Math.toRadians(110));
+    private final Pose PARK_POSE  = new Pose(46, 10, Math.toRadians(110));
     private final Pose GRAB1_START_POSE  = new Pose(41, 30, Math.toRadians(180));
     private final Pose GRAB1_END_POSE  = new Pose(15, 36, Math.toRadians(180));
     private final Pose GRAB2_START_POSE  = new Pose(104, 63, Math.toRadians(0));
@@ -167,7 +167,7 @@ public class AutoVision13 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(4600);
-        turret.setTargetAngle(-5);
+        turret.setTargetAngle(-7);
         turret.setShooterAngle(0.3);
 
 
@@ -235,17 +235,17 @@ public class AutoVision13 extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
                             new FollowPathCommand(follower, scorePreloadPath, false)
                     ),
-                    new ParallelRaceGroup(
+                    /*new ParallelRaceGroup(
                             new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
                     ),
                     new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
-                    // Acum, comandă tragerea
+                    // Acum, comandă tragerea*/
                     new WaitCommand(1500),
                     new ShootAllBallsCommand(carousel),
 
 
-                    new InstantCommand(() -> follower.setMaxPower(1)),
+                   /* new InstantCommand(() -> follower.setMaxPower(1)),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new InstantCommand(() -> intake.setPower(-1)),
@@ -267,8 +267,9 @@ public class AutoVision13 extends CommandOpMode {
                             new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
                     ),
-                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
-                    new ShootAllBallsCommand(carousel),
+                   // new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
+                    new ShootAllBallsCommand(carousel),*/
+                    new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
                   /*  //--- CICLUL 2: A doua colectare si scor ---
                     /*new InstantCommand(() -> follower.setMaxPower(0.7)),

@@ -54,13 +54,13 @@ public class AutoVision11 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(47.5, 133.5, Math.toRadians(45));
-    private final Pose SCORE_POSE = new Pose(55, 83, Math.toRadians(137));
+    private final Pose START_POSE = new Pose(33, 136, Math.toRadians(90));
+    private final Pose SCORE_POSE = new Pose(52, 93, Math.toRadians(137));
     private final Pose PARK_POSE  = new Pose(53, 80, Math.toRadians(137));
-    private final Pose GRAB1_START_POSE  = new Pose(45, 85, Math.toRadians(180));
-    private final Pose GRAB1_END_POSE  = new Pose(23, 83, Math.toRadians(180));
-    private final Pose GRAB2_START_POSE  = new Pose(43, 66, Math.toRadians(180));
-    private final Pose GRAB2_END_POSE  = new Pose(8, 64, Math.toRadians(180));
+    private final Pose GRAB1_START_POSE  = new Pose(46, 85, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE  = new Pose(18, 85, Math.toRadians(180));
+    private final Pose GRAB2_START_POSE  = new Pose(47, 66, Math.toRadians(180));
+    private final Pose GRAB2_END_POSE  = new Pose(9, 64, Math.toRadians(180));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
 
@@ -168,7 +168,7 @@ public class AutoVision11 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(3600);
-        turret.setTargetAngle(-20);
+        turret.setTargetAngle(-30);
 
 
 
@@ -244,7 +244,7 @@ public class AutoVision11 extends CommandOpMode {
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new FollowPathCommand(follower, grab1Path, false),
-                    new InstantCommand(() -> follower.setMaxPower(0.4)),
+                    new InstantCommand(() -> follower.setMaxPower(0.3)),
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
@@ -268,7 +268,7 @@ public class AutoVision11 extends CommandOpMode {
 
                     new InstantCommand(() -> intake.setPower(1)),
                     new FollowPathCommand(follower, grab2Path, false),
-                    new InstantCommand(() -> follower.setMaxPower(0.4)),
+                    new InstantCommand(() -> follower.setMaxPower(0.35)),
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),

@@ -56,7 +56,7 @@ public class AutoVision14 extends CommandOpMode {
     private final Pose START_POSE = new Pose(96, 8, Math.toRadians(90));
     private final Pose SCORE_POSE = new Pose(96, 9, Math.toRadians(65));
     private final Pose PARK_POSE  = new Pose(96, 13, Math.toRadians(65));
-    private final Pose GRAB1_START_POSE  = new Pose(106, 35, Math.toRadians(0));
+    private final Pose GRAB1_START_POSE  = new Pose(99, 31, Math.toRadians(0));
     private final Pose GRAB1_END_POSE  = new Pose(126, 35, Math.toRadians(0));
     private final Pose GRAB2_START_POSE  = new Pose(104, 63, Math.toRadians(0));
     private final Pose GRAB2_END_POSE  = new Pose(130, 63, Math.toRadians(0));
@@ -239,7 +239,7 @@ public class AutoVision14 extends CommandOpMode {
                             new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
                     ),
-                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()-7)),
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()-5)),
                     // Acum, comandă tragerea
                     new WaitCommand(3000),
                     new ShootAllBallsCommand(carousel),
@@ -252,7 +252,7 @@ public class AutoVision14 extends CommandOpMode {
                      new InstantCommand(() -> follower.setMaxPower(1)),
 
                     new FollowPathCommand(follower, grab1Path, true),
-                    new InstantCommand(() -> follower.setMaxPower(0.5)),
+                    new InstantCommand(() -> follower.setMaxPower(0.3)),
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
@@ -265,9 +265,10 @@ public class AutoVision14 extends CommandOpMode {
                             new FollowPathCommand(follower, score1Path, false)
                     ),
                     new ParallelRaceGroup(
-                            new WaitCommand(750),
+                            new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
                     ),
+                    new WaitCommand(1500),
                     new ShootAllBallsCommand(carousel),
                     new FollowPathCommand(follower, parkPath, false)
 

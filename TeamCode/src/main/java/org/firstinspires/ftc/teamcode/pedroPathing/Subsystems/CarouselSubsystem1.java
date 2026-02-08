@@ -44,7 +44,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double kD_COARSE = 0.0;     // Oprește kD când suntem departe
 
     // --- COEFICIENȚI PENTRU MIȘCĂRI FINE (eroare < 0.8 sloturi) ---
-    public static double kP_FINE = 0.0002; // kP mai mare pentru precizie (similar cu ce aveai)
+    public static double kP_FINE = 0.0003; // kP mai mare pentru precizie (similar cu ce aveai)
     public static double kD_FINE = 0.00002; // kD pentru a opri overshoot-ul la final
 
 
@@ -81,7 +81,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public static final double SLOT_OCCUPIED_MM = 100.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
-    public static final long SENSOR_DELAY_MS = 20;
+    public static final long SENSOR_DELAY_MS = 15;
     public static final double PUSH_POS = 0.1;
     public static final double RETRACT_POS = 0.5;
     public static long PUSH_TIME_MS = 350;

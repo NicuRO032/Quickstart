@@ -53,13 +53,13 @@ public class AutoVision12 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(96, 133, Math.toRadians(135));
-    private final Pose SCORE_POSE = new Pose(92, 89, Math.toRadians(45));
-    private final Pose PARK_POSE  = new Pose(94, 85, Math.toRadians(45));
-    private final Pose GRAB1_START_POSE  = new Pose(99, 85, Math.toRadians(0));
-    private final Pose GRAB1_END_POSE  = new Pose(127, 84, Math.toRadians(0));
-    private final Pose GRAB2_START_POSE  = new Pose(102, 67, Math.toRadians(0));
-    private final Pose GRAB2_END_POSE  = new Pose(130, 63, Math.toRadians(0));
+    private final Pose START_POSE = new Pose(112, 136, Math.toRadians(90));
+    private final Pose SCORE_POSE = new Pose(92, 94, Math.toRadians(45));
+    private final Pose PARK_POSE  = new Pose(125, 89, Math.toRadians(0));
+    private final Pose GRAB1_START_POSE  = new Pose(97, 88, Math.toRadians(0));
+    private final Pose GRAB1_END_POSE  = new Pose(127, 85, Math.toRadians(0));
+    private final Pose GRAB2_START_POSE  = new Pose(97, 69, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE  = new Pose(131, 63, Math.toRadians(0));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
 
@@ -168,6 +168,7 @@ public class AutoVision12 extends CommandOpMode {
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(3600);
         turret.setTargetAngle(18);
+        turret.setShooterAngle(0.15);
 
 
 
@@ -232,10 +233,10 @@ public class AutoVision12 extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
                             new FollowPathCommand(follower, scorePreloadPath, false)
                     ),
-                    /*new ParallelRaceGroup(
+                    new ParallelRaceGroup(
                             new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision)
-                    ),*/
+                    ),
                     // Acum, comandă tragerea
                     new ShootAllBallsCommand(carousel),
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
@@ -243,7 +244,7 @@ public class AutoVision12 extends CommandOpMode {
                     new InstantCommand(() -> follower.setMaxPower(0.8)),
 
                     new FollowPathCommand(follower, grab1Path, false),
-                    new InstantCommand(() -> follower.setMaxPower(0.4)),
+                    new InstantCommand(() -> follower.setMaxPower(0.35)),
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
@@ -253,7 +254,8 @@ public class AutoVision12 extends CommandOpMode {
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
-                            new FollowPathCommand(follower, score1Path, true),
+                            //new InstantCommand(() -> turret.setShooterAngle(0.1)),
+                            new FollowPathCommand(follower, score1Path, false),
                             new InstantCommand(() -> intake.setPower(1))
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
@@ -266,10 +268,10 @@ public class AutoVision12 extends CommandOpMode {
                     new InstantCommand(() -> follower.setMaxPower(1)),
 
                     new InstantCommand(() -> intake.setPower(1)),
-                    new FollowPathCommand(follower, grab1Path, false),
-                    new InstantCommand(() -> follower.setMaxPower(0.4)),
+                    new FollowPathCommand(follower, grab2Path, false),
+                    new InstantCommand(() -> follower.setMaxPower(0.35)),
                     new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab1APath, true),
+                            new FollowPathCommand(follower, grab2APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
                             new WaitCommand(6000)
                     ),
