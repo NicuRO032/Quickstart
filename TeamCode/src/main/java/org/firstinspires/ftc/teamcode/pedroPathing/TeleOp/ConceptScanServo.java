@@ -30,20 +30,22 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "ConceptScanServo", group = "TeleOp")
+@Config
 public class ConceptScanServo extends LinearOpMode {
 
     private Servo servo;
-    private double servoPos = 1.0;   // poziția inițială (poți schimba)
+    public static double servoPos = 0.0;   // poziția inițială (poți schimba)
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        servo = hardwareMap.get(Servo.class, "shooterServo");  // numele din configuration
+        servo = hardwareMap.get(Servo.class, "axonServo");  // numele din configuration
         servo.setPosition(servoPos);
 
         waitForStart();
