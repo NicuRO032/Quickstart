@@ -201,15 +201,18 @@ public class AutoVision12 extends CommandOpMode {
         packet.put("IntakeState", carousel.getIntakeState());
         packet.put("OuttakeState", carousel.getOuttakeState());
         packet.put("Logical Index", carousel.getLogicalIndex());
-        packet.put("Global Index", carousel.getGlobalIndex());
+        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
+        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
+        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
+        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
+        packet.put("Carousel At Target", carousel.atTarget());
         packet.put("Order", carousel.getOuttakeOrderString());
         packet.put("Ptr", carousel.getOuttakePtr());
-        packet.put("Target", carousel.getTargetPosition());
-        packet.put("Actual", carousel.getCurrentPosition());
+
         packet.put("Slots Occupied", String.format("[%b, %b, %b]",
                 carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
         packet.put("Slots Colors", carousel.getSlotsColorString());
-        packet.put("041.Carousel PID Error", carousel.getPIDError());
+
         dashboard.sendTelemetryPacket(packet);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
