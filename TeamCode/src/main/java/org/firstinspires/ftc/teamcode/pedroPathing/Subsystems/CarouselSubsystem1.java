@@ -29,19 +29,27 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
-    /* ================= CONSTANTE CARUSEL SERVO ================= */
-    // Vectori pentru pozițiile de Intake (servo) și Outtake (servo)
-    private static final double[] INTAKE_POSITIONS = {0.23, 0.59, 0.84};
-    private static final double[] OUTTAKE_POSITIONS = {0.72, 0.97, 0.46};
+    /* ================= CONSTANTE PENTRU CALIBRARE (NOUA METODĂ) ================= */
+// Formula ta de conversie experimentală și inversa ei
+    public static double FEEDBACK_TO_POS_SLOPE = 0.000352222;
+    public static double FEEDBACK_TO_POS_INTERCEPT = -0.0794436;
+    // Inversa: feedback = (position - intercept) / slope
+    public static double POS_TO_FEEDBACK_SLOPE_INV = 1.0 / FEEDBACK_TO_POS_SLOPE;
+    public static double POS_TO_FEEDBACK_INTERCEPT_ADD = -FEEDBACK_TO_POS_INTERCEPT;
 
-    // Vectori pentru valorile de feedback corespunzătoare (în mV)
-    private static final double[] INTAKE_FEEDBACK_MV = {1160.0, 1900.0, 2611.0};
-    private static final double[] OUTTAKE_FEEDBACK_MV = {2267.0, 2970.0, 1527.0};
+    // Constantele fizice ale sistemului
+    public static double POSITION_DIFFERENCE_PER_SLOT = 0.25;
+    public static double OUTTAKE_POSITION_OFFSET = 0.39;
+
+    // --- Aici vom stoca valorile calculate la start ---
+    private final double[] calibratedIntakePositions = new double[3];
+    private final double[] calibratedOuttakePositions = new double[3];
+    private final double[] calibratedIntakeFeedbackMv = new double[3];
+    private final double[] calibratedOuttakeFeedbackMv = new double[3];
 
     // Toleranța pentru atTarget, în milivolți (mV)
     public static double FEEDBACK_TOLERANCE_MV = 50.0;
-    public static long AT_TARGET_STABILITY_MS = 50; // Timpul de stabilitate (păstrat)
-
+    public static long AT_TARGET_STABILITY_MS = 50;
     // shooter
     public static double SHOOTER_kP = 0.001;
     public static double SHOOTER_kI = 0.0;
@@ -147,6 +155,33 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
         for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
         pusher.setPosition(RETRACT_POS);
+
+        // =================================================================
+        // ---           NOUA RUTINĂ DE CALIBRARE AUTOMATĂ               ---
+        // =================================================================
+        // Pasul 1: Citim valoarea REALĂ de feedback (mV) cu slotul 0 la intake (ora 12).
+        double feedbackMvAtInit = carouselFeedback.getVoltage() * 1000.0;
+
+        // Pasul 2: Calculăm ce poziție ar trebui să aibă servoul pentru a sta acolo, folosind formula ta.
+        double basePositionSlot0 = (feedbackMvAtInit * FEEDBACK_TO_POS_SLOPE) + FEEDBACK_TO_POS_INTERCEPT;
+
+        // Pasul 3: Calculăm și salvăm TOATE cele 6 poziții și 6 valori de feedback.
+        for (int i = 0; i < 3; i++) {
+            // -- Calcul Poziții --
+            double rawIntakePos = basePositionSlot0 + (i * POSITION_DIFFERENCE_PER_SLOT);
+            double rawOuttakePos = rawIntakePos + OUTTAKE_POSITION_OFFSET;
+
+            // -- Salvare Poziții Calibrate (cu siguranțe) --
+            calibratedIntakePositions[i] = Math.max(0.0, Math.min(1.0, rawIntakePos));
+            calibratedOuttakePositions[i] = rawOuttakePos % 1.0;
+
+            // -- Calcul și Salvare Feedback Calibrat --
+            calibratedIntakeFeedbackMv[i] = (calibratedIntakePositions[i] + POS_TO_FEEDBACK_INTERCEPT_ADD) * POS_TO_FEEDBACK_SLOPE_INV;
+            calibratedOuttakeFeedbackMv[i] = (calibratedOuttakePositions[i] + POS_TO_FEEDBACK_INTERCEPT_ADD) * POS_TO_FEEDBACK_SLOPE_INV;
+        }
+        // =================================================================
+        // ---                 SFÂRȘIT RUTINĂ DE CALIBRARE               ---
+        // =================================================================
     }
 
     // --- Funcții de conversie pentru shooter ---
@@ -170,22 +205,37 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
 
+    // --- Gettere pentru valorile calibrate ---
+    public double getCalibratedIntakePosition(int index) {
+        if (index < 0 || index >= 3) return -1;
+        return calibratedIntakePositions[index];
+    }
+    public double getCalibratedIntakeFeedback(int index) {
+        if (index < 0 || index >= 3) return -1;
+        return calibratedIntakeFeedbackMv[index];
+    }
+
+
     private void goToSlot(int targetSlot, boolean isOuttake) {
         if (targetSlot < 0 || targetSlot > 2) return; // Siguranță
 
         logicalIndex = targetSlot; // Actualizăm indexul logic
 
+        // ▼▼▼ MODIFICAREA CHEIE: Folosim vectorii CALIBRAȚI, nu cei vechi! ▼▼▼
         if (isOuttake) {
-            targetServoPosition = OUTTAKE_POSITIONS[targetSlot];
-            targetFeedbackMv = OUTTAKE_FEEDBACK_MV[targetSlot];
+            targetServoPosition = calibratedOuttakePositions[targetSlot];
+            targetFeedbackMv = calibratedOuttakeFeedbackMv[targetSlot]; // Setăm și ținta de feedback
         } else {
-            targetServoPosition = INTAKE_POSITIONS[targetSlot];
-            targetFeedbackMv = INTAKE_FEEDBACK_MV[targetSlot];
+            targetServoPosition = calibratedIntakePositions[targetSlot];
+            targetFeedbackMv = calibratedIntakeFeedbackMv[targetSlot]; // Setăm și ținta de feedback
         }
 
         carouselServo.setPosition(targetServoPosition); // Comandă mișcarea servoului
         atTargetTimer.reset(); // Resetăm cronometrul de stabilitate
     }
+
+
+
 
 
 
