@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -79,6 +80,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final DistanceSensor entrySensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final Servo pusher;
+    private final DigitalChannel pusherMagnetSensor;
 
     private final VoltageSensor batteryVoltageSensor;
 
@@ -86,7 +88,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE}
     private IntakeState intakeState = IntakeState.IDLE;
 
-    public enum OuttakeState { OUT_IDLE, PREPARE_READY, ALIGNING_FOR_SHOT, PUSH, CONFIRM_SHOT, WAIT_RETRACT, ADVANCE, FINISHED }
+    public enum OuttakeState { OUT_IDLE, PREPARE_READY, ALIGNING_FOR_SHOT, PUSH, CONFIRM_SHOT, ADVANCE, FINISHED }
     private OuttakeState outtakeState = OuttakeState.OUT_IDLE;
 
     /* ================= LOGIC ================= */
@@ -127,6 +129,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
         pusher = hardwareMap.get(Servo.class, "pusher");
+        pusherMagnetSensor = hardwareMap.get(DigitalChannel.class, "pusherMagnet");
+        pusherMagnetSensor.setMode(DigitalChannel.Mode.INPUT);
 
 
         batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
@@ -158,6 +162,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public double getShooterTargetRPM() { return this.currentTargetRPM; }
     public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor.getVelocity()); }
     public double getRpmBeforePush() { return rpmBeforePush; }
+    public boolean isPusherRetracted() {
+        // Senzorii digitali (Hall effect) de obicei returnează 'false' când magnetul este prezent.
+        // Verifică acest comportament; s-ar putea să fie nevoie să inversezi logica (!pusherMagnetSensor.getState()).
+        return !pusherMagnetSensor.getState();
+    }
 
 
     private void goToSlot(int targetSlot, boolean isOuttake) {
@@ -322,94 +331,112 @@ public class CarouselSubsystem1 extends SubsystemBase {
         double RPMdif = Math.abs(getShooterCurrentRPM() - Math.min(getShooterTargetRPM(), 6000));
         double RPMallowedDif = 200;
         switch (outtakeState) {
-            // STARE NOUĂ: Doar comandă mișcarea și trece mai departe
-            case PREPARE_READY:
-                // 1. Comandăm mișcarea caruselului (acest apel resetează timer-ul și erorile PID)
-                goToSlot(outtakeOrder[outtakePtr], true);
+            case OUT_IDLE:
+                // Stare de repaus, nu se face nimic.
+                break;
 
-                // 2. Trecem IMEDIAT la o stare dedicată de așteptare.
-                // Astfel, în următoarea buclă, PID-ul va porni corect, cu un 'dt' normal.
+            case PREPARE_READY:
+                // 1. Comandăm mișcarea caruselului spre primul slot din secvență.
+                goToSlot(outtakeOrder[outtakePtr], true);
+                // 2. Trecem IMEDIAT la starea de așteptare a aliniamentului.
                 outtakeState = OuttakeState.ALIGNING_FOR_SHOT;
                 break;
 
-            // STARE NOUĂ: Așteaptă alinierea și comanda de la pilot
             case ALIGNING_FOR_SHOT:
-                // Așteptăm ca și caruselul să ajungă la țintă ȘI pilotul să apese pe trăgaci
+                // Așteptăm ca și caruselul să ajungă la țintă, shooter-ul să fie la turație ȘI pilotul să apese pe trăgaci.
                 if (atTarget() && triggerReady && RPMdif <= RPMallowedDif) {
-                    //Am adaugat conditia ca Shooterul sa fie la viteza potrivita
-                    // Când ambele condiții sunt îndeplinite, suntem gata de aruncare
-                    rpmBeforePush = getShooterCurrentRPM(); // Salvăm RPM-ul exact înainte de a împinge
-                    shotWasDetected = false; // Resetăm flag-ul de detecție
-                    pusher.setPosition(PUSH_POS); // Împingem bila
-                    outtakeTimer.reset();
-                    shotRetryCounter = 0;
+                    // Când toate condițiile sunt îndeplinite, suntem gata de aruncare.
+
+                    // a) Salvăm datele necesare pentru confirmarea loviturii
+                    rpmBeforePush = getShooterCurrentRPM();
+                    shotWasDetected = false;
+                    triggerReady = false; // Consumăm trigger-ul pentru a nu trage în buclă
+
+                    // b) Comandăm împingerea
+                    pusher.setPosition(PUSH_POS);
+                    outtakeTimer.reset(); // Pornim timer-ul pentru PUSH_TIME_MS
+
+                    // c) Trecem la starea de împingere
                     outtakeState = OuttakeState.PUSH;
                 }
                 break;
 
+            /**
+             * STARE MODIFICATĂ: PUSH
+             * Gestionează atât împingerea (bazată pe timp), cât și așteptarea retragerii (bazată pe senzor).
+             */
             case PUSH:
-                // În timp ce pusher-ul este extins, monitorizăm pentru scăderea de viteză
+                // Pasul 1: În timp ce pusher-ul este extins, monitorizăm pentru scăderea de viteză
                 if (!shotWasDetected) {
-                    boolean dipOccurred = getShooterCurrentRPM() < (rpmBeforePush * (1.0 - SHOT_CONFIRM_DIP_PERCENT));
-                    if (dipOccurred) {
+                    if (getShooterCurrentRPM() < (rpmBeforePush * (1.0 - SHOT_CONFIRM_DIP_PERCENT))) {
                         shotWasDetected = true; // Am detectat aruncarea!
                     }
                 }
 
-                // Așteptăm ca pusher-ul să-și termine cursa de împingere
+                // Pasul 2: Așteptăm să treacă timpul alocat pentru împingere.
                 if (outtakeTimer.milliseconds() > PUSH_TIME_MS) {
-                    pusher.setPosition(RETRACT_POS); // Începem retragerea
-                    outtakeTimer.reset();
-                    outtakeState = OuttakeState.WAIT_RETRACT;
+                    // Timpul a expirat, comandăm retragerea.
+                    pusher.setPosition(RETRACT_POS);
+
+                    // Pasul 3: AȘTEPTĂM AICI confirmarea de la senzorul magnetic.
+                    // Trecem la starea următoare DOAR DUPĂ ce senzorul confirmă fizic retragerea.
+                    if (isPusherRetracted()) {
+                        // Pusher-ul este confirmat ca fiind retras. Putem continua în siguranță.
+                        outtakeTimer.reset(); // Resetăm timer-ul pentru starea următoare
+                        outtakeState = OuttakeState.CONFIRM_SHOT;
+                    }
+                    // Adăugăm și un timeout de siguranță, în caz că senzorul eșuează.
+                    else if (outtakeTimer.milliseconds() > PUSH_TIME_MS + 2000) { // 2s siguranță
+                        outtakeTimer.reset();
+                        outtakeState = OuttakeState.CONFIRM_SHOT; // Forțăm trecerea pentru a nu bloca robotul
+                    }
                 }
                 break;
 
-            case WAIT_RETRACT:
-                // Așteptăm retragerea completă a pusher-ului
-                if (outtakeTimer.milliseconds() > RETRACT_TIME_MS) {
-                    if (shotWasDetected) {
-                        // SUCCES! Aruncarea a fost detectată.
-                        // Marcăm slotul ca gol și avansăm la următoarea bilă.
-                        occupied[outtakeOrder[outtakePtr]] = false;
-                        slotColor[outtakeOrder[outtakePtr]] = BallColor.UNKNOWN;
-                        outtakePtr++; // Trecem la următoarea bilă din secvență
+            /**
+             * STARE NOUĂ: CONFIRM_SHOT
+             * Această stare se ocupă EXCLUSIV de logica de după ce pusher-ul s-a retras.
+             */
+            case CONFIRM_SHOT:
+                // Verificăm dacă a trecut un timp rezonabil pentru ca detecția să aibă loc.
+                // Dacă a trecut timpul ȘI am detectat lovitura, avansăm.
+                if (outtakeTimer.milliseconds() > RETRACT_TIME_MS && shotWasDetected) {
+                    outtakePtr++; // Incrementăm pointer-ul pentru următoarea bilă din secvență
 
+                    // Verificăm dacă mai avem bile de aruncat
+                    if (outtakePtr >= outtakeOrder.length) {
+                        outtakeState = OuttakeState.FINISHED; // Am terminat secvența
+                    } else {
+                        // Mai avem bile, comandăm mișcarea spre următoarea
+                        goToSlot(outtakeOrder[outtakePtr], true);
+                        outtakeState = OuttakeState.ADVANCE;
+                    }
+                }
+                // Dacă a trecut timpul ȘI NU am detectat lovitura, gestionăm reîncercarea.
+                else if (outtakeTimer.milliseconds() > RETRACT_TIME_MS + 200 && !shotWasDetected) {
+                    if (shotRetryCounter < MAX_SHOT_RETRIES) {
+                        shotRetryCounter++;
+                        triggerReady = true; // Reactivăm trigger-ul pentru o nouă încercare
+                        outtakeState = OuttakeState.ALIGNING_FOR_SHOT; // Ne întoarcem la aliniere pentru a reîncerca
+                    } else {
+                        // Am epuizat reîncercările, renunțăm la această bilă și avansăm.
+                        outtakePtr++;
                         if (outtakePtr >= outtakeOrder.length) {
-                            // Am terminat toate bilele, încheiem secvența
                             outtakeState = OuttakeState.FINISHED;
                         } else {
-                            // Altfel, avansăm caruselul la următorul slot
                             goToSlot(outtakeOrder[outtakePtr], true);
                             outtakeState = OuttakeState.ADVANCE;
-                        }
-                    } else {
-
-                        if (shotRetryCounter < MAX_SHOT_RETRIES) {
-                            // Mai avem încercări, reîncercăm
-                            shotRetryCounter++;
-                            rpmBeforePush = getShooterCurrentRPM();
-                            shotWasDetected = false;
-                            pusher.setPosition(PUSH_POS);
-                            outtakeTimer.reset();
-                            outtakeState = OuttakeState.PUSH;
-
-                        } else {
-                            // Nu mai avem încercări, renunțăm și consideram aruncarea reusita
-                            shotWasDetected = true;
                         }
                     }
                 }
                 break;
 
             case ADVANCE:
-                // Așteptăm ca următorul slot să ajungă la poziție (pentru aruncările în lanț)
-                if (atTarget() && RPMdif <= RPMallowedDif) {
-                    rpmBeforePush = getShooterCurrentRPM(); // Salvăm viteza pentru aruncarea în lanț
-                    shotWasDetected = false; // Resetăm flag-ul
-                    pusher.setPosition(PUSH_POS);
-                    outtakeTimer.reset();
-                    // Ne întoarcem la starea PUSH pentru a lansa următoarea bilă
-                    outtakeState = OuttakeState.PUSH;
+                // Așteptăm ca următorul slot să ajungă la poziție.
+                // Când ajunge, reintrăm în ciclul de tragere.
+                if (atTarget()) {
+                    triggerReady = true; // Pre-armăm trigger-ul pentru tragere automată în lanț
+                    outtakeState = OuttakeState.ALIGNING_FOR_SHOT;
                 }
                 break;
 
@@ -419,6 +446,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 triggerReady = false;
                 goToSlot(0, false);
 
+                // Așteptăm să ajungă la poziția de start înainte de a încheia ciclul
                 if (atTarget()) {
                     autoEnabled = true; // Permitem din nou funcționarea intake-ului automat
                     outtakeState = OuttakeState.OUT_IDLE;
