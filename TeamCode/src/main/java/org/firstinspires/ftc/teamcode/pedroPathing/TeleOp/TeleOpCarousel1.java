@@ -69,13 +69,23 @@ public class TeleOpCarousel1 extends OpMode {
         vision = new VisionSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
 
-        carousel.resetForStart();
+        //carousel.resetForStart();
         carousel.activateIntake();
 
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
+        telemetry.addData("Analog Feedback:", "%.3f V", carousel.getCurrentFeedbackMv());
+        telemetry.addLine("INIT: pentru START, PUNE SLOTUL 1 in fata cu feedback aprox. 1600");
+        if (Math.abs(carousel.getCurrentFeedbackMv()-1620)>200){
+            telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            telemetry.addLine("!!!!!!Pozitionare incorecta, STOP si reluati!!!!!");
+            telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
+        else{
+            telemetry.addLine("PUTEM INCEPE...");
+            telemetry.addLine("Dupa START, slotul 0 va veni in fata...");
 
-        telemetry.addLine("INIT: gata de START...");
+        }
         telemetry.update();
 
         vision.disableProcesor();
@@ -83,6 +93,7 @@ public class TeleOpCarousel1 extends OpMode {
 
     @Override
     public void start() {
+        carousel.resetForStart();
         follower.startTeleopDrive();
     }
 
@@ -120,7 +131,7 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        //sendTelemetry();
+        sendTelemetry();
 
     }
 

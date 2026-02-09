@@ -31,12 +31,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE CARUSEL SERVO ================= */
     // Vectori pentru pozițiile de Intake (servo) și Outtake (servo)
-    private static final double[] INTAKE_POSITIONS = {0.16, 0.41, 0.67};
-    private static final double[] OUTTAKE_POSITIONS = {0.54, 0.79, 0.29};
+    private static final double[] INTAKE_POSITIONS = {0.23, 0.59, 0.84};
+    private static final double[] OUTTAKE_POSITIONS = {0.72, 0.97, 0.46};
 
     // Vectori pentru valorile de feedback corespunzătoare (în mV)
-    private static final double[] INTAKE_FEEDBACK_MV = {680.0, 1390.0, 2128.0};
-    private static final double[] OUTTAKE_FEEDBACK_MV = {1759.0, 2471.0, 1046.0};
+    private static final double[] INTAKE_FEEDBACK_MV = {1160.0, 1900.0, 2611.0};
+    private static final double[] OUTTAKE_FEEDBACK_MV = {2267.0, 2970.0, 1527.0};
 
     // Toleranța pentru atTarget, în milivolți (mV)
     public static double FEEDBACK_TOLERANCE_MV = 50.0;
@@ -129,7 +129,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
         pusher = hardwareMap.get(Servo.class, "pusher");
-        pusherMagnetSensor = hardwareMap.get(DigitalChannel.class, "pusherMagnet");
+        //pusherMagnetSensor = hardwareMap.get(DigitalChannel.class, "magnet");
+        pusherMagnetSensor = hardwareMap.get(DigitalChannel.class, "magnet");
         pusherMagnetSensor.setMode(DigitalChannel.Mode.INPUT);
 
 
@@ -193,7 +194,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         this.logicalIndex = 0;
         this.intakeState = IntakeState.IDLE;
         this.outtakeState = OuttakeState.OUT_IDLE;
-        this.autoEnabled = false;
+        this.autoEnabled = true;
         this.ballHandled = false;
         this.triggerReady = false;
     }
@@ -312,6 +313,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     intakeState = IntakeState.IDLE;
                 }
                 break;
+
 
             /**
              * STAREA 4: Control Manual.
@@ -522,7 +524,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         boolean color2SeesBall = color2Distance < COLOR_SENSOR_OCCUPIED_MM;
 
         // Condiția brută este adevărată dacă unul dintre senzorii de culoare vede bila
-        boolean aSensorsSeeBall = color1SeesBall || color2SeesBall || mainSeesBall;
+        //boolean aSensorsSeeBall = color1SeesBall || color2SeesBall || mainSeesBall;
+        boolean aSensorsSeeBall =  mainSeesBall;
 
         // Pasul 3: Aplicăm logica timer-ului de stabilitate
         if (aSensorsSeeBall) {

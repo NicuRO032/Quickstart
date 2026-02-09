@@ -45,15 +45,21 @@ public class ConceptScanServo extends LinearOpMode {
     private Servo servo;
     private AnalogInput analogFeedback;
     private FtcDashboard dashboard;
+    private double feedbackVoltage;
     public static double servoPos = 0.0;   // poziția inițială (poți schimba)
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        servo = hardwareMap.get(Servo.class, "axonServo");  // numele din configuration
+        servo = hardwareMap.get(Servo.class, "carouselServo");  // numele din configuration
         analogFeedback = hardwareMap.get(AnalogInput.class, "axonFeedback"); // numele intrării analogice
         dashboard = FtcDashboard.getInstance();
-        servo.setPosition(servoPos);
+        //servo.setPosition(servoPos);
+        servoPos = servo.getPosition();
+        telemetry.addData("Incep de la pozitia", servo.getPosition());
+        telemetry.addData("Cu Analog Feedback (4th Wire)", "%.3f V", feedbackVoltage);
+        telemetry.update();
+
 
         waitForStart();
 
@@ -70,13 +76,16 @@ public class ConceptScanServo extends LinearOpMode {
                 servoPos -= 0.01;
                 sleep(100);
             }
+            if (gamepad1.a) {
+                servo.setPosition(0.5);
+            }
 
             // Limitare poziție între 0 și 1
             servoPos = Math.max(0, Math.min(1, servoPos));
 
             // Aplică poziția
             servo.setPosition(servoPos);
-            double feedbackVoltage = analogFeedback.getVoltage();
+            feedbackVoltage = analogFeedback.getVoltage();
 
             telemetry.addData("Servo Position", servoPos);
             telemetry.addData("2. Analog Feedback (4th Wire)", "%.3f V", feedbackVoltage);
