@@ -33,19 +33,26 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.acmerobotics.dashboard.FtcDashboard; // ADAUGAT
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket; // ADAUGAT
 
 @TeleOp(name = "ConceptScanServo", group = "TeleOp")
 @Config
 public class ConceptScanServo extends LinearOpMode {
 
     private Servo servo;
+    private AnalogInput analogFeedback;
+    private FtcDashboard dashboard;
     public static double servoPos = 0.0;   // poziția inițială (poți schimba)
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         servo = hardwareMap.get(Servo.class, "axonServo");  // numele din configuration
+        analogFeedback = hardwareMap.get(AnalogInput.class, "axonFeedback"); // numele intrării analogice
+        dashboard = FtcDashboard.getInstance();
         servo.setPosition(servoPos);
 
         waitForStart();
@@ -69,9 +76,16 @@ public class ConceptScanServo extends LinearOpMode {
 
             // Aplică poziția
             servo.setPosition(servoPos);
+            double feedbackVoltage = analogFeedback.getVoltage();
 
             telemetry.addData("Servo Position", servoPos);
+            telemetry.addData("2. Analog Feedback (4th Wire)", "%.3f V", feedbackVoltage);
             telemetry.update();
+
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.put("Commanded Position", servoPos);
+            packet.put("Analog Feedback Voltage", feedbackVoltage);
+            dashboard.sendTelemetryPacket(packet);
         }
     }
 }
