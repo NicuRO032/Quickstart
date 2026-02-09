@@ -398,34 +398,38 @@ public class CarouselSubsystem1 extends SubsystemBase {
              * Această stare se ocupă EXCLUSIV de logica de după ce pusher-ul s-a retras.
              */
             case CONFIRM_SHOT:
-                // Verificăm dacă a trecut un timp rezonabil pentru ca detecția să aibă loc.
-                // Dacă a trecut timpul ȘI am detectat lovitura, avansăm.
-                if (outtakeTimer.milliseconds() > RETRACT_TIME_MS && shotWasDetected) {
-                    outtakePtr++; // Incrementăm pointer-ul pentru următoarea bilă din secvență
+                // Așteptăm fereastra de timp pentru detecție.
+                if (outtakeTimer.milliseconds() > RETRACT_TIME_MS + 200) {
+                    // După ce a trecut fereastra, luăm o decizie finală.
 
-                    // Verificăm dacă mai avem bile de aruncat
-                    if (outtakePtr >= outtakeOrder.length) {
-                        outtakeState = OuttakeState.FINISHED; // Am terminat secvența
-                    } else {
-                        // Mai avem bile, comandăm mișcarea spre următoarea
-                        goToSlot(outtakeOrder[outtakePtr], true);
-                        outtakeState = OuttakeState.ADVANCE;
-                    }
-                }
-                // Dacă a trecut timpul ȘI NU am detectat lovitura, gestionăm reîncercarea.
-                else if (outtakeTimer.milliseconds() > RETRACT_TIME_MS + 200 && !shotWasDetected) {
-                    if (shotRetryCounter < MAX_SHOT_RETRIES) {
-                        shotRetryCounter++;
-                        triggerReady = true; // Reactivăm trigger-ul pentru o nouă încercare
-                        outtakeState = OuttakeState.ALIGNING_FOR_SHOT; // Ne întoarcem la aliniere pentru a reîncerca
-                    } else {
-                        // Am epuizat reîncercările, renunțăm la această bilă și avansăm.
+                    if (shotWasDetected) {
+                        // SUCCES: Am detectat lovitura, deci avansăm normal.
                         outtakePtr++;
                         if (outtakePtr >= outtakeOrder.length) {
                             outtakeState = OuttakeState.FINISHED;
                         } else {
                             goToSlot(outtakeOrder[outtakePtr], true);
                             outtakeState = OuttakeState.ADVANCE;
+                        }
+                    } else {
+                        // EȘEC: Nu am detectat lovitura. Verificăm dacă este prima sau a doua încercare.
+                        if (shotRetryCounter < MAX_SHOT_RETRIES) {
+                            // Este prima încercare eșuată. Incrementăm contorul și reîncercăm.
+                            shotRetryCounter++;
+                            triggerReady = true; // Reactivăm trigger-ul
+                            outtakeState = OuttakeState.ALIGNING_FOR_SHOT; // Ne întoarcem la aliniere
+                        } else {
+                            // ESTE A DOUA ÎNCERCARE EȘUATĂ (sau am atins limita).
+                            // Forțăm `shotWasDetected` pe true și avansăm, pretinzând că a fost un succes.
+                            shotWasDetected = true;
+
+                            outtakePtr++;
+                            if (outtakePtr >= outtakeOrder.length) {
+                                outtakeState = OuttakeState.FINISHED;
+                            } else {
+                                goToSlot(outtakeOrder[outtakePtr], true);
+                                outtakeState = OuttakeState.ADVANCE;
+                            }
                         }
                     }
                 }
