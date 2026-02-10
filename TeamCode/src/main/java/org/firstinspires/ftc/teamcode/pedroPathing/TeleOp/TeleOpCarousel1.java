@@ -78,7 +78,7 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addLine("INIT: pentru START, PUNE SLOTUL 1 in fata cu feedback aprox. 1700");
         if (Math.abs(carousel.getCurrentFeedbackMv()-1700)>200){
             telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            telemetry.addLine("!!!!!!Pozitionare incorecta, STOP si reluati!!!!!");
+            telemetry.addLine("!!!!!!Pozitionare incorecta, STOP si reluati!!!!!!");
             telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
         else{
