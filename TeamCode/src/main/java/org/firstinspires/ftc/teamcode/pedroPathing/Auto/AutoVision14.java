@@ -240,7 +240,7 @@ public class AutoVision14 extends CommandOpMode {
                     ),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision)
+                            new AutoAimTurretCommand(turret, vision,24)
                     ),
                     new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()-5)),
                     // Acum, comandă tragerea
@@ -269,7 +269,7 @@ public class AutoVision14 extends CommandOpMode {
                     ),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision)
+                            new AutoAimTurretCommand(turret, vision,24)
                     ),
                     new WaitCommand(1500),
                     new ShootAllBallsCommand(carousel),

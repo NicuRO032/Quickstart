@@ -239,7 +239,7 @@ public class AutoVision11 extends CommandOpMode {
                     ),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision)
+                            new AutoAimTurretCommand(turret, vision,20)
                     ),
                     // Acum, comandă tragerea
                     new ShootAllBallsCommand(carousel),
@@ -264,7 +264,7 @@ public class AutoVision11 extends CommandOpMode {
                     new InstantCommand(() -> intake.setPower(0)),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision)
+                            new AutoAimTurretCommand(turret, vision,20)
                     ),
                     new ShootAllBallsCommand(carousel),
                     //--- CICLUL 3: A doua colectare si scor ---
@@ -288,7 +288,7 @@ public class AutoVision11 extends CommandOpMode {
                     new InstantCommand(() -> intake.setPower(0)),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision)
+                            new AutoAimTurretCommand(turret, vision,20)
                     ),
                     new ShootAllBallsCommand(carousel),
                     new InstantCommand(() -> follower.setMaxPower(1)),

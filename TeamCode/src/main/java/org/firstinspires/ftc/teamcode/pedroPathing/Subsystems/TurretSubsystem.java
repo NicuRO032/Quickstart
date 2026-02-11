@@ -1,10 +1,9 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
-import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.acmerobotics.dashboard.config.Config;import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
+import com.seattlesolvers.solverslib.controller.PIDController; // IMPORTANT: Importă PIDController
 import com.seattlesolvers.solverslib.util.MathUtils;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
@@ -12,76 +11,81 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 @Config
 public class TurretSubsystem extends SubsystemBase {
 
-
     private final Servo turretServo;
     private final Servo angleServo1;
     private final Servo angleServo2;
 
-    // Turret rotation constants
+    // --- Constante Rotație Turelă ---
     public static double GEAR_RATIO = 2.0;
     public static double SERVO_RANGE_DEGREES = 360.0;
-    public static double TURRET_MIN_ANGLE = -180.0;
-    public static double TURRET_MAX_ANGLE = 180.0;
+    public static double TURRET_MIN_ANGLE = -55.0;
+    public static double TURRET_MAX_ANGLE = 55.0;
     public static double HOME_ANGLE = 0.0;
     public static double MANUAL_SPEED_MULTIPLIER = 1.0;
-    public static double AIMING_KP = 0.1;
-    public static double AIMING_KD = 0.01;
-    public static double SWEEP_SPEED_DEG_PER_SEC = 30.0;
-    public static double SWEEP_ENDPOINT_1 = -45.0;
-    public static double SWEEP_ENDPOINT_2 = 45.0;
-    public static double AIMING_TOLERANCE_DEGREES = 2.0;
+    public static double AIMING_TOLERANCE_DEGREES = 0.75; // Toleranță mai mică pentru o ochire mai precisă
 
-    // Shooter angle constants
-    public static double ANGLE_MIN_POS = 0.0;
+    // --- Coeficienți pentru noul controler PID de viteză ---
+    // Aceste valori sunt un punct de pornire și vor necesita reglaj fin (tuning)
+    public static double AIMING_KP = 0.1;  // Răspunsul proporțional la eroare
+    public static double AIMING_KI = 0.0;  // Anulează erorile mici, persistente
+    public static double AIMING_KD = 0.0;  // Previne oscilațiile și stabilizează mișcarea
+
+    // --- Constante Unghi Shooter ---
+    public static double ANGLE_MIN_POS = 0.05;
     public static double ANGLE_MAX_POS = 1.0;
     public static double ANGLE_MANUAL_SENSITIVITY = 0.02;
-    public static double ANGLE_HOME_POS = 0.0;
-    public static double ANGLE_SERVO2_OFFSET = 0.0; // CALIBRARE
+    public static double ANGLE_HOME_POS = 0.05;
+    public static double ANGLE_SERVO2_OFFSET = 0.0;
 
-
-    public enum ControlState { MANUAL_CONTROL, HOLDING_POSITION, SWEEPING_FOR_TAG, TRACKING_TAG }
+    // --- Stări și Logică ---
+    // Am eliminat SWEEPING_FOR_TAG
+    public enum ControlState { MANUAL_CONTROL, HOLDING_POSITION, TRACKING_TAG }
     private ControlState currentState = ControlState.HOLDING_POSITION;
 
     private enum AngleControlState { MANUAL, PROGRAMMATIC }
     private AngleControlState angleControlState = AngleControlState.PROGRAMMATIC;
 
+    private final PIDController turretPID; // Noul obiect PID Controller
     private double programTargetAngle = HOME_ANGLE;
     private double manualServoPosition;
-    private double sweepDirection = 1.0;
     private double currentShooterAnglePos;
-
-    private final ElapsedTime pdTimer = new ElapsedTime();
-    private double lastBearingError = 0.0;
 
     public TurretSubsystem(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(Servo.class, "turretServo");
         angleServo1 = hardwareMap.get(Servo.class, "angleServo1");
         angleServo2 = hardwareMap.get(Servo.class, "angleServo2");
 
-        goHome();
-        pdTimer.reset();
+        // Inițializăm noul controler PID
+        turretPID = new PIDController(AIMING_KP, AIMING_KI, AIMING_KD);
+        turretPID.setSetPoint(0.0); // Ținta PID-ului este să aducă eroarea (bearing-ul) la ZERO
 
+        goHome();
         setShooterAngle(ANGLE_HOME_POS);
     }
 
-    // --- Turret Rotation Methods ---
-    public void commandAutoAim(AprilTagDetection bestTag) {
-        if (bestTag != null && bestTag.metadata != null && (bestTag.id == 20 || bestTag.id == 24)) {
+    // --- Metode de Control Turelă (Logică nouă) ---
+
+    /**
+     * Metoda principală pentru auto-aim, bazată pe controlul vitezei.
+     * @param bestTag Cel mai bun AprilTag detectat.
+     */
+    public void commandAutoAim(AprilTagDetection bestTag, int targetId) {
+        // Verificăm dacă avem o țintă validă ȘI dacă ID-ul ei corespunde cu cel dorit
+        if (bestTag != null && bestTag.metadata != null && bestTag.id == targetId) {
             currentState = ControlState.TRACKING_TAG;
             double bearingError = bestTag.ftcPose.bearing;
-            double dt = pdTimer.seconds();
-            pdTimer.reset();
-            double derivative = (dt > 0) ? (bearingError - lastBearingError) / dt : 0;
-            this.lastBearingError = bearingError;
-            double correction = (bearingError * AIMING_KP) + (derivative * AIMING_KD);
-            if (Math.abs(bearingError) > AIMING_TOLERANCE_DEGREES) {
-                programTargetAngle = getCurrentAngle() - correction;//camera e cu susul in jos => corectia e invers(cu - nu cu +)
-            }
+
+            // 1. PID-ul calculează o viteză de corecție necesară pentru a anula eroarea.
+            //    Ținta (setpoint) este 0.0, iar măsura este eroarea curentă (-bearingError).
+            double angularVelocityCorrection = turretPID.calculate(0.0, -bearingError);
+
+            // 2. Aplicăm corecția de viteză la unghiul curent pentru a obține noua țintă.
+            programTargetAngle = getCurrentAngle() + angularVelocityCorrection;
+
         } else {
-            this.lastBearingError = 0;
-            if (currentState != ControlState.SWEEPING_FOR_TAG && currentState != ControlState.TRACKING_TAG) {
-                currentState = ControlState.SWEEPING_FOR_TAG;
-                sweepDirection = (getCurrentAngle() < 0) ? 1.0 : -1.0;
+            // Dacă am pierdut ținta sau nu este cea corectă, menținem ultima poziție cunoscută.
+            if (currentState == ControlState.TRACKING_TAG) {
+                currentState = ControlState.HOLDING_POSITION;
             }
         }
     }
@@ -102,7 +106,8 @@ public class TurretSubsystem extends SubsystemBase {
             manualServoPosition += positionChangePerLoop;
             turretServo.setPosition(MathUtils.clamp(manualServoPosition, 0.0, 1.0));
         } else {
-            if (currentState == ControlState.MANUAL_CONTROL || currentState == ControlState.SWEEPING_FOR_TAG || currentState == ControlState.TRACKING_TAG) {
+            // La eliberarea joystick-ului, dacă eram în manual sau tracking, trecem în HOLDING
+            if (currentState == ControlState.MANUAL_CONTROL || currentState == ControlState.TRACKING_TAG) {
                 this.programTargetAngle = getCurrentAngle();
                 this.currentState = ControlState.HOLDING_POSITION;
             }
@@ -113,7 +118,7 @@ public class TurretSubsystem extends SubsystemBase {
         setTargetAngle(HOME_ANGLE);
     }
 
-    // --- Shooter Angle Methods ---
+    // --- Metode Unghi Shooter (Neschimbate) ---
     public void setShooterAngle(double position) {
         this.angleControlState = AngleControlState.PROGRAMMATIC;
         this.currentShooterAnglePos = MathUtils.clamp(position, ANGLE_MIN_POS, ANGLE_MAX_POS);
@@ -135,35 +140,21 @@ public class TurretSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // Update turret rotation
-        switch (currentState) {
-            case MANUAL_CONTROL:
-                break;
-            case HOLDING_POSITION:
-            case TRACKING_TAG:
-                turretServo.setPosition(turretAngleToServoPosition(programTargetAngle));
-                break;
-            case SWEEPING_FOR_TAG:
-                double increment = (sweepDirection * SWEEP_SPEED_DEG_PER_SEC) / 50.0;
-                programTargetAngle += increment;
-                if (sweepDirection > 0 && programTargetAngle > SWEEP_ENDPOINT_2) {
-                    programTargetAngle = SWEEP_ENDPOINT_2;
-                    sweepDirection = -1.0;
-                } else if (sweepDirection < 0 && programTargetAngle < SWEEP_ENDPOINT_1) {
-                    programTargetAngle = SWEEP_ENDPOINT_1;
-                    sweepDirection = 1.0;
-                }
-                turretServo.setPosition(turretAngleToServoPosition(programTargetAngle));
-                break;
+        // Logica din periodic devine mai simplă.
+        turretPID.setPID(AIMING_KP, AIMING_KI, AIMING_KD);
+        if (currentState != ControlState.MANUAL_CONTROL) {
+            // Asigură clamarea unghiului înainte de a-l trimite la servo
+            double clampedAngle = MathUtils.clamp(programTargetAngle, TURRET_MIN_ANGLE, TURRET_MAX_ANGLE);
+            turretServo.setPosition(turretAngleToServoPosition(clampedAngle));
         }
 
-        // Update shooter angle
+        // Update unghi shooter (neschimbat)
         angleServo1.setPosition(currentShooterAnglePos);
         double servo2Pos = 1.0 - currentShooterAnglePos + ANGLE_SERVO2_OFFSET;
-        angleServo2.setPosition(MathUtils.clamp(servo2Pos, 0.0, 1.0)); // Mirrored and calibrated
+        angleServo2.setPosition(MathUtils.clamp(servo2Pos, 0.0, 1.0));
     }
 
-    // --- Converters and Getters ---
+    // --- Convertoare și Gettere (Neschimbate) ---
     private double turretAngleToServoPosition(double turretAngle) {
         double servoAngle = turretAngle * GEAR_RATIO;
         double servoPosition = 0.5 + (servoAngle / SERVO_RANGE_DEGREES);

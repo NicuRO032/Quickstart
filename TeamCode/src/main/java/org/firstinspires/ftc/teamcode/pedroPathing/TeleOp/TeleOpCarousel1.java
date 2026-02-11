@@ -26,6 +26,9 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 @TeleOp(name="TeleOp_Final_cu_Turela")
 @Config
 public class TeleOpCarousel1 extends OpMode {
+    private enum Alliance { BLUE, RED, UNKNOWN }
+    private Alliance selectedAlliance = Alliance.UNKNOWN;
+    private int targetAprilTagId = 0; // ID-ul țintei, 0 înseamnă niciuna
 
     private Follower follower;
     public static Pose startingPose;
@@ -74,6 +77,36 @@ public class TeleOpCarousel1 extends OpMode {
 
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
+
+        // Afișăm instrucțiunile o singură dată dacă alianța nu a fost încă selectată
+        if (selectedAlliance == Alliance.UNKNOWN) {
+            telemetry.addLine(">>> ALEGE ALIANTA <<<");
+            telemetry.addLine("Apasa 'X' (Gamepad 1 sau 2) pentru ALBASTRU");
+            telemetry.addLine("Apasa 'B' (Gamepad 1 sau 2) pentru ROSU");
+        }
+
+        // Verificăm apăsările de butoane în fiecare ciclu al buclei de init
+        if (gamepad1.x || gamepad2.x) {
+            if (selectedAlliance != Alliance.BLUE) {
+                selectedAlliance = Alliance.BLUE;
+                targetAprilTagId = 20; // ID-ul pentru turnul albastru
+                gamepad1.rumble(250);
+                gamepad2.rumble(250);
+            }
+        }
+        if (gamepad1.b || gamepad2.b) {
+            if (selectedAlliance != Alliance.RED) {
+                selectedAlliance = Alliance.RED;
+                targetAprilTagId = 24; // ID-ul pentru turnul roșu
+                gamepad1.rumble(500);
+                gamepad2.rumble(500);
+            }
+        }
+
+        // Actualizăm telemetria pentru a arăta starea curentă
+        telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
+        telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
+
         telemetry.addData("Analog Feedback:", "%.3f V", carousel.getCurrentFeedbackMv());
         telemetry.addLine("INIT: pentru START, PUNE SLOTUL 1 in fata cu feedback aprox. 1400");
         if (Math.abs(carousel.getCurrentFeedbackMv()-1400)>200){
@@ -86,6 +119,13 @@ public class TeleOpCarousel1 extends OpMode {
             telemetry.addLine("Dupa START, slotul 0 va veni in fata...");
 
         }
+
+
+        telemetry.addLine("========================================");
+        telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
+        telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
+        telemetry.addLine("GATA DE START!");
+        telemetry.addLine("========================================");
         telemetry.update();
 
         vision.disableProcesor();
@@ -178,88 +218,114 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (carousel.getOuttakeState().equals("OUT_IDLE")) outtakePrepared = false;
     }
-
     private void handleDriver2Controls() {
-        // --- Shooter Angle Control ---
-        //turret.setManualShooterAngle(-driver2.getLeftY());
+        // --- Control Unghi Shooter (păstrat) ---
+        if (driver2.wasJustPressed(GamepadKeys.Button.Y))
+            turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
+        if (driver2.wasJustPressed(GamepadKeys.Button.B))
+            turret.setShooterAngle(0.5); // Unghi inaltime medie
+        if (driver2.wasJustPressed(GamepadKeys.Button.A))
+            turret.setShooterAngle(0.0); // Unghi pentru inaltime mare
 
-        if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
-        if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi inaltime medie
-        if(driver2.wasJustPressed(GamepadKeys.Button.A)) turret.setShooterAngle(0.0); // Unghi pentru inaltime mare
-
-
-        // --- Turret Rotation and Outtake ---
-        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)){
-            if(carousel.canSkipShoot()){
+        // --- Control Outtake (păstrat) ---
+        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
+            if (carousel.canSkipShoot()) {
                 carousel.skipTrow();
-            }else
+            } else {
                 carousel.triggerShoot();
+            }
         }
 
+        // --- Comutare Mod Turelă (Manual <-> Auto-Aim) ---
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
-                vision.enableProcesor();
-                turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
+                // Permitem trecerea la auto-aim DOAR dacă o alianță a fost selectată în init()
+                if (selectedAlliance != Alliance.UNKNOWN) {
+                    vision.enableProcesor();
+                    turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
+                }
             } else {
+                // Ieșim din modul auto-aim și ne întoarcem la manual
                 vision.disableProcesor();
                 turretTeleOpState = TurretTeleOpState.MANUAL;
-                turret.setManualControl(0);
+                turret.setManualControl(0); // Oprește mișcarea turelei la ieșirea din mod
             }
         }
 
         AprilTagDetection bestTag = vision.getBestDetection();
-        boolean hasValidTarget = (bestTag != null && bestTag.metadata != null && (bestTag.id == 20 || bestTag.id == 24));
+        // NOU: 'hasValidTarget' verifică acum și ID-ul țintei selectate la inițializare
+        boolean hasValidTarget = (bestTag != null && bestTag.metadata != null && bestTag.id == targetAprilTagId);
 
         switch (turretTeleOpState) {
             case MANUAL:
-                driver2.gamepad.setLedColor(0, 1, 0, -1);
+                driver2.gamepad.setLedColor(0, 1, 0, -1); // Verde pentru control Manual
+
+                // Control manual cu joystick-ul (păstrat)
                 turret.setManualControl(-driver2.getRightX());
+
+                // Comenzi rapide manuale cu DPAD (păstrate)
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_UP)) turret.setTargetAngle(0.0);
-                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) turret.setTargetAngle(-90.0);
-                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) turret.setTargetAngle(90.0);
+                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT))
+                    turret.setTargetAngle(-90.0);
+                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT))
+                    turret.setTargetAngle(90.0);
+
+                // Comanda de ochire manuală la ținta vizibilă (păstrată)
+                // Aceasta va ochi orice tag vizibil, indiferent de alianță. Util pentru testare.
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
                     AprilTagDetection currentTag = vision.getBestDetection();
-                    // Verificăm dacă avem o țintă validă înainte de a comanda mișcarea
                     if (currentTag != null && currentTag.metadata != null) {
-                        // Calculăm unghiul final: poziția curentă + corecția necesară
-                        double targetAngle = turret.getCurrentAngle() + currentTag.ftcPose.bearing;
+                        double targetAngle = turret.getCurrentAngle() - currentTag.ftcPose.bearing;
                         turret.setTargetAngle(targetAngle);
                     }
                 }
                 break;
 
             case SEMI_AUTO_SEARCHING:
-                driver2.gamepad.setLedColor(1, 0, 0, -1);
-                if(carousel.canChangeRPM()){
+                driver2.gamepad.setLedColor(1, 0, 0, -1); // Roșu pentru Căutare
+
+                // Permite controlul manual cu joystick-ul PÂNĂ când ținta este găsită
+                turret.setManualControl(-driver2.getRightX());
+
+                // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
+                if (bestTag != null && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(-0.0302055 * x * x  + 30.9530 * x + 2400.77337);
-                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x -0.184169);
-//                    carousel.setShooterTargetRPM(SHOOT_RPM);
-//                    turret.setShooterAngle(ANGLE_SHOOT);
+                    carousel.setShooterTargetRPM(-0.0302055 * x * x + 30.9530 * x + 2400.77337);
+                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x - 0.184169);
                 }
+
+                // Dacă am găsit ȚINTA CORECTĂ, trecem la LOCKING
                 if (hasValidTarget) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
-                    driver2.gamepad.rumble(50); //am miscorat valoarea ca sa nu blochez sistemul
+                    driver2.gamepad.rumble(50);
                     lockOnTimer.reset();
-                    turret.commandAutoAim(bestTag);
-                } else {
-                    turret.setManualControl(-driver2.getRightX());
+                    // NOU: Apelăm commandAutoAim cu ID-ul țintei
+                    turret.commandAutoAim(bestTag, targetAprilTagId);
                 }
                 break;
 
             case SEMI_AUTO_LOCKING:
-                driver2.gamepad.setLedColor(1, 0, 0, -1);
-                if(carousel.canChangeRPM()){
-                    double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(-0.0302055 * x * x  + 30.9530 * x + 2400.77337);
-                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x -0.184169);
-//                    carousel.setShooterTargetRPM(SHOOT_RPM);
-//                    turret.setShooterAngle(ANGLE_SHOOT);
+                // NOU: Schimbăm culoarea LED-ului pentru a indica un lock-on reușit
+                if (Math.abs(bestTag.ftcPose.bearing) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
+                    driver2.gamepad.setLedColor(0, 0, 1, -1); // Albastru pentru Lock-On reușit
+                } else {
+                    driver2.gamepad.setLedColor(1, 0.5, 0, -1); // Portocaliu pentru Ajustare
                 }
+
+                // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
+                if (hasValidTarget && carousel.canChangeRPM()) {
+                    double x = vision.getDistance();
+                    carousel.setShooterTargetRPM(-0.0302055 * x * x + 30.9530 * x + 2400.77337);
+                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x - 0.184169);
+                }
+
                 if (hasValidTarget) {
-                    turret.commandAutoAim(bestTag);
+                    // NOU: Apelăm continuu commandAutoAim cu ID-ul țintei
+                    turret.commandAutoAim(bestTag, targetAprilTagId);
+
                     double bearingError = bestTag.ftcPose.bearing;
 
+                    // Logica de rumble la ochire precisă (păstrată)
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
                         if (lockOnTimer.milliseconds() > 500) {
                             driver2.gamepad.rumble(0.7, 0.7, 200);
@@ -268,13 +334,14 @@ public class TeleOpCarousel1 extends OpMode {
                         lockOnTimer.reset();
                     }
                 } else {
+                    // Dacă am pierdut ținta, ne întoarcem la căutare
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
-                    turret.setManualControl(0);
+                    turret.setManualControl(0); // Oprește mișcarea turelei
                 }
                 break;
         }
-        //sendTelemetry();
     }
+
 
     @SuppressLint("DefaultLocale")
     private void sendTelemetry() {
@@ -336,7 +403,10 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("14.Distance: ", vision.getDistance());
         packet.put("15.X:", vision.getLastX());
         packet.put("16.Y:", vision.getLastY());
-        packet.put("17.Angle:", turret.getCurrentShooterAngle());
+        packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
+        packet.put("18.Turret Angle:", turret.getTargetAngle());
+        packet.put("18.AprilTag Bearing:", vision.getLastBearing());
+
 
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
