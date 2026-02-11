@@ -19,6 +19,7 @@ import com.seattlesolvers.solverslib.command.WaitUntilCommand;
 import com.seattlesolvers.solverslib.pedroCommand.FollowPathCommand;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.AutoAimTurretCommand;
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.DetectAprilTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.PrepareOuttakeFromTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -169,21 +170,9 @@ public class AutoVision11 extends CommandOpMode {
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(3600);
         turret.setTargetAngle(-30);
+        vision.disableProcesor();
 
 
-
-        while (!isStarted() && !isStopRequested()) {
-            CommandScheduler.getInstance().run();
-            int tag = vision.getLastTagId();
-            if (tag == 21 || tag == 22 || tag == 23) {
-                aprilTagFromInit = tag;
-            }
-            telemetry.addLine("INIT: caut AprilTag...");
-            telemetry.addData("AprilTag vazut", tag);
-            telemetry.addData("BearingAngle", vision.getLastBearing());
-            telemetry.addData("AprilTag memorat", aprilTagFromInit);
-            telemetry.update();
-        }
 
         telemetry.addLine("INIT: gata de start.");
         telemetry.update();
@@ -231,11 +220,15 @@ public class AutoVision11 extends CommandOpMode {
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     //--- CICLUL 1: SCOR PRELOAD ---
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new InstantCommand(() -> turret.setTargetAngle(0)),
+                    new InstantCommand(() -> turret.setTargetAngle(-40)),
+                    new ParallelCommandGroup(
+                            new FollowPathCommand(follower, scorePreloadPath, false),
+                            new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000)
+                    ),
                     new ParallelCommandGroup(
                             // Pregătește caruselul pentru outtake și pornește shooter-ul
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
-                            new FollowPathCommand(follower, scorePreloadPath, false)
+                            new InstantCommand(() -> turret.setTargetAngle(0))
                     ),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
