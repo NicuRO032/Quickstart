@@ -447,16 +447,15 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 break;
 
             case FINISHED:
-                // Oprim shooter-ul și ne întoarcem la poziția de start
+                // Oprim shooter-ul și comandăm întoarcerea la poziția de start.
                 setShooterTargetRPM(0.0);
                 triggerReady = false;
-                goToSlot(0, false);
+                goToSlot(0, false); // Comanda de resetare este trimisă.
 
-                // Așteptăm să ajungă la poziția de start înainte de a încheia ciclul
-                if (atTarget()) {
-                    autoEnabled = true; // Permitem din nou funcționarea intake-ului automat
-                    outtakeState = OuttakeState.OUT_IDLE;
-                }
+                // Trecem IMEDIAT la OUT_IDLE, fără a aștepta finalizarea mișcării.
+                // Acest lucru permite autonomiei să continue.
+                autoEnabled = true; // Permitem din nou funcționarea intake-ului automat
+                outtakeState = OuttakeState.OUT_IDLE;
                 break;
         }
     }

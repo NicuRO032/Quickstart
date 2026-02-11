@@ -55,8 +55,8 @@ public class AutoVision11 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(33, 136, Math.toRadians(90));
-    private final Pose SCORE_POSE = new Pose(52, 93, Math.toRadians(137));
+    private final Pose START_POSE = new Pose(21, 124, Math.toRadians(143));
+    private final Pose SCORE_POSE = new Pose(58, 87, Math.toRadians(143));
     private final Pose PARK_POSE  = new Pose(53, 80, Math.toRadians(137));
     private final Pose GRAB1_START_POSE  = new Pose(46, 85, Math.toRadians(180));
     private final Pose GRAB1_END_POSE  = new Pose(18, 85, Math.toRadians(180));
@@ -170,7 +170,7 @@ public class AutoVision11 extends CommandOpMode {
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(3600);
         turret.setTargetAngle(-30);
-        vision.disableProcesor();
+        vision.enableProcesor();
 
 
 
@@ -220,11 +220,12 @@ public class AutoVision11 extends CommandOpMode {
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     //--- CICLUL 1: SCOR PRELOAD ---
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new InstantCommand(() -> turret.setTargetAngle(-40)),
+                    new InstantCommand(() -> turret.setTargetAngle(-55)),
                     new ParallelCommandGroup(
                             new FollowPathCommand(follower, scorePreloadPath, false),
                             new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000)
                     ),
+
                     new ParallelCommandGroup(
                             // Pregătește caruselul pentru outtake și pornește shooter-ul
                             new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),

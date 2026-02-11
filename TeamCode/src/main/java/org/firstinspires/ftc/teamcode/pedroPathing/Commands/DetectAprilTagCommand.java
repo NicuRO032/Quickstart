@@ -60,6 +60,6 @@ public class DetectAprilTagCommand extends CommandBase {
             // Dacă a expirat timpul, folosim valoarea de fallback hardcodată.
             tagConsumer.accept(FALLBACK_TAG_ID);
         }
-        vision.disableProcesor();
+        //vision.disableProcesor();
     }
 }
