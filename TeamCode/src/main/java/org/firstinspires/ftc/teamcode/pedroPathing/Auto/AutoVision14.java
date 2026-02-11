@@ -235,7 +235,7 @@ public class AutoVision14 extends CommandOpMode {
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
                             // Pregătește caruselul pentru outtake și pornește shooter-ul
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, scorePreloadPath, false)
                     ),
                     new ParallelRaceGroup(
@@ -264,7 +264,7 @@ public class AutoVision14 extends CommandOpMode {
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, score1Path, false)
                     ),
                     new ParallelRaceGroup(

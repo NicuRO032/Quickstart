@@ -223,12 +223,13 @@ public class AutoVision11 extends CommandOpMode {
                     new InstantCommand(() -> turret.setTargetAngle(-55)),
                     new ParallelCommandGroup(
                             new FollowPathCommand(follower, scorePreloadPath, false),
-                            new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000)
+                            new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000),
+                            new WaitCommand(7000)
                     ),
 
                     new ParallelCommandGroup(
                             // Pregătește caruselul pentru outtake și pornește shooter-ul
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new InstantCommand(() -> turret.setTargetAngle(0))
                     ),
                     new ParallelRaceGroup(
@@ -237,6 +238,7 @@ public class AutoVision11 extends CommandOpMode {
                     ),
                     // Acum, comandă tragerea
                     new ShootAllBallsCommand(carousel),
+                    new WaitCommand(7000),
                     new InstantCommand(() -> intake.setPower(-1)),
                     new InstantCommand(() -> follower.setMaxPower(0.8)),
 
@@ -251,7 +253,7 @@ public class AutoVision11 extends CommandOpMode {
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, score1Path, false),
                             new InstantCommand(() -> intake.setPower(1))
                     ),
@@ -275,7 +277,7 @@ public class AutoVision11 extends CommandOpMode {
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, score2Path, false),
                             new InstantCommand(() -> intake.setPower(1))
                     ),
