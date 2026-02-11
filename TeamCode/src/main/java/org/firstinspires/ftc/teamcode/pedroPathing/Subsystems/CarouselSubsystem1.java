@@ -31,12 +31,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE CARUSEL SERVO ================= */
     // Vectori pentru pozițiile de Intake (servo) și Outtake (servo)
-    private static final double[] INTAKE_POSITIONS = {0.254, 0.512, 0.762};
-    private static final double[] OUTTAKE_POSITIONS = {0.638, 0.890, 0.382};
+    private static final double[] INTAKE_POSITIONS = {0.156, 0.414, 0.666};
+    private static final double[] OUTTAKE_POSITIONS = {0.542, 0.796, 0.286};
 
     // Vectori pentru valorile de feedback corespunzătoare (în mV)
-    private static final double[] INTAKE_FEEDBACK_MV = {945.0, 1680.0, 2391.0};
-    private static final double[] OUTTAKE_FEEDBACK_MV = {2038.0, 2755.0, 1308.0};
+    private static final double[] INTAKE_FEEDBACK_MV = {663.0, 1400.0, 2112.0};
+    private static final double[] OUTTAKE_FEEDBACK_MV = {1760.0, 2483.0, 1032.0};
 
     // Toleranța pentru atTarget, în milivolți (mV)
     public static double FEEDBACK_TOLERANCE_MV = 50.0;

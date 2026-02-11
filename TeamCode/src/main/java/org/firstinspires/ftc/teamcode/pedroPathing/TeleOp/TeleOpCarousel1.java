@@ -75,8 +75,8 @@ public class TeleOpCarousel1 extends OpMode {
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
         telemetry.addData("Analog Feedback:", "%.3f V", carousel.getCurrentFeedbackMv());
-        telemetry.addLine("INIT: pentru START, PUNE SLOTUL 1 in fata cu feedback aprox. 1700");
-        if (Math.abs(carousel.getCurrentFeedbackMv()-1700)>200){
+        telemetry.addLine("INIT: pentru START, PUNE SLOTUL 1 in fata cu feedback aprox. 1400");
+        if (Math.abs(carousel.getCurrentFeedbackMv()-1400)>200){
             telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             telemetry.addLine("!!!!!!Pozitionare incorecta, STOP si reluati!!!!!!");
             telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
