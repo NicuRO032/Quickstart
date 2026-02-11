@@ -71,6 +71,7 @@ public class TeleOpCarousel1 extends OpMode {
         turret = new TurretSubsystem(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
+        carousel.isTeleOp = true;
 
         //carousel.resetForStart();
         carousel.activateIntake();

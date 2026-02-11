@@ -105,6 +105,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private int[] outtakeOrder = new int[0];
     private int outtakePtr = 0;
     private boolean triggerReady = false;
+    public boolean isTeleOp = false;
 
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
@@ -542,7 +543,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
     }
 
-    public boolean isReadyToShoot() { return outtakeState == OuttakeState.PREPARE_READY && atTarget(); }
+    public boolean isReadyToShoot() {
+        return outtakeState == OuttakeState.ALIGNING_FOR_SHOT && atTarget();
+    }
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {
         double currentVoltage = carouselFeedback.getVoltage();
@@ -578,6 +581,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public String getIntakeState() { return intakeState.name(); }
     public String getOuttakeState() { return outtakeState.name(); }
     public int getLogicalIndex() { return logicalIndex; }
+    public OuttakeState getOuttakeStateEnum() {
+        return this.outtakeState;
+    }
 
 
     public boolean getOccupied(int i) { return occupied[i]; }
@@ -659,7 +665,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         // Mașinile de stări
         if ((outtakeState == OuttakeState.OUT_IDLE) && autoEnabled) handleIntake();
         handleOuttake();
-        if (allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
+        // Acest bloc va rula acum DOAR dacă flag-ul 'isTeleOp' este activat.
+        if (isTeleOp && allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
             prepareOuttake(activePattern);
             intakeIsOn = false;
         }

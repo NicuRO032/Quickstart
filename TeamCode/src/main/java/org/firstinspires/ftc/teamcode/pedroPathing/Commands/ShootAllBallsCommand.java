@@ -9,22 +9,22 @@ import com.seattlesolvers.solverslib.command.WaitUntilCommand;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 
+// În ShootAllBallsCommand.java
 public class ShootAllBallsCommand extends SequentialCommandGroup {
 
-    public static final long SHOOTER_TIMEOUT_MS = 250; // Timp maxim de așteptare: 3 secunde
+    public static final long SHOOTER_TIMEOUT_MS = 3000; // Mărește timeout-ul la 3s pentru siguranță
 
     public ShootAllBallsCommand(CarouselSubsystem1 carousel) {
         addCommands(
-                new ParallelRaceGroup(
-                        new WaitUntilCommand(() ->
-                                (carousel.getShooterCurrentRPM() >= carousel.getShooterTargetRPM() * 0.95)
-                                        &&
-                                        (carousel.isReadyToShoot())
-                        ),
-                        new WaitCommand(SHOOTER_TIMEOUT_MS)
-                ),
+                // Așteaptă până când caruselul e gata de tragere SAU trece timeout-ul
+                new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
+
+                // Comandă tragerea
                 new InstantCommand(carousel::triggerShoot),
-                new WaitUntilCommand(() -> carousel.getOuttakeState().equals("OUT_IDLE"))
+
+                // Așteaptă până când ciclul de outtake se termină complet (revine la IDLE)
+                // MODIFICAT: Comparație directă cu enum-ul pentru siguranță
+                new WaitUntilCommand(() -> carousel.getOuttakeStateEnum() == CarouselSubsystem1.OuttakeState.OUT_IDLE)
         );
         addRequirements(carousel);
     }
