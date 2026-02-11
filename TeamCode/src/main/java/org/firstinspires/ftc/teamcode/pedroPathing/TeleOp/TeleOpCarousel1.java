@@ -305,40 +305,51 @@ public class TeleOpCarousel1 extends OpMode {
                 break;
 
             case SEMI_AUTO_LOCKING:
-                // NOU: Schimbăm culoarea LED-ului pentru a indica un lock-on reușit
-                if (Math.abs(bestTag.ftcPose.bearing) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
-                    driver2.gamepad.setLedColor(0, 0, 1, -1); // Albastru pentru Lock-On reușit
-                } else {
-                    driver2.gamepad.setLedColor(1, 0.5, 0, -1); // Portocaliu pentru Ajustare
-                }
-
-                // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
-                if (hasValidTarget && carousel.canChangeRPM()) {
-                    double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(-0.0302055 * x * x + 30.9530 * x + 2400.77337);
-                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x - 0.184169);
-                }
-
+                // ▼▼▼ AICI ESTE MODIFICAREA PRINCIPALĂ ▼▼▼
+                // Verificăm MAI ÎNTÂI dacă avem o țintă validă.
                 if (hasValidTarget) {
-                    // NOU: Apelăm continuu commandAutoAim cu ID-ul țintei
+                    // ---- Dacă avem țintă, executăm toată logica de ochire și feedback ----
+
+                    // 1. Schimbăm culoarea LED-ului în funcție de precizie
+                    double bearingError = bestTag.ftcPose.bearing;
+                    if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
+                        driver2.gamepad.setLedColor(0, 0, 1, -1); // Albastru pentru Lock-On reușit
+                    } else {
+                        driver2.gamepad.setLedColor(1, 0.5, 0, -1); // Portocaliu pentru Ajustare
+                    }
+
+                    // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
+                    if (carousel.canChangeRPM()) {
+                        double x = vision.getDistance();
+                        carousel.setShooterTargetRPM(-0.0302055 * x * x + 30.9530 * x + 2400.77337);
+                        turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x - 0.184169);
+                    }
+
+                    // 3. Comandăm turelei să continue ochirea
                     turret.commandAutoAim(bestTag, targetAprilTagId);
 
-                    double bearingError = bestTag.ftcPose.bearing;
-
-                    // Logica de rumble la ochire precisă (păstrată)
+                    // 4. Activăm rumble-ul dacă suntem pe țintă de suficient timp
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
-                        if (lockOnTimer.milliseconds() > 500) {
+                        if (lockOnTimer.milliseconds() > 100) { // Am văzut că ai modificat la 100ms
                             driver2.gamepad.rumble(0.7, 0.7, 200);
                         }
                     } else {
+                        // Dacă am ieșit din toleranță, resetăm cronometrul
                         lockOnTimer.reset();
                     }
+
                 } else {
-                    // Dacă am pierdut ținta, ne întoarcem la căutare
+                    // ---- Dacă am pierdut ținta (bestTag este null sau are ID greșit) ----
+
+                    // Trecem înapoi la starea de căutare
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
-                    turret.setManualControl(0); // Oprește mișcarea turelei
+                    // Oprim mișcarea automată a turelei. Acum poate fi controlată manual cu joystick-ul.
+                    turret.setManualControl(0);
+                    // Setăm LED-ul pe roșu pentru a indica starea de căutare
+                    driver2.gamepad.setLedColor(1, 0, 0, -1);
                 }
                 break;
+
         }
     }
 
