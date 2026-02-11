@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -53,13 +54,15 @@ public class AutoVision12 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(112, 136, Math.toRadians(90));
-    private final Pose SCORE_POSE = new Pose(92, 94, Math.toRadians(45));
-    private final Pose PARK_POSE  = new Pose(125, 89, Math.toRadians(0));
-    private final Pose GRAB1_START_POSE  = new Pose(97, 88, Math.toRadians(0));
-    private final Pose GRAB1_END_POSE  = new Pose(127, 85, Math.toRadians(0));
+    private final Pose START_POSE = new Pose(122, 125, Math.toRadians(35));
+    private final Pose SCORE_POSE = new Pose(92, 91, Math.toRadians(35));
+    private final Pose PARK_POSE  = new Pose(129, 84, Math.toRadians(0));
+    private final Pose GRAB1_START_POSE  = new Pose(129, 84, Math.toRadians(0));
+    private final Pose ControlPoint = new Pose(82,81);
+    private final Pose GRAB1_END_POSE  = new Pose(129, 84, Math.toRadians(0));
     private final Pose GRAB2_START_POSE  = new Pose(97, 69, Math.toRadians(0));
-    private final Pose GRAB2_END_POSE  = new Pose(131, 63, Math.toRadians(0));
+    private final Pose ControlPoint1 = new Pose(81,56);
+    private final Pose GRAB2_END_POSE  = new Pose(129, 60, Math.toRadians(0));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
 
@@ -83,40 +86,46 @@ public class AutoVision12 extends CommandOpMode {
 
         // 2. Traiectoria de colectare 1 (de la SCOR la zona de colectare)
         grab1Path = follower.pathBuilder()
-                .addPath(new BezierLine(SCORE_POSE, GRAB1_START_POSE)) // Pleacă de la SCORE_POSE
+                .addPath(new BezierCurve(SCORE_POSE,ControlPoint, GRAB1_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_START_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(0.9))
+                .addParametricCallback(0.3, () -> follower.setMaxPower(0.3))
                 .addPoseCallback(GRAB1_START_POSE, () -> intake.setPower(-1), 7)
                 //.setConstraints(SLOW_CONSTRAINTS)
                 .build();
 
-        grab1APath = follower.pathBuilder()
+       /* grab1APath = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB1_START_POSE, GRAB1_END_POSE))
                 .setLinearHeadingInterpolation(GRAB1_START_POSE.getHeading(), GRAB1_END_POSE.getHeading())
-                .build();
+                .build(); */
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
         score1Path = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB1_END_POSE, SCORE_POSE)) // Pleacă de unde a terminat colectarea
                 .setLinearHeadingInterpolation(GRAB1_END_POSE.getHeading(), SCORE_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
                 .build();
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         grab2Path = follower.pathBuilder()
-                .addPath(new BezierLine(SCORE_POSE, GRAB2_START_POSE)) // Pleacă de la SCORE_POSE
-                .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_START_POSE.getHeading())
+                .addPath(new BezierCurve(SCORE_POSE,ControlPoint1 ,GRAB2_END_POSE)) // Pleacă de la SCORE_POSE
+                .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(0.8))
+                .addParametricCallback(0.6, () -> follower.setMaxPower(0.3))
                 .addPoseCallback(GRAB2_START_POSE, () -> intake.setPower(-1), 7) // Corectat din GRAB1_START_POSE
                 // .setConstraints(SLOW_CONSTRAINTS)
                 .build();
 
-        grab2APath = follower.pathBuilder()
+        /*grab2APath = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB2_START_POSE, GRAB2_END_POSE))
                 .setLinearHeadingInterpolation(GRAB2_START_POSE.getHeading(), GRAB2_END_POSE.getHeading())
-                .build();
+                .build();*/
 
         // 5. Traiectoria de scor 2 (de la COLECTARE 2 înapoi la SCOR)
         score2Path = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB2_END_POSE, SCORE_POSE)) // Pleacă de unde a terminat colectarea 2
                 .setLinearHeadingInterpolation(GRAB2_END_POSE.getHeading(), SCORE_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
                 .build();
 
         // --- Restul traiectoriilor urmează același model ---

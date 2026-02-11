@@ -39,8 +39,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private static final double[] OUTTAKE_FEEDBACK_MV = {1760.0, 2483.0, 1032.0};
 
     // Toleranța pentru atTarget, în milivolți (mV)
-    public static double FEEDBACK_TOLERANCE_MV = 50.0;
-    public static long AT_TARGET_STABILITY_MS = 50; // Timpul de stabilitate (păstrat)
+    // Crește toleranța: cu cât e mai mare, cu atât consideră mai repede că "a ajuns"
+    public static double FEEDBACK_TOLERANCE_MV = 120; // de la 50.0
+
+    // Scade timpul de așteptare: 50ms e mult în competiție
+    public static long AT_TARGET_STABILITY_MS = 20; // de la 50 // Timpul de stabilitate (păstrat)
 
     // shooter
     public static double SHOOTER_kP = 0.001;
@@ -49,7 +52,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double SHOOTER_kF = 0.00045;
 
     public static final double SHOOTER_MOTOR_CPR = 28.0;
-    public static double DEFAULT_SHOOTER_RPM = 3000.0;
+    public static double DEFAULT_SHOOTER_RPM = 4500.0;
     public static double SHOT_CONFIRM_DIP_PERCENT = 0.05; // Acum se aplică la RPM
     private double rpmBeforePush = 0.0;
     private boolean shotWasDetected = false;
@@ -64,11 +67,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public static final double SLOT_OCCUPIED_MM = 100.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
-    public static final long SENSOR_DELAY_MS = 15;
+    public static final long SENSOR_DELAY_MS = 10;
     public static final double PUSH_POS = 0.1;
     public static final double RETRACT_POS = 0.5;
-    public static long PUSH_TIME_MS = 350;
-    public static long RETRACT_TIME_MS = 175;
+    public static long PUSH_TIME_MS = 250;
+    public static long RETRACT_TIME_MS = 125;
     public static int MAX_SHOT_RETRIES = 1; // Permitem o singură reîncercare suplimentară
     private int shotRetryCounter = 0;
 
@@ -411,6 +414,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                         if (outtakePtr >= outtakeOrder.length) {
                             outtakeState = OuttakeState.FINISHED;
                         } else {
+                            occupied[outtakePtr] = false;
                             goToSlot(outtakeOrder[outtakePtr], true);
                             outtakeState = OuttakeState.ADVANCE;
                         }

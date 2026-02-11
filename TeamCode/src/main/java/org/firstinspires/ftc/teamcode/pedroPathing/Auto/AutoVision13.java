@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -57,9 +58,11 @@ public class AutoVision13 extends CommandOpMode {
     private final Pose SCORE_POSE = new Pose(48, 9, Math.toRadians(112));
     private final Pose PARK_POSE  = new Pose(46, 10, Math.toRadians(110));
     private final Pose GRAB1_START_POSE  = new Pose(41, 30, Math.toRadians(180));
+    private final Pose ControlPoint1 = new Pose(78,41);
+    private final Pose ControlPoint2 = new Pose(78,41);
     private final Pose GRAB1_END_POSE  = new Pose(15, 36, Math.toRadians(180));
     private final Pose GRAB2_START_POSE  = new Pose(104, 63, Math.toRadians(0));
-    private final Pose GRAB2_END_POSE  = new Pose(130, 63, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE  = new Pose(6, 15, Math.toRadians(200));
     private final Pose GRAB3_START_POSE  = new Pose(60, 100, Math.toRadians(143));
     private final Pose GRAB3_END_POSE  = new Pose(60, 100, Math.toRadians(143));
 
@@ -83,23 +86,37 @@ public class AutoVision13 extends CommandOpMode {
 
         // 2. Traiectoria de colectare 1 (de la SCOR la zona de colectare)
         grab1Path = follower.pathBuilder()
-                .addPath(new BezierLine(SCORE_POSE, GRAB1_START_POSE)) // Pleacă de la SCORE_POSE
-                .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_START_POSE.getHeading())
-                .addPoseCallback(GRAB1_START_POSE, () -> intake.setPower(-1), 7)
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // Pleacă de la SCORE_POSE
+                .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(0.8))
+                .addParametricCallback(0.5, () -> follower.setMaxPower(0.3))
+                .addPoseCallback(GRAB1_END_POSE, () -> intake.setPower(-1), 7)
                 //.setConstraints(SLOW_CONSTRAINTS)
                 .build();
 
-        grab1APath = follower.pathBuilder()
+        /*grab1APath = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB1_START_POSE, GRAB1_END_POSE))
                 .setLinearHeadingInterpolation(GRAB1_START_POSE.getHeading(), GRAB1_END_POSE.getHeading())
-                .build();
+                .build();*/
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
         score1Path = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB1_END_POSE, SCORE_POSE)) // Pleacă de unde a terminat colectarea
                 .setLinearHeadingInterpolation(GRAB1_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .build();
-
+        grab2Path = follower.pathBuilder()
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_END_POSE)) // Pleacă de la SCORE_POSE
+                .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(0.8))
+                .addParametricCallback(0.6, () -> follower.setMaxPower(0.3))
+                .addPoseCallback(GRAB2_END_POSE, () -> intake.setPower(-1), 7) // Corectat din GRAB1_START_POSE
+                // .setConstraints(SLOW_CONSTRAINTS)
+                .build();
+        score2Path = follower.pathBuilder()
+                .addPath(new BezierLine(GRAB1_END_POSE, SCORE_POSE))
+                .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
+                .setLinearHeadingInterpolation(GRAB2_END_POSE.getHeading(), SCORE_POSE.getHeading())
+                .build();
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         /*grab2Path = follower.pathBuilder()
                 .addPath(new BezierLine(SCORE_POSE, GRAB2_START_POSE)) // Pleacă de la SCORE_POSE
@@ -248,7 +265,7 @@ public class AutoVision13 extends CommandOpMode {
                     new ShootAllBallsCommand(carousel),
 
 
-                   /* new InstantCommand(() -> follower.setMaxPower(1)),
+                   new InstantCommand(() -> follower.setMaxPower(1)),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
                     new InstantCommand(() -> intake.setPower(-1)),
@@ -256,22 +273,39 @@ public class AutoVision13 extends CommandOpMode {
                     new FollowPathCommand(follower, grab1Path, true),
                     new InstantCommand(() -> follower.setMaxPower(0.3)),
                     new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab1APath, true),
                             new WaitUntilCommand(carousel::allSlotsOccupied),
                             new WaitCommand(8000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, score1Path, false)
                     ),
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision)
+                            new AutoAimTurretCommand(turret, vision, 20)
                     ),
                    // new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
-                    new ShootAllBallsCommand(carousel),*/
+                    new InstantCommand(() -> intake.setPower(-1)),
+
+                    new FollowPathCommand(follower, grab2Path, true),
+                    new InstantCommand(() -> follower.setMaxPower(0.3)),
+                    new ParallelRaceGroup(
+                            new WaitUntilCommand(carousel::allSlotsOccupied),
+                            new WaitCommand(8000)
+                    ),
+                    new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> follower.setMaxPower(1)),
+                    new ParallelCommandGroup(
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
+                            new FollowPathCommand(follower, score2Path, false)
+                    ),
+                    new ParallelRaceGroup(
+                            new WaitCommand(1500),
+                            new AutoAimTurretCommand(turret, vision, 20)
+                    ),
+                    new ShootAllBallsCommand(carousel),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
                   /*  //--- CICLUL 2: A doua colectare si scor ---
