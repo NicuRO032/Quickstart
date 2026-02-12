@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 @Config
 public class VisionSubsystem extends SubsystemBase {
-    public static int EXPOSURE_MS = 6;
-    public static int GAIN = 100;
+    public static int EXPOSURE_MS = 2;
+    public static int GAIN = 230;
     public static double FOCUS = 0.0;
 
     private VisionPortal visionPortal;
@@ -34,13 +34,16 @@ public class VisionSubsystem extends SubsystemBase {
     private double lastBearing = 0.0, lastX = 0.0, lastY = 0.0, lastDistance = 0.0;
     private boolean hasValidTag = false;
 
+    /* private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
+            0, -90, 0, 0);*/
+
     public VisionSubsystem(HardwareMap hardwareMap) {
         aprilTag = new AprilTagProcessor.Builder().build();
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .addProcessor(aprilTag)
-                .setCameraResolution(new Size(1280, 720))
+                .setCameraResolution(new Size(960, 720))
                 .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
                 .build();
         // ▼▼▼ ADAUGĂ ACEST APEL ▼▼▼
@@ -80,7 +83,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        //setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
+        setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
         updateAprilTagData();
     }
 
