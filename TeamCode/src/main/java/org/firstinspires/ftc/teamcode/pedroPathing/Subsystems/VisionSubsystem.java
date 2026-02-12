@@ -34,6 +34,9 @@ public class VisionSubsystem extends SubsystemBase {
     private double lastBearing = 0.0, lastX = 0.0, lastY = 0.0, lastDistance = 0.0;
     private boolean hasValidTag = false;
 
+    /* private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
+            0, -90, 0, 0);*/
+
     public VisionSubsystem(HardwareMap hardwareMap) {
         aprilTag = new AprilTagProcessor.Builder().build();
 
