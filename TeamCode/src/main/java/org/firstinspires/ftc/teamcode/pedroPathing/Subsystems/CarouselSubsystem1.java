@@ -53,6 +53,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public static final double SHOOTER_MOTOR_CPR = 28.0;
     public static double DEFAULT_SHOOTER_RPM = 4500.0;
+    //public static double DEFAULT_SHOOTER_RPM = 1500.0;
     public static double SHOT_CONFIRM_DIP_PERCENT = 0.05; // Acum se aplică la RPM
     private double rpmBeforePush = 0.0;
     private boolean shotWasDetected = false;
@@ -65,7 +66,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     /* ================= CONSTANTE ================= */
 
-    public static final double SLOT_OCCUPIED_MM = 100.0;
+    public static final double SLOT_OCCUPIED_MM = 120.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
     public static final long SENSOR_DELAY_MS = 10;
     public static final double PUSH_POS = 0.1;
@@ -409,12 +410,25 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     // După ce a trecut fereastra, luăm o decizie finală.
 
                     if (shotWasDetected) {
-                        // SUCCES: Am detectat lovitura, deci avansăm normal.
+                        // SUCCES: Am detectat lovitura.
+
+                        // 1. Identificăm slotul care tocmai a fost GOLIT.
+                        //    Acesta este cel indicat de valoarea veche a lui outtakePtr.
+                        int slotJustShot = outtakeOrder[outtakePtr];
+
+                        // 2. Resetăm starea acelui slot.
+                        occupied[slotJustShot] = false;
+                        slotColor[slotJustShot] = BallColor.UNKNOWN;
+
+                        // 3. Avansăm pointer-ul pentru a pregăti următoarea aruncare.
                         outtakePtr++;
+
+                        // 4. Verificăm dacă am terminat.
                         if (outtakePtr >= outtakeOrder.length) {
+                            // Am aruncat toate bilele, trecem la finalizare.
                             outtakeState = OuttakeState.FINISHED;
                         } else {
-                            occupied[outtakePtr] = false;
+                            // Mai avem bile, comandăm mișcarea către următorul slot.
                             goToSlot(outtakeOrder[outtakePtr], true);
                             outtakeState = OuttakeState.ADVANCE;
                         }
@@ -427,10 +441,22 @@ public class CarouselSubsystem1 extends SubsystemBase {
                             outtakeState = OuttakeState.ALIGNING_FOR_SHOT; // Ne întoarcem la aliniere
                         } else {
                             // ESTE A DOUA ÎNCERCARE EȘUATĂ (sau am atins limita).
-                            // Forțăm `shotWasDetected` pe true și avansăm, pretinzând că a fost un succes.
-                            shotWasDetected = true;
+                            // Considerăm bila ca fiind "aruncată" pentru a nu ne bloca și avansăm.
 
+                            // 1. Identificăm slotul pe care îl abandonăm.
+                            int slotJustAbandoned = outtakeOrder[outtakePtr];
+
+                            // 2. Resetăm starea acelui slot, la fel ca la un succes real.
+                            occupied[slotJustAbandoned] = false;
+                            slotColor[slotJustAbandoned] = BallColor.UNKNOWN;
+
+                            // 3. Resetăm contorul de reîncercări pentru următoarea bilă.
+                            shotRetryCounter = 0; // Foarte important!
+
+                            // 4. Avansăm pointer-ul.
                             outtakePtr++;
+
+                            // 5. Verificăm dacă am terminat sau avansăm.
                             if (outtakePtr >= outtakeOrder.length) {
                                 outtakeState = OuttakeState.FINISHED;
                             } else {

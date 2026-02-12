@@ -394,9 +394,9 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("10. Outtake State", carousel.getOuttakeState());
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
 
-        packet.put("040.Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
-        packet.put("041.Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
-        packet.put("042.Carousel Feedback Error (mV)", carousel.getFeedbackError());
+        packet.put("040.Carousel Target Feedback (mV)", String.format("%.3f", carousel.getTargetFeedbackMv()));
+        packet.put("041.Carousel Current Feedback (mV)", String.format("%.3f", carousel.getCurrentFeedbackMv()));
+        packet.put("042.Carousel Feedback Error (mV)", String.format("%.3f", carousel.getFeedbackError()));
         packet.put("043.Carousel At Target", carousel.atTarget()); // Foarte util de monitorizat
 
 

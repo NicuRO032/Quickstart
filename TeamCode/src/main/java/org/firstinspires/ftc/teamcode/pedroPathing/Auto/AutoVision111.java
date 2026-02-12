@@ -29,8 +29,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
-@Autonomous(name = "AUTO.big.BLUE", group = "Pedro Pathing")
-public class AutoVision11 extends CommandOpMode {
+@Autonomous(name = "AUTO.big.BLUE-TEST", group = "Pedro Pathing")
+public class AutoVision111 extends CommandOpMode {
     private Follower follower;
     private CarouselSubsystem1 carousel;
     private TurretSubsystem turret;
@@ -212,11 +212,13 @@ public class AutoVision11 extends CommandOpMode {
         packet.put("Slots Occupied", String.format("[%b, %b, %b]",
                 carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
         packet.put("Slots Colors", carousel.getSlotsColorString());
+        packet.put("AprilTag Vazut", aprilTagFromInit);
 
         dashboard.sendTelemetryPacket(packet);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("AprilTag Vazut", aprilTagFromInit);
         telemetry.update();
 
 
@@ -234,80 +236,21 @@ public class AutoVision11 extends CommandOpMode {
                     new ParallelCommandGroup(
                             new FollowPathCommand(follower, scorePreloadPath, false),
                             new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000)
+                            //new WaitCommand(1000)
+                            // Pregătește caruselul pentru outtake și pornește shooter-ul
+                            //new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
+                            //new InstantCommand(() -> turret.setTargetAngle(0))
                     ),
                     //new WaitCommand(200),
-                    // Pregătește caruselul pentru outtake și pornește shooter-ul
                     new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                     new InstantCommand(() -> turret.setTargetAngle(0)),
-
                     new ParallelRaceGroup(
                             new WaitCommand(1500),
                             new AutoAimTurretCommand(turret, vision,20)
                     ),
                     // Acum, comandă tragerea
-                    new ShootAllBallsCommand(carousel),
-                    //new WaitCommand(1000),
-                    new InstantCommand(() -> intake.setPower(-0.8)),
-
-                    //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new ParallelRaceGroup(
-                            new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new FollowPathCommand(follower, grab1Path, false),
-                            new WaitCommand(6000)
-                    ),
-                    new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(0.8)),
-                    new InstantCommand(() -> intake.setPower(0.6)),
-                    new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
-                            new FollowPathCommand(follower, score1Path, false)
-                    ),
-                    new InstantCommand(() -> intake.setPower(0)),
-                    new ParallelRaceGroup(
-                            new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision,20)
-                    ),
-                    new ShootAllBallsCommand(carousel),
-
-                    //--- CICLUL 3: A doua colectare si scor ---
-                    new InstantCommand(() -> follower.setMaxPower(0.8)),
-
-                    new InstantCommand(() -> intake.setPower(-1)),
-                    new ParallelRaceGroup(
-                            new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new FollowPathCommand(follower, grab2Path, false),
-                            new WaitCommand(5000)
-                    ),
-                    new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(0.5)),
-                    new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
-                            new FollowPathCommand(follower, score2Path, false),
-                            new InstantCommand(() -> intake.setPower(1))
-                    ),
-                    new InstantCommand(() -> intake.setPower(0)),
-                    new ParallelRaceGroup(
-                            new WaitCommand(1500),
-                            new AutoAimTurretCommand(turret, vision,20)
-                    ),
-                    new ShootAllBallsCommand(carousel),
-                    new InstantCommand(() -> follower.setMaxPower(1)),
-                    new FollowPathCommand(follower, parkPath, false)
-
-                    /*  // A doua colectare (comentat)
-                    new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab2Path, false, 0.9),
-                            new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new WaitCommand(5000)
-                    ),
-                    new InstantCommand(() -> intake.setPower(0)),
-                    new ParallelCommandGroup(
-                            new PrepareOuttakeFromTagCommand(carousel, aprilTagFromInit),
-                            new FollowPathCommand(follower, score2Path, true, 0.5)
-                    ),
-                    new WaitCommand(1000),
                     new ShootAllBallsCommand(carousel)
-                    */
+
             );
             schedule(autoSequence);
         }
