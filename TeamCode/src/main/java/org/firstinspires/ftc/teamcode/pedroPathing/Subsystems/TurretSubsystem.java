@@ -22,7 +22,7 @@ public class TurretSubsystem extends SubsystemBase {
     public static double TURRET_MAX_ANGLE = 55.0;
     public static double HOME_ANGLE = 0.0;
     public static double MANUAL_SPEED_MULTIPLIER = 1.0;
-    public static double AIMING_TOLERANCE_DEGREES = 0.75; // Toleranță mai mică pentru o ochire mai precisă
+    public static double AIMING_TOLERANCE_DEGREES = 1.0; // Toleranță mai mică pentru o ochire mai precisă
 
     // --- Coeficienți pentru noul controler PID de viteză ---
     // Aceste valori sunt un punct de pornire și vor necesita reglaj fin (tuning)

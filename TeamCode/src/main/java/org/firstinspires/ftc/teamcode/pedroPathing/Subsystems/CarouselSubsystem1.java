@@ -89,7 +89,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final VoltageSensor batteryVoltageSensor;
 
     /* ================= STATES ================= */
-    public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE}
+    public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE, REVERSE_INTAKE,}
     private IntakeState intakeState = IntakeState.IDLE;
 
     public enum OuttakeState { OUT_IDLE, PREPARE_READY, ALIGNING_FOR_SHOT, PUSH, CONFIRM_SHOT, ADVANCE, FINISHED }
@@ -118,13 +118,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     private final ElapsedTime intakeTimer = new ElapsedTime();
     private final ElapsedTime outtakeTimer = new ElapsedTime();
+    private final ElapsedTime intakeReverseTimer = new ElapsedTime();
     private boolean timerRunning = false;
 
     final float[] hsvValues1 = new float[3];
     final float[] hsvValues2 = new float[3];
 
     public CarouselSubsystem1(HardwareMap hardwareMap) {
-
 
         carouselServo = hardwareMap.get(Servo.class, "carouselServo");
         carouselFeedback = hardwareMap.get(AnalogInput.class, "axonFeedback");
@@ -292,7 +292,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     intakeIsOn = false;
                     // După pregătire, ne întoarcem la IDLE. Intake-ul va fi oricum dezactivat
                     // de către 'prepareOuttake' (prin autoEnabled = false).
-                    intakeState = IntakeState.IDLE;
+                    intakeReverseTimer.reset();
+                    intakeState = IntakeState.REVERSE_INTAKE;
 
                 } else {
                     // Mai este loc. Găsim următorul slot liber.
@@ -316,6 +317,14 @@ public class CarouselSubsystem1 extends SubsystemBase {
                     // Mașina de stări de intake și-a terminat treaba pentru această bilă.
                     // Acum așteaptă dispariția bilei curente și apariția uneia noi.
                     intakeState = IntakeState.IDLE;
+                }
+                break;
+
+            //reversing the intake after we load all balls
+            case REVERSE_INTAKE:
+                if(intakeReverseTimer.milliseconds() > 300){
+                    intakeState = IntakeState.IDLE;
+
                 }
                 break;
 

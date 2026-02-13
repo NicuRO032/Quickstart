@@ -54,12 +54,12 @@ public class AutoVision13 extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
-    private final Pose START_POSE = new Pose(60, 8, Math.toRadians(90));
-    private final Pose SCORE_POSE = new Pose(55, 10, Math.toRadians(115));
+    private final Pose START_POSE = new Pose(60, 10, Math.toRadians(90));
+    private final Pose SCORE_POSE = new Pose(56, 15.5, Math.toRadians(115));
     private final Pose PARK_POSE  = new Pose(46, 10, Math.toRadians(110));
     private final Pose ControlPoint1 = new Pose(65,35);
     private final Pose ControlPoint2 = new Pose(19,45);
-    private final Pose GRAB1_END_POSE  = new Pose(9, 35, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE  = new Pose(9, 31, Math.toRadians(180));
     private final Pose GRAB2_END_POSE  = new Pose(9, 5, Math.toRadians(210));
 
     private PathChain scorePreloadPath;
@@ -97,6 +97,7 @@ public class AutoVision13 extends CommandOpMode {
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
                 .setLinearHeadingInterpolation(GRAB1_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .build();
+
         grab2Path = follower.pathBuilder()
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
@@ -176,9 +177,9 @@ public class AutoVision13 extends CommandOpMode {
 
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        carousel.setShooterForAutoRPM(4600);
+        carousel.setShooterForAutoRPM(4700);
         turret.setTargetAngle(-10);
-        turret.setShooterAngle(0.15);
+        turret.setShooterAngle(0.21);
 
 
 
@@ -243,6 +244,7 @@ public class AutoVision13 extends CommandOpMode {
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     //--- CICLUL 1: SCOR PRELOAD ---
                     new InstantCommand(() -> follower.setMaxPower(1)),
+                    new InstantCommand(() -> turret.setTargetAngle(-10)),
                     new ParallelCommandGroup(
                             // Pregătește caruselul pentru outtake și pornește shooter-ul
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
@@ -262,14 +264,13 @@ public class AutoVision13 extends CommandOpMode {
                    new InstantCommand(() -> follower.setMaxPower(1)),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new InstantCommand(() -> intake.setPower(-1)),
+                    new InstantCommand(() -> intake.setPower(-0.7)),
 
-                    new FollowPathCommand(follower, grab1Path, true),
-                    new InstantCommand(() -> follower.setMaxPower(0.3)),
                     new ParallelRaceGroup(
-                            new WaitUntilCommand(carousel::allSlotsOccupied),
-                            new WaitCommand(1000)
+                            new FollowPathCommand(follower, grab1Path, true)
+//                            new InstantCommand(carousel::allSlotsOccupied)
                     ),
+                    new InstantCommand(() -> follower.setMaxPower(0.3)),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new ParallelCommandGroup(
