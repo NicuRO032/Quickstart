@@ -5,7 +5,6 @@ package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 import android.annotation.SuppressLint;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -24,12 +23,10 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @TeleOp(name="TeleOp_Final_cu_Turela")
-@Config
 public class TeleOpCarousel1 extends OpMode {
-    private enum Alliance { BLUE, RED, UNKNOWN }
-    private Alliance selectedAlliance = Alliance.UNKNOWN;
-    private int targetAprilTagId = 0; // ID-ul țintei, 0 înseamnă niciuna
-
+    // VARIABILE  PENTRU ALINIERE AUTOMATĂ
+    private final ElapsedTime alignTimer = new ElapsedTime();
+    private boolean aligningCarousel = false;
     private Follower follower;
     public static Pose startingPose;
     private boolean slowMode = false;
@@ -53,8 +50,6 @@ public class TeleOpCarousel1 extends OpMode {
     private final ElapsedTime lockOnTimer = new ElapsedTime();
     public static boolean intakeIsOn = false;
 
-    public static double SHOOT_RPM = 3000, ANGLE_SHOOT = 0;
-
     @Override
     public void init() {
         CommandScheduler.getInstance().reset();
@@ -71,109 +66,95 @@ public class TeleOpCarousel1 extends OpMode {
         turret = new TurretSubsystem(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
-        carousel.isTeleOp = true;
 
-        //carousel.resetForStart();
-        carousel.activateIntake();
+        carousel.resetForStart();
+        //carousel.activateIntake();
 
         dashboard = FtcDashboard.getInstance();
         CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
 
-        // Afișăm instrucțiunile o singură dată dacă alianța nu a fost încă selectată
-        if (selectedAlliance == Alliance.UNKNOWN) {
-            telemetry.addLine(">>> ALEGE ALIANTA <<<");
-            telemetry.addLine("Apasa 'X' (Gamepad 1 sau 2) pentru ALBASTRU");
-            telemetry.addLine("Apasa 'B' (Gamepad 1 sau 2) pentru ROSU");
-        }
-
-        // Verificăm apăsările de butoane în fiecare ciclu al buclei de init
-        if (gamepad1.x || gamepad2.x) {
-            if (selectedAlliance != Alliance.BLUE) {
-                selectedAlliance = Alliance.BLUE;
-                targetAprilTagId = 20; // ID-ul pentru turnul albastru
-                gamepad1.rumble(250);
-                gamepad2.rumble(250);
-            }
-        }
-        if (gamepad1.b || gamepad2.b) {
-            if (selectedAlliance != Alliance.RED) {
-                selectedAlliance = Alliance.RED;
-                targetAprilTagId = 24; // ID-ul pentru turnul roșu
-                gamepad1.rumble(500);
-                gamepad2.rumble(500);
-            }
-        }
-
-        // Actualizăm telemetria pentru a arăta starea curentă
-        telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
-        telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
-
-        telemetry.addData("Analog Feedback:", "%.3f V", carousel.getCurrentFeedbackMv());
-        telemetry.addLine("INIT: pentru START, PUNE SLOTUL 1 in fata cu feedback aprox. 1400");
-        if (Math.abs(carousel.getCurrentFeedbackMv()-1400)>200){
-            telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            telemetry.addLine("!!!!!!Pozitionare incorecta, STOP si reluati!!!!!!");
-            telemetry.addLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        }
-        else{
-            telemetry.addLine("PUTEM INCEPE...");
-            telemetry.addLine("Dupa START, slotul 0 va veni in fata...");
-
-        }
-
-
-        telemetry.addLine("========================================");
-        telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
-        telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
-        telemetry.addLine("GATA DE START!");
-        telemetry.addLine("========================================");
+        telemetry.addLine("INIT: gata de START...Alinierea va porni automat.");
         telemetry.update();
-
-        vision.disableProcesor();
+        carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS);
     }
 
     @Override
     public void start() {
-        carousel.resetForStart();
         follower.startTeleopDrive();
+        // -- PORNEȘTE ALINIEREA AUTOMATĂ --
+        carousel.deactivateIntake(); // O siguranță în plus. Setează autoEnabled = false.
+        carousel.jogServoPos(CarouselSubsystem1.JOG_ON_POS); // Activează servo-ul de blocare
+
+        aligningCarousel = true; // Activează flag-ul pentru loop()
+        alignTimer.reset(); // Pornește cronometrul
     }
 
     @Override
     public void loop() {
         CommandScheduler.getInstance().run();
-        follower.update();
+        // --- SECVENȚĂ DE ALINIERE AUTOMATĂ LA START ---
+        if (aligningCarousel) {
+            // Oprește complet șasiul pe durata alinierii
+            follower.setTeleOpDrive(0, 0, 0, true);
 
-        if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
-            follower.setTeleOpDrive(
+            double alignTime = alignTimer.seconds();
+
+            // Rotește motorul doar în primele 1.5 secunde
+            if (alignTime < 1.5) {
+                // Dă putere constantă caruselului pentru a-l împinge în opritorul fizic
+                carousel.jogCarousel(-0.1);
+            }
+
+            // Etapa 1: Finalizarea alinierii (după 1.5 secunde)
+            if (alignTime >= 1.5) {
+                carousel.jogCarousel(0); // Oprește puterea manuală
+                //carousel.confirmAlignment(); // Resetează encoderul ȘI reactivează automatizarea
+            }
+
+            // Etapa 2: Eliberarea servo-ului și finalizarea (după 1.7 secunde)
+            if (alignTime >= 1.7) {
+                carousel.jogServoPos(CarouselSubsystem1.JOG_OFF_POS); // Eliberează servo-ul
+                carousel.confirmAlignment();
+                aligningCarousel = false; // Termină secvența de aliniere
+
+                // Notificare pentru șofer
+                gamepad1.rumble(0.8, 0.8, 400);
+                gamepad1.setLedColor(0, 1, 0, -1);
+            }
+        }
+        if (!aligningCarousel) {
+            follower.update();
+
+            if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
+                follower.setTeleOpDrive(
                         0, 0, 0, true
-            );
-        } else {
-            if (!slowMode) follower.setTeleOpDrive(
+                );
+            } else {
+                if (!slowMode) follower.setTeleOpDrive(
                         -gamepad1.left_stick_y,
                         -gamepad1.left_stick_x,
                         gamepad1.left_trigger - gamepad1.right_trigger,
                         true
-            );
-            else follower.setTeleOpDrive(
+                );
+                else follower.setTeleOpDrive(
                         -gamepad1.left_stick_y * slowModeMultiplier,
                         -gamepad1.left_stick_x * slowModeMultiplier,
                         (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
                         true
-            );
-        }
+                );
+            }
 
-        if (gamepad1.rightBumperWasPressed()) {
+            if (gamepad1.rightBumperWasPressed()) {
                 slowMode = !slowMode;
+            }
+
+            driver1.readButtons();
+            driver2.readButtons();
+
+            handleDriver1Controls();
+            handleDriver2Controls();
         }
-
-        driver1.readButtons();
-        driver2.readButtons();
-
-        handleDriver1Controls();
-        handleDriver2Controls();
-
         sendTelemetry();
-
     }
 
     private void handleDriver1Controls() {
@@ -193,6 +174,8 @@ public class TeleOpCarousel1 extends OpMode {
                 intake.stop();
             }
         }
+
+
 
         if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {
             carousel.abortAll();
@@ -219,141 +202,81 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (carousel.getOuttakeState().equals("OUT_IDLE")) outtakePrepared = false;
     }
+
     private void handleDriver2Controls() {
-        // --- Control Unghi Shooter (păstrat) ---
-        if (driver2.wasJustPressed(GamepadKeys.Button.Y))
-            turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
-        if (driver2.wasJustPressed(GamepadKeys.Button.B))
-            turret.setShooterAngle(0.5); // Unghi inaltime medie
-        if (driver2.wasJustPressed(GamepadKeys.Button.A))
-            turret.setShooterAngle(0.0); // Unghi pentru inaltime mare
+        // --- Shooter Angle Control ---
+        turret.setManualShooterAngle(-driver2.getLeftY());
 
-        // --- Control Outtake (păstrat) ---
-        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
-            if (carousel.canSkipShoot()) {
-                carousel.skipTrow();
-            } else {
-                carousel.triggerShoot();
-            }
-        }
+        if(driver2.wasJustPressed(GamepadKeys.Button.Y)) turret.setShooterAngle(0.65); // Unghi pentru inaltime mica
+        if(driver2.wasJustPressed(GamepadKeys.Button.B)) turret.setShooterAngle(0.5); // Unghi inaltime medie
+        if(driver2.wasJustPressed(GamepadKeys.Button.A)) turret.setShooterAngle(0.0); // Unghi pentru inaltime mare
 
-        // --- Comutare Mod Turelă (Manual <-> Auto-Aim) ---
+
+        // --- Turret Rotation and Outtake ---
+        if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) carousel.triggerShoot();
+
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
-                // Permitem trecerea la auto-aim DOAR dacă o alianță a fost selectată în init()
-                if (selectedAlliance != Alliance.UNKNOWN) {
-                    vision.enableProcesor();
-                    turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
-                }
+                turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
             } else {
-                // Ieșim din modul auto-aim și ne întoarcem la manual
-                vision.disableProcesor();
                 turretTeleOpState = TurretTeleOpState.MANUAL;
-                turret.setManualControl(0); // Oprește mișcarea turelei la ieșirea din mod
+                turret.setManualControl(0);
             }
         }
 
         AprilTagDetection bestTag = vision.getBestDetection();
-        // NOU: 'hasValidTarget' verifică acum și ID-ul țintei selectate la inițializare
-        boolean hasValidTarget = (bestTag != null && bestTag.metadata != null && bestTag.id == targetAprilTagId);
+        boolean hasValidTarget = (bestTag != null && bestTag.metadata != null && (bestTag.id == 20 || bestTag.id == 24));
 
         switch (turretTeleOpState) {
             case MANUAL:
-                driver2.gamepad.setLedColor(0, 1, 0, -1); // Verde pentru control Manual
-
-                // Control manual cu joystick-ul (păstrat)
+                driver2.gamepad.setLedColor(0, 1, 0, -1);
                 turret.setManualControl(-driver2.getRightX());
-
-                // Comenzi rapide manuale cu DPAD (păstrate)
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_UP)) turret.setTargetAngle(0.0);
-                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT))
-                    turret.setTargetAngle(-90.0);
-                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT))
-                    turret.setTargetAngle(90.0);
-
-                // Comanda de ochire manuală la ținta vizibilă (păstrată)
-                // Aceasta va ochi orice tag vizibil, indiferent de alianță. Util pentru testare.
+                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) turret.setTargetAngle(-90.0);
+                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) turret.setTargetAngle(90.0);
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
                     AprilTagDetection currentTag = vision.getBestDetection();
+                    // Verificăm dacă avem o țintă validă înainte de a comanda mișcarea
                     if (currentTag != null && currentTag.metadata != null) {
-                        double targetAngle = turret.getCurrentAngle() - currentTag.ftcPose.bearing;
+                        // Calculăm unghiul final: poziția curentă + corecția necesară
+                        double targetAngle = turret.getCurrentAngle() + currentTag.ftcPose.bearing;
                         turret.setTargetAngle(targetAngle);
                     }
                 }
                 break;
 
             case SEMI_AUTO_SEARCHING:
-                driver2.gamepad.setLedColor(1, 0, 0, -1); // Roșu pentru Căutare
-
-                // Permite controlul manual cu joystick-ul PÂNĂ când ținta este găsită
-                turret.setManualControl(-driver2.getRightX());
-
-                // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
-                if (bestTag != null && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
-                    double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(-0.0302055 * x * x + 30.9530 * x + 2400.77337);
-                    turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x - 0.184169);
-                }
-
-                // Dacă am găsit ȚINTA CORECTĂ, trecem la LOCKING
+                driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if (hasValidTarget) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
-                    driver2.gamepad.rumble(50);
+                    driver2.gamepad.rumble(50);//am miscorat valoarea ca sa nu blochez sistemul
                     lockOnTimer.reset();
-                    // NOU: Apelăm commandAutoAim cu ID-ul țintei
-                    turret.commandAutoAim(bestTag, targetAprilTagId);
+                    turret.commandAutoAim(bestTag);
+                } else {
+                    turret.setManualControl(-driver2.getRightX());
                 }
                 break;
 
             case SEMI_AUTO_LOCKING:
-                // ▼▼▼ AICI ESTE MODIFICAREA PRINCIPALĂ ▼▼▼
-                // Verificăm MAI ÎNTÂI dacă avem o țintă validă.
+                driver2.gamepad.setLedColor(1, 0, 0, -1);
                 if (hasValidTarget) {
-                    // ---- Dacă avem țintă, executăm toată logica de ochire și feedback ----
-
-                    // 1. Schimbăm culoarea LED-ului în funcție de precizie
+                    turret.commandAutoAim(bestTag);
                     double bearingError = bestTag.ftcPose.bearing;
+
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
-                        driver2.gamepad.setLedColor(0, 0, 1, -1); // Albastru pentru Lock-On reușit
-                    } else {
-                        driver2.gamepad.setLedColor(1, 0.5, 0, -1); // Portocaliu pentru Ajustare
-                    }
-
-                    // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
-                    if (carousel.canChangeRPM()) {
-                        double x = vision.getDistance();
-                        carousel.setShooterTargetRPM(-0.0302055 * x * x + 30.9530 * x + 2400.77337);
-                        turret.setShooterAngle(-0.0000824054 * x * x + 0.0132998 * x - 0.184169);
-                    }
-
-                    // 3. Comandăm turelei să continue ochirea
-                    turret.commandAutoAim(bestTag, targetAprilTagId);
-
-                    // 4. Activăm rumble-ul dacă suntem pe țintă de suficient timp
-                    if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
-                        if (lockOnTimer.milliseconds() > 100) { // Am văzut că ai modificat la 100ms
+                        if (lockOnTimer.milliseconds() > 500) {
                             driver2.gamepad.rumble(0.7, 0.7, 200);
                         }
                     } else {
-                        // Dacă am ieșit din toleranță, resetăm cronometrul
                         lockOnTimer.reset();
                     }
-
                 } else {
-                    // ---- Dacă am pierdut ținta (bestTag este null sau are ID greșit) ----
-
-                    // Trecem înapoi la starea de căutare
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
-                    // Oprim mișcarea automată a turelei. Acum poate fi controlată manual cu joystick-ul.
                     turret.setManualControl(0);
-                    // Setăm LED-ul pe roșu pentru a indica starea de căutare
-                    driver2.gamepad.setLedColor(1, 0, 0, -1);
                 }
                 break;
-
         }
     }
-
 
     @SuppressLint("DefaultLocale")
     private void sendTelemetry() {
@@ -389,17 +312,13 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("09. LogicalIndex", carousel.getLogicalIndex());
         packet.put("10. Outtake State", carousel.getOuttakeState());
 **/
-
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
+        packet.put("01.Global index", carousel.getGlobalIndex());
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
-
-        packet.put("040.Carousel Target Feedback (mV)", String.format("%.3f", carousel.getTargetFeedbackMv()));
-        packet.put("041.Carousel Current Feedback (mV)", String.format("%.3f", carousel.getCurrentFeedbackMv()));
-        packet.put("042.Carousel Feedback Error (mV)", String.format("%.3f", carousel.getFeedbackError()));
-        packet.put("043.Carousel At Target", carousel.atTarget()); // Foarte util de monitorizat
-
-
+        packet.put("03.CarouselTarget Position", carousel.getTargetPosition());
+        packet.put("04.CarouselActual Position", carousel.getCurrentPosition());
+        packet.put("041.Carousel PID Error", carousel.getPIDError());
         packet.put("050. Main Distance (mm)", carousel.getMainDistance());
         packet.put("051. Color1 Distance (mm)", String.format("%.3f", carousel.getColor1Distance()));
         packet.put("052. Color2 Distance (mm)", String.format("%.3f", carousel.getColor2Distance()));
@@ -415,10 +334,7 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("14.Distance: ", vision.getDistance());
         packet.put("15.X:", vision.getLastX());
         packet.put("16.Y:", vision.getLastY());
-        packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
-        packet.put("18.Turret Angle:", turret.getTargetAngle());
-        packet.put("18.AprilTag Bearing:", vision.getLastBearing());
-
+        packet.put("17.Angle:", turret.getCurrentShooterAngle());
 
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
