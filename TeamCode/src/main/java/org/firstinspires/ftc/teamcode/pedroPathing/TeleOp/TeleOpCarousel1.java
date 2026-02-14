@@ -67,10 +67,12 @@ public class TeleOpCarousel1 extends OpMode {
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
-        carousel = new CarouselSubsystem1(hardwareMap);
+        intake = new IntakeSubsystem1(hardwareMap);
+        carousel = new CarouselSubsystem1(hardwareMap, intake);
+        //carousel = new CarouselSubsystem1(hardwareMap);
         turret = new TurretSubsystem(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
-        intake = new IntakeSubsystem1(hardwareMap);
+        //intake = new IntakeSubsystem1(hardwareMap);
         carousel.isTeleOp = true;
 
         //carousel.resetForStart();
@@ -187,11 +189,21 @@ public class TeleOpCarousel1 extends OpMode {
             if (driver1.wasJustPressed(GamepadKeys.Button.A)) {
                 intakeIsOn = !intakeIsOn;
             }
-            if (intakeIsOn) {
-                intake.setPower(-0.8);
-            } else {
-                intake.stop();
+
+            // Obținem starea mașinii de stări de intake din carusel
+            CarouselSubsystem1.IntakeState currentIntakeState = carousel.getIntakeStateEnum();
+
+            // Acționăm asupra motorului DOAR dacă caruselul este în starea IDLE (așteptare).
+            // Astfel, nu interferăm cu stările STORE_AND_ADVANCE sau REVERSE_INTAKE.
+            if (currentIntakeState == CarouselSubsystem1.IntakeState.IDLE) {
+                if (intakeIsOn) {
+                    intake.setPower(-0.8); // Pornește intake-ul la comanda șoferului
+                } else {
+                    intake.stop(); // Oprește intake-ul la comanda șoferului
+                }
             }
+            // Dacă starea NU este IDLE, înseamnă că subsistemul Carousel are controlul.
+            // Nu facem nimic și îl lăsăm să-și termine treaba (ex: să ruleze în marșarier).
         }
 
         if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {

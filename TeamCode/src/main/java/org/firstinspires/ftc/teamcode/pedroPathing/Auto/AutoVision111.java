@@ -159,9 +159,10 @@ public class AutoVision111 extends CommandOpMode {
         dashboard = FtcDashboard.getInstance();
         follower = Constants.createFollower(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
-        carousel = new CarouselSubsystem1(hardwareMap);
+        //carousel = new CarouselSubsystem1(hardwareMap);
         turret = new TurretSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
+        carousel = new CarouselSubsystem1(hardwareMap, intake);
 
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat

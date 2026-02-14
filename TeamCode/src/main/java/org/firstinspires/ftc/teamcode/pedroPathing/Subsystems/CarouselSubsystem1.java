@@ -87,6 +87,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final DigitalChannel pusherMagnetSensor;
 
     private final VoltageSensor batteryVoltageSensor;
+    private final IntakeSubsystem1 intake;
 
     /* ================= STATES ================= */
     public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE, REVERSE_INTAKE,}
@@ -124,7 +125,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     final float[] hsvValues1 = new float[3];
     final float[] hsvValues2 = new float[3];
 
-    public CarouselSubsystem1(HardwareMap hardwareMap) {
+    public CarouselSubsystem1(HardwareMap hardwareMap, IntakeSubsystem1 intake) {
+        this.intake = intake;
 
         carouselServo = hardwareMap.get(Servo.class, "carouselServo");
         carouselFeedback = hardwareMap.get(AnalogInput.class, "axonFeedback");
@@ -284,14 +286,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
                 // Verificăm dacă am umplut caruselul DUPĂ ce am adăugat bila curentă.
                 if (allSlotsOccupied()) {
-                    /**
-                     * STAREA 3: Toate sloturile sunt ocupate.
-                     * Pregătim mașina de stări pentru outtake.
-                     */
+                    // Caruselul s-a umplut.
+                    autoEnabled = false; // Oprește ciclul automat
                     prepareOuttake(activePattern);
-                    intakeIsOn = false;
-                    // După pregătire, ne întoarcem la IDLE. Intake-ul va fi oricum dezactivat
-                    // de către 'prepareOuttake' (prin autoEnabled = false).
+                    intakeIsOn = false; // Setează flag-ul pentru TeleOp
+
+                    // Comandă direct inversarea motorului
+                    intake.setPower(0.7); // Putere pozitivă pentru a scoate bila
                     intakeReverseTimer.reset();
                     intakeState = IntakeState.REVERSE_INTAKE;
 
@@ -322,9 +323,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
             //reversing the intake after we load all balls
             case REVERSE_INTAKE:
-                if(intakeReverseTimer.milliseconds() > 300){
-                    intakeState = IntakeState.IDLE;
-
+                // Așteptăm să treacă timpul de inversare
+                if (intakeReverseTimer.milliseconds() > 300) {
+                    intake.stop(); // Oprim motorul de intake
+                    intakeState = IntakeState.IDLE; // Revenim la starea de așteptare
                 }
                 break;
 
@@ -604,6 +606,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public double getFeedbackError() {
         double currentMilliVolts = carouselFeedback.getVoltage() * 1000.0;
         return currentMilliVolts - targetFeedbackMv;
+    }
+
+    public IntakeState getIntakeStateEnum() {
+        return this.intakeState;
     }
 
 // --- De asemenea, adaugă aceste funcții ajutătoare pentru telemetrie ---
