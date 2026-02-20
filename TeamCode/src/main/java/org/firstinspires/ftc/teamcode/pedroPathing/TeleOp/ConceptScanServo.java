@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -18,8 +19,8 @@ import com.seattlesolvers.solverslib.controller.PIDController;
 @Config
 public class ConceptScanServo extends LinearOpMode {
 
-    private Servo servo;
-    private DcMotorEx shooterMotor;
+    private Servo servo1, servo2;
+    private DcMotorEx shooterMotor1, shooterMotor2;
     private AnalogInput analogFeedback;
     private FtcDashboard dashboard;
 
@@ -27,10 +28,10 @@ public class ConceptScanServo extends LinearOpMode {
     public static double servoPos = 0.5;   // Poziția comandată pentru servo
 
     // --- Constante și Variabile pentru Shooter ---
-    public static double SHOOTER_kP = 0.001;
+    public static double SHOOTER_kP = 0.003;
     public static double SHOOTER_kI = 0.0;
-    public static double SHOOTER_kD = 0.000001;
-    public static double SHOOTER_kF = 0.00045; // Coeficient Feedforward
+    public static double SHOOTER_kD = 0.00001;
+    public static double SHOOTER_kF = 0.00046; // Coeficient Feedforward
     public static double TARGET_SHOOTER_RPM = 3000.0; // Ținta pentru shooter, în RPM
     public static final double SHOOTER_MOTOR_CPR = 28.0; // Counts Per Revolution pentru motorul de shooter
 
@@ -50,19 +51,29 @@ public class ConceptScanServo extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         // --- Inițializare Hardware ---
-        servo = hardwareMap.get(Servo.class, "carouselServo");
+        servo1 = hardwareMap.get(Servo.class, "carouselServo1");
+        servo2 = hardwareMap.get(Servo.class, "carouselServo2");
+
         analogFeedback = hardwareMap.get(AnalogInput.class, "axonFeedback");
-        shooterMotor = hardwareMap.get(DcMotorEx.class, "motorShooter");
+        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motorShooter1");
+        shooterMotor2 = hardwareMap.get(DcMotorEx.class, "motorShooter2");
 
         // --- Configurare Shooter ---
-        shooterMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        shooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterMotor1.setDirection(DcMotorEx.Direction.REVERSE);
+        shooterMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        shooterMotor2.setDirection(DcMotorEx.Direction.FORWARD);
+        shooterMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         shooterController = new PIDController(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
 
         // --- Inițializare Dashboard și poziție inițială ---
         dashboard = FtcDashboard.getInstance();
-        servo.setPosition(servoPos);
+        servo1.setPosition(servoPos);
+        servo2.setPosition(servoPos);
+
         telemetry.addData("Status", "Initializat. Astept START.");
         telemetry.update();
 
@@ -75,7 +86,7 @@ public class ConceptScanServo extends LinearOpMode {
             shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
 
             // Citim viteza curentă a motorului în tick-uri/secundă
-            double currentShooterVelo = shooterMotor.getVelocity();
+            double currentShooterVelo = shooterMotor1.getVelocity();
             // Convertim turația țintă din RPM în tick-uri/secundă
             double targetShooterVelo = rpmToTicksPerSecond(TARGET_SHOOTER_RPM);
 
@@ -86,7 +97,8 @@ public class ConceptScanServo extends LinearOpMode {
 
             // Puterea finală este suma dintre Feedforward și corecția PID
             double shooterPower = feedforward + pidCorrection;
-            shooterMotor.setPower(shooterPower);
+            shooterMotor1.setPower(shooterPower);
+            shooterMotor2.setPower(shooterPower);
 
 
             // ================== LOGICA PENTRU SERVO (Carusel) ==================
@@ -109,7 +121,8 @@ public class ConceptScanServo extends LinearOpMode {
 
             // Limităm poziția servomotorului între 0 și 1
             servoPos = Math.max(0, Math.min(1, servoPos));
-            servo.setPosition(servoPos);
+            servo1.setPosition(servoPos);
+            servo2.setPosition(servoPos);
 
 
             // ================== TELEMETRIE ==================
