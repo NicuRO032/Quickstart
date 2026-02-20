@@ -31,12 +31,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE CARUSEL SERVO ================= */
     // Vectori pentru pozițiile de Intake (servo) și Outtake (servo)
-    private static final double[] INTAKE_POSITIONS = {0.156, 0.414, 0.666};
-    private static final double[] OUTTAKE_POSITIONS = {0.542, 0.796, 0.286};
+    private static final double[] INTAKE_POSITIONS = {0.262, 0.518, 0.774};
+    private static final double[] OUTTAKE_POSITIONS = {0.646, 0.902, 0.388};
 
     // Vectori pentru valorile de feedback corespunzătoare (în mV)
-    private static final double[] INTAKE_FEEDBACK_MV = {663.0, 1400.0, 2112.0};
-    private static final double[] OUTTAKE_FEEDBACK_MV = {1760.0, 2483.0, 1032.0};
+    private static final double[] INTAKE_FEEDBACK_MV = {963.0, 1693.0, 2418.0};
+    private static final double[] OUTTAKE_FEEDBACK_MV = {2056.0, 2780.0, 1326.0};
 
     // Toleranța pentru atTarget, în milivolți (mV)
     // Crește toleranța: cu cât e mai mare, cu atât consideră mai repede că "a ajuns"
@@ -46,13 +46,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static long AT_TARGET_STABILITY_MS = 20; // de la 50 // Timpul de stabilitate (păstrat)
 
     // shooter
-    public static double SHOOTER_kP = 0.001;
+    public static double SHOOTER_kP = 0.003;
     public static double SHOOTER_kI = 0.0;
-    public static double SHOOTER_kD = 0.000001;
-    public static double SHOOTER_kF = 0.00045;
+    public static double SHOOTER_kD = 0.00001;
+    public static double SHOOTER_kF = 0.00046;
 
     public static final double SHOOTER_MOTOR_CPR = 28.0;
-    public static double DEFAULT_SHOOTER_RPM = 4500.0;
+    public static double DEFAULT_SHOOTER_RPM = 4000.0;
     //public static double DEFAULT_SHOOTER_RPM = 1500.0;
     public static double SHOT_CONFIRM_DIP_PERCENT = 0.05; // Acum se aplică la RPM
     private double rpmBeforePush = 0.0;
@@ -78,8 +78,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
     /* ================= HARDWARE ================= */
-    private final DcMotorEx shooterMotor;
-    private final Servo carouselServo;
+    private final DcMotorEx shooterMotor1, shooterMotor2;
+    private final Servo carouselServo1, carouselServo2;
+
     private final AnalogInput carouselFeedback;
     private final DistanceSensor entrySensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
@@ -128,10 +129,12 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public CarouselSubsystem1(HardwareMap hardwareMap, IntakeSubsystem1 intake) {
         this.intake = intake;
 
-        carouselServo = hardwareMap.get(Servo.class, "carouselServo");
+        carouselServo1 = hardwareMap.get(Servo.class, "carouselServo1");
+        carouselServo2 = hardwareMap.get(Servo.class, "carouselServo2");
         carouselFeedback = hardwareMap.get(AnalogInput.class, "axonFeedback");
 
-        shooterMotor = hardwareMap.get(DcMotorEx.class, "motorShooter");
+        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motorShooter1");
+        shooterMotor2 = hardwareMap.get(DcMotorEx.class, "motorShooter2");
         entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
@@ -145,9 +148,14 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
 
-        shooterMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        shooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterMotor1.setDirection(DcMotorEx.Direction.REVERSE);
+        shooterMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        shooterMotor2.setDirection(DcMotorEx.Direction.FORWARD);
+        shooterMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         shooterController = new PIDController(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
 
 
@@ -168,7 +176,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void setShooterTargetRPM(double rpm) { this.currentTargetRPM = rpm; }// Metodă publică pentru a seta viteza shooter-ului din exterior
     public void setShooterForAutoRPM(double rpm) {this.DEFAULT_SHOOTER_RPM = rpm;}
     public double getShooterTargetRPM() { return this.currentTargetRPM; }
-    public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor.getVelocity()); }
+    public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor1.getVelocity()); }
     public double getRpmBeforePush() { return rpmBeforePush; }
     public boolean isPusherRetracted() {
         // Senzorii digitali (Hall effect) de obicei returnează 'false' când magnetul este prezent.
@@ -190,7 +198,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
             targetFeedbackMv = INTAKE_FEEDBACK_MV[targetSlot];
         }
 
-        carouselServo.setPosition(targetServoPosition); // Comandă mișcarea servoului
+        carouselServo1.setPosition(targetServoPosition);
+        carouselServo2.setPosition(targetServoPosition);
+
         atTargetTimer.reset(); // Resetăm cronometrul de stabilitate
     }
 
@@ -698,12 +708,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void periodic() {
                 // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
         shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
-        double currentShooterVelo = shooterMotor.getVelocity(); // În ticks/sec
+        double currentShooterVelo = shooterMotor1.getVelocity(); // În ticks/sec
         double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
         double pidCorrection = shooterController.calculate(currentShooterVelo,targetShooterVelo);
         double feedforward = targetShooterVelo * SHOOTER_kF;
         double shooterPower = feedforward + pidCorrection;
-        shooterMotor.setPower(shooterPower);
+        shooterMotor1.setPower(shooterPower);
+        shooterMotor2.setPower(shooterPower);
 
 
 
