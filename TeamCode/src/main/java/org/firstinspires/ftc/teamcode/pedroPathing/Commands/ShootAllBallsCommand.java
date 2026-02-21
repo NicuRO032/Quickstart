@@ -1,29 +1,23 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Commands;
 
-import com.seattlesolvers.solverslib.command.CommandBase;
 import com.seattlesolvers.solverslib.command.InstantCommand;
-import com.seattlesolvers.solverslib.command.ParallelRaceGroup;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
-import com.seattlesolvers.solverslib.command.WaitCommand;
 import com.seattlesolvers.solverslib.command.WaitUntilCommand;
-
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 
-// În ShootAllBallsCommand.java
 public class ShootAllBallsCommand extends SequentialCommandGroup {
 
-    public static final long SHOOTER_TIMEOUT_MS = 3000; // Mărește timeout-ul la 3s pentru siguranță
+    public static final long SHOOTER_TIMEOUT_MS = 3000;
 
     public ShootAllBallsCommand(CarouselSubsystem1 carousel) {
         addCommands(
-                // Așteaptă până când caruselul e gata de tragere SAU trece timeout-ul
+                // 1. Așteaptă până când caruselul este pregătit (aliniat și shooter la turație)
                 new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
 
-                // Comandă tragerea
+                // 2. Comandă declanșarea salvei
                 new InstantCommand(carousel::triggerShoot),
 
-                // Așteaptă până când ciclul de outtake se termină complet (revine la IDLE)
-                // MODIFICAT: Comparație directă cu enum-ul pentru siguranță
+                // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
                 new WaitUntilCommand(() -> carousel.getOuttakeStateEnum() == CarouselSubsystem1.OuttakeState.OUT_IDLE)
         );
         addRequirements(carousel);

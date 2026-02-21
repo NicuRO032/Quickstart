@@ -208,8 +208,7 @@ public class AutoVision11 extends CommandOpMode {
         packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
         packet.put("Carousel At Target", carousel.atTarget());
 
-        packet.put("Order", carousel.getOuttakeOrderString());
-        packet.put("Ptr", carousel.getOuttakePtr());
+
 
         packet.put("Slots Occupied", String.format("[%b, %b, %b]",
                 carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));

@@ -242,11 +242,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         // --- Control Outtake (păstrat) ---
         if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
-            if (carousel.canSkipShoot()) {
-                carousel.skipTrow();
-            } else {
-                carousel.triggerShoot();
-            }
+            carousel.triggerShoot();
         }
 
         // --- Comutare Mod Turelă (Manual <-> Auto-Aim) ---
@@ -427,7 +423,6 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("10.Hue2", carousel.getHue2());
         packet.put("11.HueMax", carousel.getHueMax());
         packet.put("12.Slot colors", carousel.getSlotsColorString());
-        packet.put("13.Outtake order string", carousel.getOuttakeOrderString());
         packet.put("14.Distance: ", vision.getDistance());
         packet.put("15.X:", vision.getLastX());
         packet.put("16.Y:", vision.getLastY());
@@ -439,7 +434,7 @@ public class TeleOpCarousel1 extends OpMode {
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
         packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
-        packet.put("Velocity before push", carousel.getRpmBeforePush());
+
 
 /**
         packet.put("14.Turret TeleOp State", turretTeleOpState.name());
