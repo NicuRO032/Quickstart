@@ -83,6 +83,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     private int logicalIndex = 0;
     private double targetServoPosition = 0.0;
+    public static double CAROUSEL_SERVO2_OFFSET = 0.02;
     private double targetFeedbackMv = 0.0;
     private final ElapsedTime atTargetTimer = new ElapsedTime();
     private final ElapsedTime intakeReverseTimer = new ElapsedTime();
@@ -305,7 +306,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         targetServoPosition = position;
         targetFeedbackMv = feedbackMv;
         carouselServo1.setPosition(targetServoPosition);
-        carouselServo2.setPosition(targetServoPosition);
+        carouselServo2.setPosition(targetServoPosition + CAROUSEL_SERVO2_OFFSET);
         atTargetTimer.reset();
     }
 

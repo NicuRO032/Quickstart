@@ -31,11 +31,11 @@ public class TurretSubsystem extends SubsystemBase {
     public static double AIMING_KD = 0.0;  // Previne oscilațiile și stabilizează mișcarea
 
     // --- Constante Unghi Shooter ---
-    public static double ANGLE_MIN_POS = 0.05;
-    public static double ANGLE_MAX_POS = 1.0;
+    public static double ANGLE_MIN_POS = 0.06;
+    public static double ANGLE_MAX_POS = 0.37;
     public static double ANGLE_MANUAL_SENSITIVITY = 0.02;
-    public static double ANGLE_HOME_POS = 0.05;
-    public static double ANGLE_SERVO2_OFFSET = 0.0;
+    public static double ANGLE_HOME_POS = 0.06;
+    public static double ANGLE_SERVO2_OFFSET = 0.7;
 
     // --- Stări și Logică ---
     // Am eliminat SWEEPING_FOR_TAG
