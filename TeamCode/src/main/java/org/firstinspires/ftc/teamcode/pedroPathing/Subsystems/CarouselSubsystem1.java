@@ -76,7 +76,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE, REVERSE_INTAKE}
     private IntakeState intakeState = IntakeState.IDLE;
 
-    public enum OuttakeState { OUT_IDLE, PREPARING_SALVO, SHOOTING_SALVO, FINISHED }
+    public enum OuttakeState { OUT_IDLE, PREPARING_SALVO, RELAXING_SERVO, SHOOTING_SALVO, FINISHED }
     private OuttakeState outtakeState = OuttakeState.OUT_IDLE;
 
     /* ================= LOGIC ================= */
@@ -106,6 +106,19 @@ public class CarouselSubsystem1 extends SubsystemBase {
     final float[] hsvValues1 = new float[3];
     final float[] hsvValues2 = new float[3];
     public boolean isTeleOp = false;
+
+    /* ================= LOGIC PENTRU MIȘCARE LENTĂ SERVO ================= */
+    private enum SlowMoveState {
+        INACTIVE,
+        MOVING
+    }
+    private SlowMoveState slowMoveState = SlowMoveState.INACTIVE;
+
+    private double slowMoveStartPos;
+    private double slowMoveTargetPos;
+    private final ElapsedTime slowMoveTimer = new ElapsedTime();
+    public static double SLOW_MOVE_DURATION_MS = 2000; // Durata în milisecunde pentru mișcarea lentă.
+
     public CarouselSubsystem1(HardwareMap hardwareMap, IntakeSubsystem1 intake) {
         this.intake = intake;
 
@@ -216,13 +229,19 @@ public class CarouselSubsystem1 extends SubsystemBase {
     /**
      * Declanșează salva, dacă sistemul este pregătit.
      */
+
     public void triggerShoot() {
-        if (outtakeState != OuttakeState.PREPARING_SALVO || !atTarget() || !isShooterReady()) return;
+        // Folosim direct funcția helper, care acum are logica corectă.
+        // Dacă nu suntem gata, ieșim.
+        if (!isReadyToShoot()) {
+            return;
+        }
 
         // Comandăm mișcarea la poziția de FINAL a salvei stocate
         goToServoPosition(SALVO_END_POSITIONS[activeSalvoIndex], SALVO_END_FEEDBACK_MV[activeSalvoIndex]);
         outtakeState = OuttakeState.SHOOTING_SALVO;
     }
+
 
     /**
      * Oprește totul și resetează sistemul.
@@ -232,6 +251,52 @@ public class CarouselSubsystem1 extends SubsystemBase {
         autoEnabled = true;
         for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
         resetForStart();
+    }
+
+    /**
+     * Inițiază o mișcare lentă a caruselului de la poziția curentă la o țintă nouă.
+     * @param targetPosition Ținta finală a servoului.
+     */
+    private void startSlowMove(double targetPosition) {
+        // Citim poziția curentă a servoului pentru a ști de unde plecăm.
+        // Folosim targetServoPosition ca o aproximație bună a poziției curente.
+        this.slowMoveStartPos = this.targetServoPosition;
+        this.slowMoveTargetPos = targetPosition;
+        this.slowMoveTimer.reset();
+        this.slowMoveState = SlowMoveState.MOVING;
+    }
+
+    /**
+     * Execută un pas al mișcării lente. Această metodă trebuie apelată continuu în periodic().
+     * Calculează și comandă o nouă poziție intermediară a servoului în fiecare ciclu.
+     */
+    private void handleSlowMove() {
+        if (slowMoveState != SlowMoveState.MOVING) {
+            return; // Nu facem nimic dacă nu suntem în mișcare lentă.
+        }
+
+        double elapsed = slowMoveTimer.milliseconds();
+        // Calculăm progresul mișcării ca un procent (0.0 la 1.0)
+        double progress = Math.min(elapsed / SLOW_MOVE_DURATION_MS, 1.0);
+
+        // Interpolare liniară: calculăm poziția curentă pe baza progresului.
+        double newPosition = slowMoveStartPos + (slowMoveTargetPos - slowMoveStartPos) * progress;
+
+        // Comandăm servoului să meargă la această nouă poziție intermediară.
+        // Folosim o valoare generică pentru feedback, deoarece ținta se schimbă constant.
+        goToServoPosition(newPosition, (slowMoveStartPos + slowMoveTargetPos)/2 * 3000); // Feedback mediu
+
+        // Dacă am ajuns la final (progres >= 1.0), oprim mișcarea lentă.
+        if (progress >= 1.0) {
+
+            double feedbackReduction = 220; // O valoare rotundă, sigură. Poate fi ajustată.
+            double finalTargetFeedback = SALVO_START_FEEDBACK_MV[activeSalvoIndex] - feedbackReduction;
+
+            // Comandăm poziția finală ȘI setăm ținta de feedback corectă.
+            goToServoPosition(slowMoveTargetPos, finalTargetFeedback);
+
+            slowMoveState = SlowMoveState.INACTIVE;
+        }
     }
 
     // Metoda goToSlot devine privată și este înlocuită de goToServoPosition pentru claritate
@@ -389,25 +454,60 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
     }
 
-    private void handleOuttake() {
+    // în CarouselSubsystem1.java, înlocuiește handleOuttake()
+
+    private void handleOuttake() {// Prioritizăm mișcarea lentă. Dacă una e în curs, nu executăm altceva.
+        if (slowMoveState == SlowMoveState.MOVING) {
+            return;
+        }
+
         switch (outtakeState) {
-            case SHOOTING_SALVO:
-                // Verificăm dacă am ajuns la poziția finală a salvei.
+            case OUT_IDLE:
+                // Nu facem nimic, așteptăm comenzi
+                break;
+
+            case PREPARING_SALVO:
+                // STAREA 1: Așteptăm ca servoul să ajungă la poziția de start a salvei.
                 if (atTarget()) {
+                    // A ajuns! Acum pornim cronometrul de 1 secundă.
+                    outtakeTimer.reset();
+                    // Trecem în starea de așteptare/relaxare.
+                    outtakeState = OuttakeState.RELAXING_SERVO;
+                }
+                break;
+
+            case RELAXING_SERVO:
+                // STAREA 2: Am ajuns la țintă și cronometrul a pornit.
+                // Acum așteptăm să treacă 1 secundă.
+                if (outtakeTimer.milliseconds() > 1000) {
+                    // A trecut timpul de stabilizare, Pornim MIȘCAREA LENTĂ de relaxare.
+                    double currentTarget = targetServoPosition;
+                    double newTarget = currentTarget - 0.07; // Micșorăm poziția
+
+                    // Comandăm MIȘCAREA LENTĂ în loc de cea instantanee
+                    startSlowMove(newTarget);
+
+                    // Trecem într-o stare finală de "gata de tragere".
                     outtakeState = OuttakeState.FINISHED;
                 }
                 break;
+
             case FINISHED:
-                // Salva s-a terminat. Oprim și resetăm totul automat.
-                abortAll();
+                // STAREA 3: Sistemul este acum în poziția finală, relaxată, gata de tragere.
+                // Așteptăm ca mișcarea lentă să se termine (slowMoveState devine INACTIVE)
+                // și apoi ca atTarget() să fie adevărat pentru noua poziție.
                 break;
-            case OUT_IDLE:
-            case PREPARING_SALVO:
-            default:
-                // Așteptăm comenzi externe (triggerShoot).
+
+            case SHOOTING_SALVO:
+                // Am comandat mișcarea de tragere. Acum așteptăm să ajungă la final.
+                if (atTarget()) {
+                    // Salva s-a terminat. Resetăm totul.
+                    abortAll();
+                }
                 break;
         }
     }
+
 
 
 
@@ -469,7 +569,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
     }
 
-    public boolean isReadyToShoot() { return outtakeState == OuttakeState.PREPARING_SALVO && atTarget() && isShooterReady(); }
+    public boolean isReadyToShoot() {
+        // Starea trebuie să fie FINISHED, caruselul trebuie să fie stabilizat la ținta relaxată (atTarget)
+        // și shooter-ul să fie la turația corectă.
+        return outtakeState == OuttakeState.FINISHED && atTarget() && isShooterReady();
+    }
     public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 200; }
 
     public OuttakePattern getActivePattern() { return this.activePattern; }
@@ -579,7 +683,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         shooterMotor1.setPower(shooterPower);
         shooterMotor2.setPower(shooterPower);
 
-
+        handleSlowMove();
 
         // Mașinile de stări
         if (outtakeState == OuttakeState.OUT_IDLE) {
