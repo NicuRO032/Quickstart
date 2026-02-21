@@ -35,12 +35,12 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private static final double[] INTAKE_FEEDBACK_MV = {869.0, 1640.0, 2340.0};
 
     // Vectori pentru pozițiile de START ale fiecărei salve. Corespund sloturilor 0, 1, 2
-    public static final double[] SALVO_START_POSITIONS   = {0.224, 0.224,  0.224};
-    public static final double[] SALVO_START_FEEDBACK_MV = {869.0, 869.0, 869.0};
+    public static final double[] SALVO_START_POSITIONS   = {1.0, 1.0,  1.0};
+    public static final double[] SALVO_START_FEEDBACK_MV = {3090.0, 3090.0, 3090.0};
 
     // Vectori pentru pozițiile de FINAL ale fiecărei salve. O valoare mică produce o rotație amplă
-    public static final double[] SALVO_END_POSITIONS     = {0.224,  0.224,  0.224};
-    public static final double[] SALVO_END_FEEDBACK_MV   = {869.0, 869.0, 869.0};
+    public static final double[] SALVO_END_POSITIONS     = {0.155,  0.155,  0.155};
+    public static final double[] SALVO_END_FEEDBACK_MV   = {685.0, 685.0, 685.0};
 
     // Toleranța pentru atTarget
     public static double FEEDBACK_TOLERANCE_MV = 120;
@@ -93,6 +93,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private boolean autoEnabled = true;
     private OuttakePattern activePattern = OuttakePattern.GPP;
     private int activeSalvoIndex = 0; // Indexul salvei (0, 1, 2) care se va executa
+    private boolean needsAutoPrepare = false; //Flag pentru a cere pregătirea automată a outtake-ului
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
     public enum OuttakePattern { GPP, PGP, PPG }
@@ -331,8 +332,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 if (allSlotsOccupied()) {
                     // Caruselul s-a umplut.
                     autoEnabled = false; // Oprește ciclul automat
-                    prepareOuttake(activePattern);
                     intakeIsOn = false; // Setează flag-ul pentru TeleOp
+                    needsAutoPrepare = true;
 
                     // Comandă direct inversarea motorului
                     intake.setPower(0.7); // Putere pozitivă pentru a scoate bila
@@ -581,12 +582,23 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
         // Mașinile de stări
-        if ((outtakeState == OuttakeState.OUT_IDLE) && autoEnabled) handleIntake();
+        if (outtakeState == OuttakeState.OUT_IDLE) {
+            handleIntake();
+        }
         handleOuttake();
         // Acest bloc va rula acum DOAR dacă flag-ul 'isTeleOp' este activat.
         if (isTeleOp && allSlotsOccupied() && outtakeState == OuttakeState.OUT_IDLE && autoEnabled) {
             prepareOuttake(activePattern);
             intakeIsOn = false;
+        }
+
+        if (needsAutoPrepare) {
+            // O executăm DOAR dacă ambele FSM-uri sunt în repaus (IDLE).
+            // Asta garantează că ciclul de REVERSE_INTAKE s-a terminat.
+            if (intakeState == IntakeState.IDLE && outtakeState == OuttakeState.OUT_IDLE) {
+                prepareOuttake(activePattern);
+                needsAutoPrepare = false; // Resetăm flag-ul după ce am pornit pregătirea
+            }
         }
     }
 
