@@ -117,7 +117,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private double slowMoveStartPos;
     private double slowMoveTargetPos;
     private final ElapsedTime slowMoveTimer = new ElapsedTime();
-    public static double SLOW_MOVE_DURATION_MS = 2000; // Durata în milisecunde pentru mișcarea lentă.
+    public static double SLOW_MOVE_DURATION_MS = 1000; // Durata în milisecunde pentru mișcarea lentă.
+    public static double STABILIZATION_DURATION_MS = 1000; // Durata în milisecunde pentru stabilizare parghie.
 
     public CarouselSubsystem1(HardwareMap hardwareMap, IntakeSubsystem1 intake) {
         this.intake = intake;
@@ -469,7 +470,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
             case PREPARING_SALVO:
                 // STAREA 1: Așteptăm ca servoul să ajungă la poziția de start a salvei.
                 if (atTarget()) {
-                    // A ajuns! Acum pornim cronometrul de 1 secundă.
+                    // A ajuns! Acum pornim cronometrul.
                     outtakeTimer.reset();
                     // Trecem în starea de așteptare/relaxare.
                     outtakeState = OuttakeState.RELAXING_SERVO;
@@ -478,8 +479,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
             case RELAXING_SERVO:
                 // STAREA 2: Am ajuns la țintă și cronometrul a pornit.
-                // Acum așteptăm să treacă 1 secundă.
-                if (outtakeTimer.milliseconds() > 1000) {
+                if (outtakeTimer.milliseconds() > STABILIZATION_DURATION_MS) {
                     // A trecut timpul de stabilizare, Pornim MIȘCAREA LENTĂ de relaxare.
                     double currentTarget = targetServoPosition;
                     double newTarget = currentTarget - 0.07; // Micșorăm poziția
