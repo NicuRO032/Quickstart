@@ -202,6 +202,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
 
+
+
     /**
      * Pregătește outtake-ul. Ia decizia inteligentă aici.
      */
@@ -267,6 +269,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         this.slowMoveTimer.reset();
         this.slowMoveState = SlowMoveState.MOVING;
     }
+
+
 
     /**
      * Execută un pas al mișcării lente. Această metodă trebuie apelată continuu în periodic().
@@ -342,6 +346,32 @@ public class CarouselSubsystem1 extends SubsystemBase {
         this.outtakeState = OuttakeState.OUT_IDLE;
         this.autoEnabled = true;
     }
+
+    // --- ADAUGĂ ACESTE VARIABILE LA FINALUL CLASEI ---
+    private int[] outtakeOrder = {2, 1, 0};
+    private int outtakePtr = 0;
+    private boolean triggerReady = false;
+
+    // --- ADAUGĂ ACESTE METODE ---
+
+    public void prepareOuttakeDirect() {
+        setShooterTargetRPM(DEFAULT_SHOOTER_RPM);
+        this.outtakeOrder = new int[]{2, 1, 0}; // Ordinea inversă cerută
+        this.outtakePtr = 0;
+        this.outtakeState = OuttakeState.PREPARING_SALVO;
+        // Mergem la primul slot din listă (care este 2)
+        int firstSlot = outtakeOrder[outtakePtr];
+        goToServoPosition(SALVO_START_POSITIONS[firstSlot], SALVO_START_FEEDBACK_MV[firstSlot]);
+    }
+
+
+
+    public int getOuttakePtr() {
+        return outtakePtr;
+    }
+
+
+
 
     public void activateIntake() { autoEnabled = true; }
     public void deactivateIntake() { autoEnabled = false; }

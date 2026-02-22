@@ -7,17 +7,29 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 
 public class ShootAllBallsCommand extends SequentialCommandGroup {
 
-    public static final long SHOOTER_TIMEOUT_MS = 3000;
+    public static final long SHOOTER_TIMEOUT_MS = 2000;
 
     public ShootAllBallsCommand(CarouselSubsystem1 carousel) {
         addCommands(
-                // 1. Așteaptă până când caruselul este pregătit (aliniat și shooter la turație)
-                new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
+                // 1. Pregătire: Motor ON și setare ordine 2-1-0
+                new InstantCommand(carousel::prepareOuttakeDirect),
 
-                // 2. Comandă declanșarea salvei
+                // --- BILA 1 (Slot 2) ---
+                new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
                 new InstantCommand(carousel::triggerShoot),
 
-                // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
+                // --- BILA 2 (Slot 1) ---
+                // Așteptăm ca pointerul să crească (semn că bila 1 a plecat)
+                new WaitUntilCommand(() -> carousel.getOuttakePtr() == 1).withTimeout(1000),
+                new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
+                new InstantCommand(carousel::triggerShoot),
+
+                // --- BILA 3 (Slot 0) ---
+                new WaitUntilCommand(() -> carousel.getOuttakePtr() == 2).withTimeout(1000),
+                new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
+                new InstantCommand(carousel::triggerShoot),
+
+                // Finalizare
                 new WaitUntilCommand(() -> carousel.getOuttakeStateEnum() == CarouselSubsystem1.OuttakeState.OUT_IDLE)
         );
         addRequirements(carousel);

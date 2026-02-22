@@ -180,7 +180,7 @@ public class AutoVision11 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(3650);
-        turret.setTargetAngle(-55);
+      //  turret.setTargetAngle(-55);
         turret.setShooterAngle(0.12);
         vision.enableProcesor();
 
@@ -232,7 +232,7 @@ public class AutoVision11 extends CommandOpMode {
 
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new InstantCommand(() -> turret.setTargetAngle(-55)),
+                  //  new InstantCommand(() -> turret.setTargetAngle(-55)),
                     //--- CICLUL 1: SCOR PRELOAD ---
                     new ParallelCommandGroup(
                             new FollowPathCommand(follower, scorePreloadPath, false),
