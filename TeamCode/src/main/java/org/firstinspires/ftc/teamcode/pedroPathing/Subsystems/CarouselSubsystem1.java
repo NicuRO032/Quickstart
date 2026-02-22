@@ -31,12 +31,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE CARUSEL SERVO ================= */
     // Vectori pentru pozițiile de Intake (servo) - Rămân la fel
-    private static final double[] INTAKE_POSITIONS = {0.224, 0.48, 0.734};
-    private static final double[] INTAKE_FEEDBACK_MV = {869.0, 1640.0, 2340.0};
+    private static final double[] INTAKE_POSITIONS = {0.210, 0.466, 0.722};
+    private static final double[] INTAKE_FEEDBACK_MV = {838.0, 1550.0, 2277.0};
 
     // Vectori pentru pozițiile de START ale fiecărei salve. Corespund sloturilor 0, 1, 2
     public static final double[] SALVO_START_POSITIONS   = {1.0, 1.0,  1.0};
-    public static final double[] SALVO_START_FEEDBACK_MV = {3090.0, 3090.0, 3090.0};
+    public static final double[] SALVO_START_FEEDBACK_MV = {3100.0, 3100.0, 3100.0};
 
     // Vectori pentru pozițiile de FINAL ale fiecărei salve. O valoare mică produce o rotație amplă
     public static final double[] SALVO_END_POSITIONS     = {0.155,  0.155,  0.155};
@@ -45,6 +45,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     // Toleranța pentru atTarget
     public static double FEEDBACK_TOLERANCE_MV = 120;
     public static long AT_TARGET_STABILITY_MS = 20;
+    public static double CAROUSEL_SERVO2_OFFSET = 0.02;
 
 
     // Constante shooter
@@ -83,7 +84,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     private int logicalIndex = 0;
     private double targetServoPosition = 0.0;
-    public static double CAROUSEL_SERVO2_OFFSET = 0.02;
     private double targetFeedbackMv = 0.0;
     private final ElapsedTime atTargetTimer = new ElapsedTime();
     private final ElapsedTime intakeReverseTimer = new ElapsedTime();

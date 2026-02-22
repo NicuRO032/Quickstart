@@ -25,7 +25,7 @@ public class ConceptScanServo extends LinearOpMode {
 
     // --- Variabile pentru Carusel Servo Tuning ---
     public static double servoPos = 0.224;      // Poziția master pentru servo1
-    public static double servo2Offset = 0.0;    // NOU: Offset pentru servo2
+    public static double servo2Offset = 0.02;    // NOU: Offset pentru servo2
 
     // --- Constante și Variabile pentru Shooter (neschimbate) ---
     public static double SHOOTER_kP = 0.003;
