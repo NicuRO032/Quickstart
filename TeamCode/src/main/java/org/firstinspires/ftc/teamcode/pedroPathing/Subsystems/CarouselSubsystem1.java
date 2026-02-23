@@ -49,7 +49,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
     // Constante shooter
-    public static double SHOOTER_kP = 0.003;
+    public static double SHOOTER_kP = 0.012;
     public static double SHOOTER_kI = 0.0;
     public static double SHOOTER_kD = 0.00001;
     public static double SHOOTER_kF = 0.00046;
@@ -338,6 +338,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void setShooterForAutoRPM(double rpm) {this.DEFAULT_SHOOTER_RPM = rpm;}
     public double getShooterTargetRPM() { return this.currentTargetRPM; }
     public double getShooterCurrentRPM() { return ticksPerSecondToRpm(shooterMotor1.getVelocity()); }
+    public double getShooterPower() { return shooterMotor1.getPower(); }
+
 
 
     public void resetForStart() {

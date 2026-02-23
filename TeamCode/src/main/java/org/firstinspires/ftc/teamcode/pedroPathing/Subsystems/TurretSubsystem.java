@@ -48,7 +48,7 @@ public class TurretSubsystem extends SubsystemBase {
     private final PIDController turretPID; // Noul obiect PID Controller
     private double programTargetAngle = HOME_ANGLE;
     private double manualServoPosition;
-    private double currentShooterAnglePos;
+    public static double currentShooterAnglePos;
 
     public TurretSubsystem(HardwareMap hardwareMap) {
         turretServo = hardwareMap.get(Servo.class, "turretServo");

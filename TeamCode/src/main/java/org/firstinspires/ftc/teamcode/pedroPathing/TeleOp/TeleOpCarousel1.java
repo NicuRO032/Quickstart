@@ -434,6 +434,7 @@ public class TeleOpCarousel1 extends OpMode {
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
         packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
+        packet.put("Shooter Power", carousel.getShooterPower());
 
 
 /**
