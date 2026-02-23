@@ -252,9 +252,10 @@ public class AutoVision12 extends CommandOpMode {
                     new ShootAllBallsCommand(carousel),
 
                     //new WaitCommand(1000),
-                    new InstantCommand(() -> intake.setPower(-0.8)),
+
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
+                    new InstantCommand(() -> intake.setPower(-0.8)),
                     new ParallelRaceGroup(
                             new WaitUntilCommand(carousel::allSlotsOccupied),
                             new FollowPathCommand(follower, grab1Path, false),

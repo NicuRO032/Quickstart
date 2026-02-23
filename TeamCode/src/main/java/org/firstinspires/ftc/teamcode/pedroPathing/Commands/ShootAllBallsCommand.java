@@ -20,12 +20,12 @@ public class ShootAllBallsCommand extends SequentialCommandGroup {
 
                 // --- BILA 2 (Slot 1) ---
                 // Așteptăm ca pointerul să crească (semn că bila 1 a plecat)
-                new WaitUntilCommand(() -> carousel.getOuttakePtr() == 1).withTimeout(1000),
+                new WaitUntilCommand(() -> carousel.getOuttakePtr() == 1).withTimeout(500),
                 new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
                 new InstantCommand(carousel::triggerShoot),
 
                 // --- BILA 3 (Slot 0) ---
-                new WaitUntilCommand(() -> carousel.getOuttakePtr() == 2).withTimeout(1000),
+                new WaitUntilCommand(() -> carousel.getOuttakePtr() == 2).withTimeout(500),
                 new WaitUntilCommand(carousel::isReadyToShoot).withTimeout(SHOOTER_TIMEOUT_MS),
                 new InstantCommand(carousel::triggerShoot),
 
