@@ -299,8 +299,8 @@ public class TeleOpCarousel1 extends OpMode {
                 // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
                 if (bestTag != null && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(30.52157 * x + 2529.34106);
-                    turret.setShooterAngle(0.00485834 * x - 0.0423725);
+                    carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
+                    turret.setShooterAngle(0.00402116 * x - 0.0283422);
                     //carousel.setShooterTargetRPM(SHOOT_RPM);
                     //turret.setShooterAngle(ANGLE_SHOOT);
                 }
@@ -332,8 +332,8 @@ public class TeleOpCarousel1 extends OpMode {
                     // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
                     if (carousel.canChangeRPM()) {
                         double x = vision.getDistance();
-                        carousel.setShooterTargetRPM(30.52157 * x + 2529.34106);
-                        turret.setShooterAngle(0.00485834 * x - 0.0423725);
+                        carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
+                        turret.setShooterAngle(0.00402116 * x - 0.0283422);
                         //carousel.setShooterTargetRPM(SHOOT_RPM);
                         //turret.setShooterAngle(ANGLE_SHOOT);
                     }

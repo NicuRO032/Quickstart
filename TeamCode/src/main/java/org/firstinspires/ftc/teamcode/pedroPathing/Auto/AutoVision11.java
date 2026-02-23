@@ -236,16 +236,16 @@ public class AutoVision11 extends CommandOpMode {
                     //--- CICLUL 1: SCOR PRELOAD ---
                     new ParallelCommandGroup(
                             new FollowPathCommand(follower, scorePreloadPath, false),
-                            new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000)
+                            //new DetectAprilTagCommand(vision, (tagId) -> this.aprilTagFromInit = tagId, 4000)
                             //new WaitCommand(1000)
                             // Pregătește caruselul pentru outtake și pornește shooter-ul
-                            //new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                             //new InstantCommand(() -> turret.setTargetAngle(0))
                     ),
                     //new WaitCommand(200),
                     new InstantCommand(() -> turret.setTargetAngle(0)),
-                    new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
-                    new WaitCommand(200),
+                    //new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
+                    //new WaitCommand(200),
                     /**
                     new ParallelCommandGroup(
                             new WaitCommand(1000),

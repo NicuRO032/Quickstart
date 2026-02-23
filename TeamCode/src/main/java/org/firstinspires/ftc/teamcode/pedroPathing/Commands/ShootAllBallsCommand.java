@@ -7,7 +7,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 
 public class ShootAllBallsCommand extends SequentialCommandGroup {
 
-    public static final long SHOOTER_TIMEOUT_MS = 2000;
+    public static final long SHOOTER_TIMEOUT_MS = 1000;
 
     public ShootAllBallsCommand(CarouselSubsystem1 carousel) {
         addCommands(
