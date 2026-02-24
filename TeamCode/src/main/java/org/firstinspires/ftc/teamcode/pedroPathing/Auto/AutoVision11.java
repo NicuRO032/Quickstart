@@ -91,8 +91,8 @@ public class AutoVision11 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.25, () -> follower.setMaxPower(0.4))
-                .addPoseCallback(GRAB1_END_POSE, () -> intake.setPower(-1), 7)
+                .addParametricCallback(0.25, () -> follower.setMaxPower(0.3))
+                //.addPoseCallback(GRAB1_END_POSE, () -> intake.setPower(-0.5), 7)
                 //.setConstraints(SLOW_CONSTRAINTS)
                 .build();
 
@@ -115,7 +115,7 @@ public class AutoVision11 extends CommandOpMode {
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
                 .addParametricCallback(0.45, () -> follower.setMaxPower(0.37))
-                .addPoseCallback(GRAB2_END_POSE, () -> intake.setPower(-1), 7) // Corectat din GRAB1_START_POSE
+                //.addPoseCallback(GRAB2_END_POSE, () -> intake.setPower(-1), 7) // Corectat din GRAB1_START_POSE
                 // .setConstraints(SLOW_CONSTRAINTS)
                 .build();
 
@@ -233,73 +233,66 @@ public class AutoVision11 extends CommandOpMode {
             telemetry.update();
 
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
-                    new InstantCommand(() -> follower.setMaxPower(1)),
-                  //  new InstantCommand(() -> turret.setTargetAngle(-55)),
-                    //--- CICLUL 1: SCOR PRELOAD ---
                     new ParallelCommandGroup(
-                            new InstantCommand(() -> carousel.setShooterTargetRPM(3150)),
-                            new FollowPathCommand(follower, scorePreloadPath, false),
-                            new ShootAllBallsCommand(carousel)
-                            ),
-                    //new InstantCommand(() -> turret.setTargetAngle(0)),
+                        new InstantCommand(() -> follower.setMaxPower(1)),
+                        new InstantCommand(() -> carousel.setShooterForAutoRPM(3100)),
+                        new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
+                    ),
+                    new FollowPathCommand(follower, scorePreloadPath, false),
+                    new ShootAllBallsCommand(carousel),
 
 
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new InstantCommand(() -> intake.setPower(-0.5)),
+                    new InstantCommand(() -> intake.setPower(-0.3)),
 
                     new ParallelRaceGroup(
-                            new WaitUntilCommand(carousel::allSlotsOccupied),
+                            //new WaitUntilCommand(carousel::allSlotsOccupied),
                             new FollowPathCommand(follower, grab1Path, false),
                             new WaitCommand(5000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new InstantCommand(() -> intake.setPower(0.2)),
+                    new InstantCommand(() -> intake.setPower(0.1)),
 
 
                     new ParallelCommandGroup(
-                            new InstantCommand(() -> carousel.setShooterTargetRPM(3150)),
-                            new FollowPathCommand(follower, score1Path, false),
-                            new ShootAllBallsCommand(carousel)
+                            new InstantCommand(() -> follower.setMaxPower(1)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3100)),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
-                    /**
+                    new FollowPathCommand(follower, score1Path, false),
+                    new ShootAllBallsCommand(carousel),
+
+
+                    // CICLUL 3: A doua colectare si scor
+                    new InstantCommand(() -> intake.setPower(-0.3)),
                     new ParallelRaceGroup(
-                            new WaitCommand(1000),
-                            new AutoAimTurretCommand(turret, vision,20)
-                    ),
-                    */
-
-                    //--- CICLUL 3: A doua colectare si scor ---
-
-
-                    new InstantCommand(() -> follower.setMaxPower(0.8)),
-
-                    new InstantCommand(() -> intake.setPower(-0.8)),
-                    new ParallelRaceGroup(
-                          //  new WaitUntilCommand(carousel::allSlotsOccupied),
+                            //new WaitUntilCommand(carousel::allSlotsOccupied),
                             new FollowPathCommand(follower, grab2Path, false),
                             new WaitCommand(5000)
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
+                    new InstantCommand(() -> intake.setPower(0.1)),
 
                     new ParallelCommandGroup(
-                            new InstantCommand(() -> intake.setPower(0.3)),
-                            new InstantCommand(() -> carousel.setShooterTargetRPM(3150)),
-                            new FollowPathCommand(follower, score2Path, false),
-                            new ShootAllBallsCommand(carousel)
+                            new InstantCommand(() -> follower.setMaxPower(1)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3100)),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
+                    new FollowPathCommand(follower, score2Path, false),
+                    new ShootAllBallsCommand(carousel)
                     /**
                     new InstantCommand(() -> intake.setPower(0)),
                     new ParallelRaceGroup(
                             new WaitCommand(1000),
                             new AutoAimTurretCommand(turret, vision,20)
                     ),
-                     */
+
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new FollowPathCommand(follower, parkPath, false)
+                    new FollowPathCommand(follower, parkPath, false)*/
                     /*  // A doua colectare (comentat)
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false, 0.9),
