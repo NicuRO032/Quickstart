@@ -43,9 +43,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double[] SALVO_END_FEEDBACK_MV   = {685.0, 685.0, 685.0};
 
     //Constante PENTRU SALVA LENTĂ, DE PRECIZIE
-    public static final double[] SLOW_SALVO_PAUSE1_POS       = {0.75, 0.75, 0.75};
-    public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2100.0, 2100.0, 2100.0};
-    public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.45, 0.45, 0.45};
+    public static final double[] SLOW_SALVO_PAUSE1_POS       = {0.66, 0.66, 0.66};
+    public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2108.0, 2108.0, 2108.0};
+    public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.414, 0.414, 0.414};
     public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1400.0, 1400.0, 1400.0};
     public static int SLOW_SHOOT_PAUSE_MS = 750; // Pauza în milisecunde pentru recuperarea turației
 
@@ -264,7 +264,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
 
         // Pornim secvența lentă, trecând în prima sa stare
+        goToServoPosition(SLOW_SALVO_PAUSE1_POS[activeSalvoIndex], SLOW_SALVO_PAUSE1_FEEDBACK[activeSalvoIndex]);
         slowShootState = SlowShootSequence.STEP_1;
+        //outtakeState = OuttakeState.SHOOTING_SALVO;
     }
 
     /**
@@ -574,7 +576,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         switch (slowShootState) {
             case STEP_1: // Aruncă prima bilă
                 // Comandăm mișcarea către prima poziție de pauză
-                goToServoPosition(SLOW_SALVO_PAUSE1_POS[activeSalvoIndex], SLOW_SALVO_PAUSE1_FEEDBACK[activeSalvoIndex]);
+                //goToServoPosition(SLOW_SALVO_PAUSE1_POS[activeSalvoIndex], SLOW_SALVO_PAUSE1_FEEDBACK[activeSalvoIndex]);
                 // Așteptăm ca servoul să ajungă la destinație
                 if (atTarget()) {
                     outtakeTimer.reset(); // Pornim timer-ul pentru pauză
@@ -725,7 +727,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public OuttakeState getOuttakeStateEnum() {
         return this.outtakeState;
     }
-
+    public SlowShootSequence getSlowShootState() {
+        return this.slowShootState;
+    }
 
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }

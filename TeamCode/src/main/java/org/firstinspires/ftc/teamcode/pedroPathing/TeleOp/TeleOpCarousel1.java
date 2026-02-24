@@ -408,6 +408,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
+        packet.put("101.SlowShootState", carousel.getSlowShootState());
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
 
         packet.put("040.Carousel Target Feedback (mV)", String.format("%.3f", carousel.getTargetFeedbackMv()));
