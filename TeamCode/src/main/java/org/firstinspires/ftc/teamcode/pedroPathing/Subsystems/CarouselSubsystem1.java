@@ -47,7 +47,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2108.0, 2108.0, 2108.0};
     public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.414, 0.414, 0.414};
     public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1400.0, 1400.0, 1400.0};
-    public static int SLOW_SHOOT_PAUSE_MS = 750; // Pauza în milisecunde pentru recuperarea turației
+    public static int SLOW_SHOOT_PAUSE_MS = 500; // Pauza în milisecunde pentru recuperarea turației
 
 
     // Toleranța pentru atTarget
@@ -57,7 +57,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
     // Constante shooter
-    public static double SHOOTER_kP = 0.012;
+    public static double SHOOTER_kP = 0.01;
     public static double SHOOTER_kI = 0.0;
     public static double SHOOTER_kD = 0.00001;
     public static double SHOOTER_kF = 0.00046;
