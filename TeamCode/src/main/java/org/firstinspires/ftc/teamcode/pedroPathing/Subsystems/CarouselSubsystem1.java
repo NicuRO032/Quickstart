@@ -38,9 +38,17 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double[] SALVO_START_POSITIONS   = {1.0, 1.0,  1.0};
     public static final double[] SALVO_START_FEEDBACK_MV = {3100.0, 3100.0, 3100.0};
 
-    // Vectori pentru pozițiile de FINAL ale fiecărei salve. O valoare mică produce o rotație amplă
+    // Vectori pentru pozițiile de FINAL ale fiecărei salve.
     public static final double[] SALVO_END_POSITIONS     = {0.155,  0.155,  0.155};
     public static final double[] SALVO_END_FEEDBACK_MV   = {685.0, 685.0, 685.0};
+
+    //Constante PENTRU SALVA LENTĂ, DE PRECIZIE
+    public static final double[] SLOW_SALVO_PAUSE1_POS       = {0.75, 0.75, 0.75};
+    public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2100.0, 2100.0, 2100.0};
+    public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.45, 0.45, 0.45};
+    public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1400.0, 1400.0, 1400.0};
+    public static int SLOW_SHOOT_PAUSE_MS = 750; // Pauza în milisecunde pentru recuperarea turației
+
 
     // Toleranța pentru atTarget
     public static double FEEDBACK_TOLERANCE_MV = 120;
@@ -79,6 +87,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public enum OuttakeState { OUT_IDLE, PREPARING_SALVO, RELAXING_SERVO, SHOOTING_SALVO, FINISHED }
     private OuttakeState outtakeState = OuttakeState.OUT_IDLE;
+
+    private enum SlowShootSequence { INACTIVE, STEP_1, PAUSE_1, STEP_2, PAUSE_2, STEP_3 }
+    private SlowShootSequence slowShootState = SlowShootSequence.INACTIVE;
 
     /* ================= LOGIC ================= */
 
@@ -246,6 +257,15 @@ public class CarouselSubsystem1 extends SubsystemBase {
         outtakeState = OuttakeState.SHOOTING_SALVO;
     }
 
+    public void triggerSlowShoot() {
+        // Verificăm dacă suntem pregătiți ȘI dacă nu este deja o altă acțiune în curs
+        if (!isReadyToShoot() || slowShootState != SlowShootSequence.INACTIVE || outtakeState != OuttakeState.FINISHED) {
+            return;
+        }
+
+        // Pornim secvența lentă, trecând în prima sa stare
+        slowShootState = SlowShootSequence.STEP_1;
+    }
 
     /**
      * Oprește totul și resetează sistemul.
@@ -541,6 +561,60 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
     }
 
+    /**
+     * Gestionează secvența de aruncare lentă, bazată pe feedback și un timer.
+     * Rulează independent de mașina de stări principală a outtake-ului.
+     */
+    private void handleSlowShoot() {
+        // Dacă secvența nu este activă, nu facem nimic.
+        if (slowShootState == SlowShootSequence.INACTIVE) {
+            return;
+        }
+
+        switch (slowShootState) {
+            case STEP_1: // Aruncă prima bilă
+                // Comandăm mișcarea către prima poziție de pauză
+                goToServoPosition(SLOW_SALVO_PAUSE1_POS[activeSalvoIndex], SLOW_SALVO_PAUSE1_FEEDBACK[activeSalvoIndex]);
+                // Așteptăm ca servoul să ajungă la destinație
+                if (atTarget()) {
+                    outtakeTimer.reset(); // Pornim timer-ul pentru pauză
+                    slowShootState = SlowShootSequence.PAUSE_1;
+                }
+                break;
+
+            case PAUSE_1: // Pauză după prima bilă
+                // Așteptăm scurgerea timpului de pauză
+                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
+                    slowShootState = SlowShootSequence.STEP_2;
+                }
+                break;
+
+            case STEP_2: // Aruncă a doua bilă
+                // Comandăm mișcarea către a doua poziție de pauză
+                goToServoPosition(SLOW_SALVO_PAUSE2_POS[activeSalvoIndex], SLOW_SALVO_PAUSE2_FEEDBACK[activeSalvoIndex]);
+                if (atTarget()) {
+                    outtakeTimer.reset(); // Pornim din nou timer-ul pentru pauză
+                    slowShootState = SlowShootSequence.PAUSE_2;
+                }
+                break;
+
+            case PAUSE_2: // Pauză după a doua bilă
+                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
+                    slowShootState = SlowShootSequence.STEP_3;
+                }
+                break;
+
+            case STEP_3: // Aruncă a treia bilă și predă controlul
+                // Comandăm mișcarea finală și setăm starea principală, pe care o cunoaștem deja
+                goToServoPosition(SALVO_END_POSITIONS[activeSalvoIndex], SALVO_END_FEEDBACK_MV[activeSalvoIndex]);
+                outtakeState = OuttakeState.SHOOTING_SALVO;
+
+                // Oprim mini-mașina de stări a salvei lente
+                slowShootState = SlowShootSequence.INACTIVE;
+                break;
+        }
+    }
+
 
 
 
@@ -716,7 +790,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
         shooterMotor1.setPower(shooterPower);
         shooterMotor2.setPower(shooterPower);
 
-        handleSlowMove();
+        handleSlowMove();//asezare parghie shooter
+        handleSlowShoot();//salva lenta
 
         // Mașinile de stări
         if (outtakeState == OuttakeState.OUT_IDLE) {

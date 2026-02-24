@@ -244,6 +244,10 @@ public class TeleOpCarousel1 extends OpMode {
         if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
             carousel.triggerShoot();
         }
+        if (driver2.wasJustPressed(GamepadKeys.Button.X)) {
+            carousel.triggerSlowShoot();
+        }
+
 
         // --- Comutare Mod Turelă (Manual <-> Auto-Aim) ---
         if (driver2.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
