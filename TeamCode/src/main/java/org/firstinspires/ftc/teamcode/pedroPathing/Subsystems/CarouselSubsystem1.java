@@ -568,51 +568,47 @@ public class CarouselSubsystem1 extends SubsystemBase {
      * Rulează independent de mașina de stări principală a outtake-ului.
      */
     private void handleSlowShoot() {
-        // Dacă secvența nu este activă, nu facem nimic.
-        if (slowShootState == SlowShootSequence.INACTIVE) {
-            return;
-        }
+        if (slowShootState == SlowShootSequence.INACTIVE) return;
 
         switch (slowShootState) {
-            case STEP_1: // Aruncă prima bilă
-                // Comandăm mișcarea către prima poziție de pauză
-                //goToServoPosition(SLOW_SALVO_PAUSE1_POS[activeSalvoIndex], SLOW_SALVO_PAUSE1_FEEDBACK[activeSalvoIndex]);
-                // Așteptăm ca servoul să ajungă la destinație
+            case STEP_1:
+                // Nu dăm comandă aici (a fost dată în triggerSlowShoot)
                 if (atTarget()) {
-                    outtakeTimer.reset(); // Pornim timer-ul pentru pauză
+                    outtakeTimer.reset();
                     slowShootState = SlowShootSequence.PAUSE_1;
                 }
                 break;
 
-            case PAUSE_1: // Pauză după prima bilă
-                // Așteptăm scurgerea timpului de pauză
+            case PAUSE_1:
                 if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
+                    // COMANDĂM AICI (o singură dată, înainte să plecăm din stare)
+                    goToServoPosition(SLOW_SALVO_PAUSE2_POS[activeSalvoIndex], SLOW_SALVO_PAUSE2_FEEDBACK[activeSalvoIndex]);
                     slowShootState = SlowShootSequence.STEP_2;
                 }
                 break;
 
-            case STEP_2: // Aruncă a doua bilă
-                // Comandăm mișcarea către a doua poziție de pauză
-                goToServoPosition(SLOW_SALVO_PAUSE2_POS[activeSalvoIndex], SLOW_SALVO_PAUSE2_FEEDBACK[activeSalvoIndex]);
+            case STEP_2:
+                // DOAR AȘTEPTĂM. Nu punem goToServoPosition aici!
                 if (atTarget()) {
-                    outtakeTimer.reset(); // Pornim din nou timer-ul pentru pauză
+                    outtakeTimer.reset();
                     slowShootState = SlowShootSequence.PAUSE_2;
                 }
                 break;
 
-            case PAUSE_2: // Pauză după a doua bilă
+            case PAUSE_2:
                 if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
+                    // COMANDĂM POZIȚIA FINALĂ AICI
+                    goToServoPosition(SALVO_END_POSITIONS[activeSalvoIndex], SALVO_END_FEEDBACK_MV[activeSalvoIndex]);
                     slowShootState = SlowShootSequence.STEP_3;
                 }
                 break;
 
-            case STEP_3: // Aruncă a treia bilă și predă controlul
-                // Comandăm mișcarea finală și setăm starea principală, pe care o cunoaștem deja
-                goToServoPosition(SALVO_END_POSITIONS[activeSalvoIndex], SALVO_END_FEEDBACK_MV[activeSalvoIndex]);
-                outtakeState = OuttakeState.SHOOTING_SALVO;
-
-                // Oprim mini-mașina de stări a salvei lente
-                slowShootState = SlowShootSequence.INACTIVE;
+            case STEP_3:
+                // Așteptăm confirmarea finală
+                if (atTarget()) {
+                    outtakeState = OuttakeState.SHOOTING_SALVO; // Opțional, poți pune direct FINISHED
+                    slowShootState = SlowShootSequence.INACTIVE;
+                }
                 break;
         }
     }
