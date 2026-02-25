@@ -62,7 +62,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double SHOOTER_kD = 0.00001;
     public static double SHOOTER_kF = 0.00046;
     public static final double SHOOTER_MOTOR_CPR = 28.0;
-    public static double DEFAULT_SHOOTER_RPM = 4000.0;
+    public static double DEFAULT_SHOOTER_RPM = 3200.0;
 
     /* ================= CONSTANTE ================= */
 
