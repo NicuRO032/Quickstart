@@ -156,6 +156,7 @@ public class AutoVision14 extends CommandOpMode {
         turret = new TurretSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
+        carousel.isTeleOp = false;
 
         vision.enableProcesor();
 

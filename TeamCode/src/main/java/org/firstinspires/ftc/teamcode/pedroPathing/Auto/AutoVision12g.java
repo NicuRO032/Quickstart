@@ -58,13 +58,13 @@ public class AutoVision12g extends CommandOpMode {
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(122, 124, Math.toRadians(36));
     private final Pose SCORE_POSE = new Pose(91, 91, Math.toRadians(47));
-    private final Pose PARK_POSE = new Pose(52.5, 75.5, Math.toRadians(135));
-    private final Pose GRAB1_END_POSE = new Pose(134, 79, Math.toRadians(0)); // set 2 artefacte
-    private final Pose GRAB2_END_POSE = new Pose(134, 65, Math.toRadians(15));// artefacte gate
-    private final Pose GRAB3_END_POSE = new Pose(134 , 36, Math.toRadians(0)); // set 1 artedfacte
-    private final Pose ControlPoint1 = new Pose(92,82);
-    private final Pose ControlPoint2 = new Pose(99, 62);
-    private final Pose ControlPoint3 = new Pose(92, 79);
+    private final Pose PARK_POSE = new Pose(91, 70, Math.toRadians(47));
+    private final Pose GRAB1_END_POSE = new Pose(122, 80, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE = new Pose(130 , 60   , Math.toRadians(0));
+    private final Pose GRAB3_END_POSE = new Pose(134 , 46, Math.toRadians(0));
+    private final Pose ControlPoint1 = new Pose(92,81);
+    private final Pose ControlPoint2 = new Pose(89.5, 52);
+    private final Pose ControlPoint3 = new Pose(87, 27);
     private final Pose ControlPoint5 = new Pose(74, 25);
 
 
@@ -90,7 +90,7 @@ public class AutoVision12g extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // set 2 artefacte
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.55, () -> follower.setMaxPower(0.3))
+                .addParametricCallback(0.55, () -> follower.setMaxPower(0.5))
                 .addParametricCallback(0.8, () -> follower.setMaxPower(1))
                 .build();
 
@@ -102,41 +102,34 @@ public class AutoVision12g extends CommandOpMode {
                 .build();
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
-        /*grab2Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB2_END_POSE)) // gate
+        grab2Path = follower.pathBuilder()
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
-                .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))  // porneste cu putere maxima
-                .addParametricCallback(0.45, () -> follower.setMaxPower(0.5)) // la 45% din path reduce viteza pentru a intra in gate
-                .addParametricCallback(0.65, () -> follower.setMaxPower(1)) // la 65% din path revine la viteza maxima
-                .addParametricCallback(0.90, () -> follower.setMaxPower(0.85))
+                .addParametricCallback(0.0, () -> follower.setMaxPower(1))
+                .addParametricCallback(0.5, () -> follower.setMaxPower(0.5))
                 .build();
 
-             grab2APath = follower.pathBuilder()
-                .addPath(new BezierLine(GRAB2_START_POSE, GRAB2_END_POSE)) // gate
-                .setLinearHeadingInterpolation(GRAB2_START_POSE.getHeading(), GRAB2_END_POSE.getHeading())
-                .build();
-
-        // 5. Traiectoria de scor 2 (de la COLECTARE 2 înapoi la SCOR)
+        //7. Traiectoria de la Colectare 3 la score 3
         score2Path = follower.pathBuilder()
-                .addPath(new BezierCurve(GRAB2_END_POSE, ControlPoint2, SCORE_POSE))
+                .addPath(new BezierLine(GRAB2_END_POSE, SCORE_POSE))
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
-                .addParametricCallback(0.90, () -> follower.setMaxPower(0.9))
+                .addParametricCallback(0.85, () -> follower.setMaxPower(0.9))
                 .setLinearHeadingInterpolation(GRAB2_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .build();
-*/
+
         // 6. Traiectoria de la score 2 la COLECTARE 3
         grab3Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, ControlPoint5, GRAB3_END_POSE)) //  primul set
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB3_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.32))
+                .addParametricCallback(0.8, () -> follower.setMaxPower(0.4))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
         score3Path = follower.pathBuilder()
                 .addPath(new BezierLine(GRAB3_END_POSE, SCORE_POSE))
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
-                .addParametricCallback(0.85, () -> follower.setMaxPower(0.9))
+                //.addParametricCallback(0.85, () -> follower.setMaxPower(0.5))
                 .setLinearHeadingInterpolation(GRAB3_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .build();
 
@@ -259,12 +252,13 @@ public class AutoVision12g extends CommandOpMode {
 
 
                     // CICLUL 3: A doua colectare si scor
-                    /*new ParallelCommandGroup(
-                            new InstantCommand(() -> intake.setPower(-0.4)),
-                            new FollowPathCommand(follower, grab3Path, false),
-                            new WaitCommand(2000)
-                    ),
-                    //new FollowPathCommand(follower, grab2APath, false),
+                    new InstantCommand(() -> intake.setPower(-0.3)),
+            new ParallelRaceGroup(
+                    new FollowPathCommand(follower, grab2Path, false),
+                    new WaitCommand(5000)
+            ),
+                    /*new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> follower.setMaxPower(1)),*/
                     new InstantCommand(() -> intake.setPower(0.1)),
 
                     new ParallelCommandGroup(
@@ -272,19 +266,20 @@ public class AutoVision12g extends CommandOpMode {
                             new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
-                    new FollowPathCommand(follower, score3Path, false),
-                    new ShootAllBallsCommand(carousel),*/
+                    new FollowPathCommand(follower, score2Path, false),
+
+                    new ShootAllBallsCommand(carousel),
 
                     // CICLU 4 a treia colectare
 
-                    new InstantCommand(() -> intake.setPower(-0.4)),
+                    new InstantCommand(() -> intake.setPower(-0.5)),
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab3Path, false),
                             new WaitCommand(5000)
                     ),
-                    new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(1)),
+                    /*new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> follower.setMaxPower(1)),*/
                     new InstantCommand(() -> intake.setPower(0.1)),
 
 
@@ -294,8 +289,9 @@ public class AutoVision12g extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
-                    new InstantCommand(() -> intake.setPower(0)),
                     new ShootAllBallsCommand(carousel),
+
+                    new InstantCommand(() -> intake.setPower(0)),
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)

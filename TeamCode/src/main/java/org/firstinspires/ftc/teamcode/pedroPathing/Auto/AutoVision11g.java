@@ -160,6 +160,7 @@ public class AutoVision11g extends CommandOpMode {
         intake = new IntakeSubsystem1(hardwareMap);
         //intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
+        carousel.isTeleOp = false;
 
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat
