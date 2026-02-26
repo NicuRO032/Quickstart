@@ -56,11 +56,16 @@ public class AutoVision12g extends CommandOpMode {
             0.1);
 
     // Definește toate punctele cheie ale autonomiei
+    private final Pose START_POSE = new Pose(122, 124, Math.toRadians(36));
+    private final Pose SCORE_POSE = new Pose(91, 91, Math.toRadians(47));
     private final Pose PARK_POSE = new Pose(52.5, 75.5, Math.toRadians(135));
-    private final Pose ControlPoint4 = new Pose(36.5, 57);
-    private final Pose ControlPoint5 = new Pose(64, 81);
+    private final Pose GRAB1_END_POSE = new Pose(137, 75, Math.toRadians(0)); // set 2 artefacte
+    private final Pose GRAB2_END_POSE = new Pose(134, 65, Math.toRadians(15));// artefacte gate
+    private final Pose GRAB3_END_POSE = new Pose(134 , 36, Math.toRadians(0)); // set 1 artedfacte
+    private final Pose ControlPoint1 = new Pose(89,47);
     private final Pose ControlPoint2 = new Pose(99, 62);
     private final Pose ControlPoint3 = new Pose(92, 79);
+    private final Pose ControlPoint5 = new Pose(74, 25);
 
 
     private PathChain scorePreloadPath;
