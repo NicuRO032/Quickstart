@@ -83,7 +83,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
+        //setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
         updateAprilTagData();
     }
 

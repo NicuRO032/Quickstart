@@ -368,6 +368,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         goToSlot(0);
         this.intakeState = IntakeState.IDLE;
         this.outtakeState = OuttakeState.OUT_IDLE;
+        slowShootState = SlowShootSequence.INACTIVE;
         this.autoEnabled = true;
     }
 
@@ -606,8 +607,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
             case STEP_3:
                 // Așteptăm confirmarea finală
                 if (atTarget()) {
-                    outtakeState = OuttakeState.SHOOTING_SALVO; // Opțional, poți pune direct FINISHED
-                    slowShootState = SlowShootSequence.INACTIVE;
+                    //outtakeState = OuttakeState.SHOOTING_SALVO; // Opțional, poți pune direct FINISHED
+                    //slowShootState = SlowShootSequence.INACTIVE;
+                    abortAll();
                 }
                 break;
         }
@@ -726,6 +728,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public SlowShootSequence getSlowShootState() {
         return this.slowShootState;
     }
+    public boolean getIsReadyToShoot() {return isReadyToShoot();}
 
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }
