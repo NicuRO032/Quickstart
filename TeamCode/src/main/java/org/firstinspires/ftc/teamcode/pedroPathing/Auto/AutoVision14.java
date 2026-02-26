@@ -155,6 +155,7 @@ public class AutoVision14 extends CommandOpMode {
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
 
+        vision.enableProcesor();
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat
         follower.setStartingPose(START_POSE);
@@ -172,7 +173,6 @@ public class AutoVision14 extends CommandOpMode {
         carousel.setShooterForAutoRPM(4700);
         turret.setTargetAngle(-9);
         turret.setShooterAngle(0.3);
-
 
 
         while (!isStarted() && !isStopRequested()) {

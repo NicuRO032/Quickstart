@@ -155,6 +155,8 @@ public class AutoVision13 extends CommandOpMode {
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
 
+        vision.enableProcesor();
+
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat
         follower.setStartingPose(START_POSE);
@@ -172,7 +174,6 @@ public class AutoVision13 extends CommandOpMode {
         carousel.setShooterForAutoRPM(4700);
         turret.setTargetAngle(-9);
         turret.setShooterAngle(0.3);
-
 
 
         while (!isStarted() && !isStopRequested()) {
@@ -201,9 +202,11 @@ public class AutoVision13 extends CommandOpMode {
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
-        packet.put("IntakeState", carousel.getIntakeState());
-        packet.put("OuttakeState", carousel.getOuttakeState());
-        packet.put("SlowShootState", carousel.getSlowShootState());
+        packet.put("00 IntakeState", carousel.getIntakeState());
+        packet.put("01 OuttakeState", carousel.getOuttakeState());
+        packet.put("02 SlowShootState", carousel.getSlowShootState());
+        packet.put("03 IsShooterReady", carousel.isShooterReady());
+        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
         packet.put("Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
