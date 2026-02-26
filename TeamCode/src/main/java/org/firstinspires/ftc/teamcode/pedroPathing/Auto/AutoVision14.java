@@ -174,19 +174,9 @@ public class AutoVision14 extends CommandOpMode {
         turret.setTargetAngle(-9);
         turret.setShooterAngle(0.3);
 
-
-        while (!isStarted() && !isStopRequested()) {
-            CommandScheduler.getInstance().run();
-            int tag = vision.getLastTagId();
-            if (tag == 21 || tag == 22 || tag == 23) {
-                aprilTagFromInit = tag;
-            }
-            telemetry.addLine("INIT: caut AprilTag...");
-            telemetry.addData("AprilTag vazut", tag);
-            telemetry.addData("BearingAngle", vision.getLastBearing());
-            telemetry.addData("AprilTag memorat", aprilTagFromInit);
-            telemetry.update();
-        }
+        carousel.isTeleOp = false;
+        CommandScheduler.getInstance().run();
+        
 
         telemetry.addLine("INIT: gata de start.");
         telemetry.update();
