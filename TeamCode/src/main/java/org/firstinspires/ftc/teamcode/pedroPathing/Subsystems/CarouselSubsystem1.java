@@ -259,7 +259,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public void triggerSlowShoot() {
         // Verificăm dacă suntem pregătiți ȘI dacă nu este deja o altă acțiune în curs
-        if (!isReadyToShoot() || slowShootState != SlowShootSequence.INACTIVE || outtakeState != OuttakeState.FINISHED) {
+        if (slowShootState != SlowShootSequence.INACTIVE || outtakeState != OuttakeState.FINISHED) {
             return;
         }
 

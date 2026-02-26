@@ -172,6 +172,7 @@ public class AutoVision13 extends CommandOpMode {
         carousel.setShooterForAutoRPM(4700);
         turret.setTargetAngle(-9);
         turret.setShooterAngle(0.3);
+        carousel.isTeleOp = false;
 
 
 
