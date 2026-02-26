@@ -203,6 +203,7 @@ public class AutoVision13 extends CommandOpMode {
         TelemetryPacket packet = new TelemetryPacket();
         packet.put("IntakeState", carousel.getIntakeState());
         packet.put("OuttakeState", carousel.getOuttakeState());
+        packet.put("SlowShootState", carousel.getSlowShootState());
         packet.put("Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
