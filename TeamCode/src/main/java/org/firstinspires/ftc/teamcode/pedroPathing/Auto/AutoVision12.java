@@ -59,12 +59,12 @@ public class AutoVision12 extends CommandOpMode {
     private final Pose START_POSE = new Pose(122, 124, Math.toRadians(36));
     private final Pose SCORE_POSE = new Pose(91, 91, Math.toRadians(47));
     private final Pose PARK_POSE  = new Pose(52.5, 75.5, Math.toRadians(135));
-    private final Pose GRAB1_END_POSE = new Pose(134, 75, Math.toRadians(0));
-    private final Pose GRAB2_END_POSE = new Pose(134 , 85, Math.toRadians(0));
-    private final Pose GRAB3_END_POSE = new Pose(134 , 38, Math.toRadians(0));
-    private final Pose ControlPoint1 = new Pose(92,79);
-    private final Pose ControlPoint2 = new Pose(89, 45);
-    private final Pose ControlPoint3 = new Pose(87, 25);
+    private final Pose GRAB1_END_POSE = new Pose(122, 83, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE = new Pose(130 , 59   , Math.toRadians(0));
+    private final Pose GRAB3_END_POSE = new Pose(134 , 46, Math.toRadians(0));
+    private final Pose ControlPoint1 = new Pose(92,81);
+    private final Pose ControlPoint2 = new Pose(89.5, 52);
+    private final Pose ControlPoint3 = new Pose(87, 27);
 
 
     private PathChain scorePreloadPath;
@@ -89,7 +89,6 @@ public class AutoVision12 extends CommandOpMode {
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.55, () -> follower.setMaxPower(0.3))
-                .addParametricCallback(0.8, () -> follower.setMaxPower(1))
                 .build();
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
@@ -104,7 +103,7 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.32))
+                .addParametricCallback(0.5, () -> follower.setMaxPower(0.32))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -228,7 +227,7 @@ public class AutoVision12 extends CommandOpMode {
 
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new InstantCommand(() -> intake.setPower(-0.3)),
+                    new InstantCommand(() -> intake.setPower(-0.5)),
 
                     new ParallelRaceGroup(
                             //new WaitUntilCommand(carousel::allSlotsOccupied),
@@ -269,7 +268,7 @@ public class AutoVision12 extends CommandOpMode {
 
                     // CICLU 4 a treia colectare
 
-                    new InstantCommand(() -> intake.setPower(-0.3)),
+                    new InstantCommand(() -> intake.setPower(-0.5)),
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab3Path, false),
