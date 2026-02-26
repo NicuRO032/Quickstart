@@ -176,7 +176,7 @@ public class AutoVision14 extends CommandOpMode {
 
         carousel.isTeleOp = false;
         CommandScheduler.getInstance().run();
-        
+
 
         telemetry.addLine("INIT: gata de start.");
         telemetry.update();
