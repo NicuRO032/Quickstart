@@ -259,7 +259,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public void triggerSlowShoot() {
         // Verificăm dacă suntem pregătiți ȘI dacă nu este deja o altă acțiune în curs
-        if (slowShootState != SlowShootSequence.INACTIVE || outtakeState != OuttakeState.FINISHED) {
+        if (!isReadyToShoot())  {
             return;
         }
 
@@ -679,9 +679,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public boolean isReadyToShoot() {
         // Starea trebuie să fie FINISHED, caruselul trebuie să fie stabilizat la ținta relaxată (atTarget)
         // și shooter-ul să fie la turația corectă.
-        return outtakeState == OuttakeState.FINISHED && atTarget() && isShooterReady();
+        return (outtakeState == OuttakeState.FINISHED)|| (outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
     }
-    public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 200; }
+    public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 250; }
 
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {
