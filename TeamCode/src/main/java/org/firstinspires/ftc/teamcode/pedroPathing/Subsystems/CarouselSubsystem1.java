@@ -396,6 +396,10 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
 
+public boolean isReadyToShoot() {
+        return (outtakeState == OuttakeState.FINISHED || outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
+}
+
 
 
     public void activateIntake() { autoEnabled = true; }
@@ -676,11 +680,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
         }
     }
 
-    public boolean isReadyToShoot() {
-        // Starea trebuie să fie FINISHED, caruselul trebuie să fie stabilizat la ținta relaxată (atTarget)
-        // și shooter-ul să fie la turația corectă.
-        return (outtakeState == OuttakeState.FINISHED)|| (outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
-    }
     public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 250; }
 
     public OuttakePattern getActivePattern() { return this.activePattern; }
