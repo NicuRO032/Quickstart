@@ -185,8 +185,11 @@ public class AutoVision12 extends CommandOpMode {
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
-        packet.put("IntakeState", carousel.getIntakeState());
-        packet.put("OuttakeState", carousel.getOuttakeState());
+        packet.put("01 IntakeState", carousel.getIntakeState());
+        packet.put("02 OuttakeState", carousel.getOuttakeState());
+        packet.put("02 SlowShootState", carousel.getSlowShootState());
+        packet.put("03 IsShooterReady", carousel.isShooterReady());
+        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
         packet.put("Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
@@ -246,6 +249,7 @@ public class AutoVision12 extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
+
                     new ShootAllBallsCommand(carousel),
 
 
@@ -265,6 +269,7 @@ public class AutoVision12 extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score2Path, false),
+
                     new ShootAllBallsCommand(carousel),
 
                     // CICLU 4 a treia colectare

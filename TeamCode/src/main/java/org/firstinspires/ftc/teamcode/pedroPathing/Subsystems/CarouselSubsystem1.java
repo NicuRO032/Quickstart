@@ -680,7 +680,7 @@ public boolean isReadyToShoot() {
         }
     }
 
-    public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 250; }
+    public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 500; }
 
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {
