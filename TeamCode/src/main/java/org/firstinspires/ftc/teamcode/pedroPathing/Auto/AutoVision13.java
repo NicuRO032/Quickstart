@@ -61,7 +61,7 @@ public class AutoVision13 extends CommandOpMode {
     private final Pose PARK_POSE  = new Pose(50, 15, Math.toRadians(110));
     private final Pose ControlPoint1 = new Pose(65,35);
     private final Pose ControlPoint2 = new Pose(13,28);
-    private final Pose GRAB1_END_POSE  = new Pose(9, 31, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE  = new Pose(9, 33, Math.toRadians(180));
     private final Pose GRAB2_END_POSE  = new Pose(5, 5, Math.toRadians(230));
 
     private PathChain scorePreloadPath;
@@ -174,7 +174,8 @@ public class AutoVision13 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         carousel.setShooterForAutoRPM(4600);
-        turret.getTargetAngle();
+        turret.setTargetAngle(0);
+        //turret.getTargetAngle();
         turret.setShooterAngle(0.3);
         carousel.isTeleOp = false;
 
@@ -230,18 +231,19 @@ public class AutoVision13 extends CommandOpMode {
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     //--- CICLUL 1: SCOR PRELOAD ---
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new ParallelRaceGroup(
-                            new AutoAimTurretCommand(turret, vision, 20),
-                            new WaitCommand(1000)
-                    ),
+
                     new ParallelCommandGroup(
                             //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle())),
                             new FollowPathCommand(follower, scorePreloadPath, false),
                             new InstantCommand(() -> carousel.setShooterTargetRPM(4500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
+                    new ParallelRaceGroup(
+                            new AutoAimTurretCommand(turret, vision, 20),
+                            new WaitCommand(2000)
+                    ),
 
-                    //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+1)),
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+6)),
 
                     // Acum, comandă tragerea
                     new ShootAllBallsSlowCommand(carousel),
@@ -259,18 +261,19 @@ public class AutoVision13 extends CommandOpMode {
                     ),
                     new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
-                    new ParallelRaceGroup(
-                            new AutoAimTurretCommand(turret, vision, 20),
-                            new WaitCommand(1000)
-                    ),
+
                     new ParallelCommandGroup(
                             //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle())),
                             new InstantCommand(() -> carousel.setShooterTargetRPM(4500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, score2Path, false)
                     ),
+                    new ParallelRaceGroup(
+                            new AutoAimTurretCommand(turret, vision, 20),
+                            new WaitCommand(2000)
+                    ),
 
-
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle() + 6)),
                     new ShootAllBallsSlowCommand(carousel),
 
                     //A doua colectare (artefacte human player) si scor
@@ -287,11 +290,15 @@ public class AutoVision13 extends CommandOpMode {
 
 
                     new ParallelCommandGroup(
-                            new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle())),
                             new InstantCommand(() -> carousel.setShooterTargetRPM(4600)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit),
                             new FollowPathCommand(follower, score1Path, false)
                     ),
+                    new ParallelRaceGroup(
+                            new AutoAimTurretCommand(turret, vision, 20),
+                            new WaitCommand(2000)
+                    ),
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle() + 6)),
 
                     new ShootAllBallsSlowCommand(carousel),
 
