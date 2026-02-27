@@ -28,6 +28,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1;
 
 @Autonomous(name = "AUTO.BIG.RED", group = "Pedro Pathing")
 public class AutoVision12 extends CommandOpMode {
@@ -141,6 +142,7 @@ public class AutoVision12 extends CommandOpMode {
 
     @Override
     public void initialize() {
+        CommandScheduler.getInstance().reset();
         dashboard = FtcDashboard.getInstance();
         follower = Constants.createFollower(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
@@ -150,6 +152,7 @@ public class AutoVision12 extends CommandOpMode {
         //intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
         carousel.isTeleOp = false;
+        TeleOpCarousel1.intakeIsOn = false;
 
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat
@@ -231,7 +234,7 @@ public class AutoVision12 extends CommandOpMode {
 
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new InstantCommand(() -> intake.setPower(-0.5)),
+                    new InstantCommand(() -> intake.setPower(-0.3)),
 
                     new ParallelRaceGroup(
                             //new WaitUntilCommand(carousel::allSlotsOccupied),

@@ -8,6 +8,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.command.InstantCommand;
@@ -27,6 +28,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1;
 
 @Autonomous(name = "AUTO.small.blue", group = "Pedro Pathing")
 public class AutoVision13 extends CommandOpMode {
@@ -149,6 +151,7 @@ public class AutoVision13 extends CommandOpMode {
 
     @Override
     public void initialize() {
+        CommandScheduler.getInstance().reset();
         dashboard = FtcDashboard.getInstance();
         follower = Constants.createFollower(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
@@ -178,6 +181,7 @@ public class AutoVision13 extends CommandOpMode {
         //turret.getTargetAngle();
         turret.setShooterAngle(0.3);
         carousel.isTeleOp = false;
+        TeleOpCarousel1.intakeIsOn = false;
 
         CommandScheduler.getInstance().run();
 

@@ -27,6 +27,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
+import org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1;
 
 @Autonomous(name = "AUTO.small.red", group = "Pedro Pathing")
 public class AutoVision14 extends CommandOpMode {
@@ -149,6 +150,7 @@ public class AutoVision14 extends CommandOpMode {
 
     @Override
     public void initialize() {
+        CommandScheduler.getInstance().reset();
         dashboard = FtcDashboard.getInstance();
         follower = Constants.createFollower(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
@@ -177,6 +179,7 @@ public class AutoVision14 extends CommandOpMode {
         turret.setTargetAngle(0);
         turret.setShooterAngle(0.3);
         carousel.isTeleOp = false;
+        TeleOpCarousel1.intakeIsOn = false;
 
         CommandScheduler.getInstance().run();
 
