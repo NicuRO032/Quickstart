@@ -198,24 +198,24 @@ public class AutoVision11g extends CommandOpMode {
         telemetry.addData("Correction Angle", correctionAngle);
         telemetry.update();
 
-        TelemetryPacket packet = new TelemetryPacket();
-        packet.put("IntakeState", carousel.getIntakeState());
-        packet.put("OuttakeState", carousel.getOuttakeState());
-        packet.put("Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
-        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
-        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
-        packet.put("Carousel At Target", carousel.atTarget());
+//        TelemetryPacket packet = new TelemetryPacket();
+//        packet.put("IntakeState", carousel.getIntakeState());
+//        packet.put("OuttakeState", carousel.getOuttakeState());
+//        packet.put("Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
+//        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
+//        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
+//        packet.put("Carousel At Target", carousel.atTarget());
+//
+//
+//
+//        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
+//                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
+//        packet.put("Slots Colors", carousel.getSlotsColorString());
+//        packet.put("AprilTag Vazut", aprilTagFromInit);
 
-
-
-        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
-                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-        packet.put("Slots Colors", carousel.getSlotsColorString());
-        packet.put("AprilTag Vazut", aprilTagFromInit);
-
-        dashboard.sendTelemetryPacket(packet);
+        //dashboard.sendTelemetryPacket(packet);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());

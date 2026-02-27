@@ -155,6 +155,7 @@ public class AutoVision11 extends CommandOpMode {
         carousel = new CarouselSubsystem1(hardwareMap, intake);
         carousel.isTeleOp = false;
         TeleOpCarousel1.intakeIsOn = false;
+        TeleOpCarousel1.intakeIsOn = false;
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat
         follower.setStartingPose(START_POSE);
@@ -188,27 +189,27 @@ public class AutoVision11 extends CommandOpMode {
         telemetry.addData("Correction Angle", correctionAngle);
         telemetry.update();
 
-        TelemetryPacket packet = new TelemetryPacket();
-        packet.put("01 IntakeState", carousel.getIntakeState());
-        packet.put("02 OuttakeState", carousel.getOuttakeState());
-        packet.put("02 SlowShootState", carousel.getSlowShootState());
-        packet.put("03 IsShooterReady", carousel.isShooterReady());
-        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
-        packet.put("Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
-        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
-        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
-        packet.put("Carousel At Target", carousel.atTarget());
+//        TelemetryPacket packet = new TelemetryPacket();
+//        packet.put("01 IntakeState", carousel.getIntakeState());
+//        packet.put("02 OuttakeState", carousel.getOuttakeState());
+//        packet.put("02 SlowShootState", carousel.getSlowShootState());
+//        packet.put("03 IsShooterReady", carousel.isShooterReady());
+//        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
+//        packet.put("Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
+//        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
+//        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
+//        packet.put("Carousel At Target", carousel.atTarget());
+//
+//
+//
+//        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
+//                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
+//        packet.put("Slots Colors", carousel.getSlotsColorString());
+//        packet.put("AprilTag Vazut", aprilTagFromInit);
 
-
-
-        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
-                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-        packet.put("Slots Colors", carousel.getSlotsColorString());
-        packet.put("AprilTag Vazut", aprilTagFromInit);
-
-        dashboard.sendTelemetryPacket(packet);
+        //dashboard.sendTelemetryPacket(packet);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());

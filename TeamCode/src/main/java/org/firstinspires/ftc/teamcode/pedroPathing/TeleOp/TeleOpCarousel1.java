@@ -174,7 +174,7 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        sendTelemetry();
+        /*sendTelemetry();*/
 
     }
 
