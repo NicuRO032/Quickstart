@@ -245,7 +245,6 @@ public class AutoVision11 extends CommandOpMode {
                     ),
                     /*new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),*/
-                    new InstantCommand(() -> intake.setPower(0.1)),
 
 
                     new ParallelCommandGroup(

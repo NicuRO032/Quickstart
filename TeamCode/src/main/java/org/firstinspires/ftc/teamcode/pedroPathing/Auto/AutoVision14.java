@@ -57,9 +57,9 @@ public class AutoVision14 extends CommandOpMode {
 
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(83.5, 10, Math.toRadians(90));
-    private final Pose SCORE_POSE1= new Pose(83.5,10.5, Math.toRadians(75));
+    private final Pose SCORE_POSE1= new Pose(83.5,10.5, Math.toRadians(70));
     private final Pose SCORE_POSE = new Pose(83.5, 15.5, Math.toRadians(75));
-    private final Pose PARK_POSE  = new Pose(50, 15, Math.toRadians(110));
+    private final Pose PARK_POSE  = new Pose(84.5, 17, Math.toRadians(110));
     private final Pose ControlPoint1 = new Pose(131,35);
     private final Pose ControlPoint2 = new Pose(113,44);
     private final Pose GRAB1_END_POSE  = new Pose(136, 8, Math.toRadians(320));
@@ -84,7 +84,7 @@ public class AutoVision14 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE1, ControlPoint1, GRAB1_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE1.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.3, () -> follower.setMaxPower(0.4))
+                .addParametricCallback(0.3, () -> follower.setMaxPower(0.6))
                 .build();
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
@@ -158,6 +158,8 @@ public class AutoVision14 extends CommandOpMode {
         turret = new TurretSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
+        carousel.isTeleOp = false;
+        TeleOpCarousel1.intakeIsOn = false;
 
         vision.enableProcesor();
 
@@ -178,8 +180,7 @@ public class AutoVision14 extends CommandOpMode {
         carousel.setShooterForAutoRPM(4600);
         turret.setTargetAngle(0);
         turret.setShooterAngle(0.3);
-        carousel.isTeleOp = false;
-        TeleOpCarousel1.intakeIsOn = false;
+
 
         CommandScheduler.getInstance().run();
 
@@ -214,8 +215,8 @@ public class AutoVision14 extends CommandOpMode {
 //
 //        packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
 //        packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
-        //packet.put("Unghi Turreta: ", turret.getCurrentAngle());
-        //dashboard.sendTelemetryPacket(packet);
+//        packet.put("Unghi Turreta: ", turret.getCurrentAngle());
+//        dashboard.sendTelemetryPacket(packet);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
@@ -245,7 +246,7 @@ public class AutoVision14 extends CommandOpMode {
                             new AutoAimTurretCommand(turret, vision, 24),
                             new WaitCommand(1000)
                     ),
-                    //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()+6)),
+                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()-5)),
 
                     // Acum, comandă tragerea
                     new ShootAllBallsSlowCommand(carousel),
@@ -275,6 +276,8 @@ public class AutoVision14 extends CommandOpMode {
                             new WaitCommand(1000)
                     ),
 
+                    //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()-5)),
+
                     new ShootAllBallsSlowCommand(carousel),
 
                     //A doua colectare (artefacte human player) si scor
@@ -300,6 +303,7 @@ public class AutoVision14 extends CommandOpMode {
                             new AutoAimTurretCommand(turret, vision, 24),
                             new WaitCommand(2000)
                     ),
+                    //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle()-5)),
 
                     new ShootAllBallsSlowCommand(carousel),
 

@@ -159,6 +159,8 @@ public class AutoVision13 extends CommandOpMode {
         turret = new TurretSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
+        carousel.isTeleOp = false;
+        TeleOpCarousel1.intakeIsOn = false;
 
         vision.enableProcesor();
 
@@ -180,8 +182,7 @@ public class AutoVision13 extends CommandOpMode {
         turret.setTargetAngle(0);
         //turret.getTargetAngle();
         turret.setShooterAngle(0.3);
-        carousel.isTeleOp = false;
-        TeleOpCarousel1.intakeIsOn = false;
+
 
         CommandScheduler.getInstance().run();
 
@@ -263,7 +264,8 @@ public class AutoVision13 extends CommandOpMode {
                             new FollowPathCommand(follower, grab2Path, true),
                             new WaitCommand(6000)
                     ),
-                    new InstantCommand(() -> intake.setPower(0)),
+                    //new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> intake.setPower(0.1)),
                     new InstantCommand(() -> follower.setMaxPower(1)),
 
                     new ParallelCommandGroup(
@@ -277,7 +279,7 @@ public class AutoVision13 extends CommandOpMode {
                             new WaitCommand(2000)
                     ),
 
-                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle() + 6)),
+                    //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle() + 6)),
                     new ShootAllBallsSlowCommand(carousel),
 
                     //A doua colectare (artefacte human player) si scor
@@ -302,7 +304,7 @@ public class AutoVision13 extends CommandOpMode {
                             new AutoAimTurretCommand(turret, vision, 20),
                             new WaitCommand(2000)
                     ),
-                    new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle() + 6)),
+                    //new InstantCommand(() -> turret.setTargetAngle(turret.getTargetAngle() + 6)),
 
                     new ShootAllBallsSlowCommand(carousel),
 
