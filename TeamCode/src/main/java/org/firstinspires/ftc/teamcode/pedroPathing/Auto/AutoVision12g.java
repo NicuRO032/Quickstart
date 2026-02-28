@@ -59,8 +59,8 @@ public class AutoVision12g extends CommandOpMode {
     private final Pose START_POSE = new Pose(122, 124, Math.toRadians(36));
     private final Pose SCORE_POSE = new Pose(91, 91, Math.toRadians(47));
     private final Pose PARK_POSE = new Pose(91, 70, Math.toRadians(47));
-    private final Pose GRAB1_END_POSE = new Pose(122, 80, Math.toRadians(0));
-    private final Pose GRAB2_END_POSE = new Pose(130 , 60   , Math.toRadians(0));
+    private final Pose GRAB1_END_POSE = new Pose(123, 78, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE = new Pose(130 , 58   , Math.toRadians(0));
     private final Pose GRAB3_END_POSE = new Pose(134 , 46, Math.toRadians(0));
     private final Pose ControlPoint1 = new Pose(92,81);
     private final Pose ControlPoint2 = new Pose(89.5, 52);
@@ -96,7 +96,7 @@ public class AutoVision12g extends CommandOpMode {
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)      kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
         score1Path = follower.pathBuilder()
-                .addPath(new BezierCurve(GRAB1_END_POSE, ControlPoint2, SCORE_POSE)) // Pleacă de unde a terminat colectarea
+                .addPath(new BezierLine(GRAB1_END_POSE, SCORE_POSE)) // Pleacă de unde a terminat colectarea
                 .setLinearHeadingInterpolation(GRAB1_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .addParametricCallback(0.90, () -> follower.setMaxPower(0.9))
                 .build();
@@ -278,8 +278,9 @@ public class AutoVision12g extends CommandOpMode {
                             new FollowPathCommand(follower, grab3Path, false),
                             new WaitCommand(5000)
                     ),
-                    /*new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(1)),*/
+
+                    new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> follower.setMaxPower(1)),
                     new InstantCommand(() -> intake.setPower(0.1)),
 
 

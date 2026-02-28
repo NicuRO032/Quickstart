@@ -59,8 +59,8 @@ public class AutoVision11 extends CommandOpMode {
     private final Pose START_POSE = new Pose(21, 124, Math.toRadians(143));
     private final Pose SCORE_POSE = new Pose(52, 90.5, Math.toRadians(133));
     private final Pose PARK_POSE  = new Pose(52.5, 75.5, Math.toRadians(135));
-    private final Pose GRAB1_END_POSE = new Pose(14, 75, Math.toRadians(160));
-    private final Pose GRAB2_END_POSE = new Pose(17 , 85, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE = new Pose(12, 68, Math.toRadians(180));
+    private final Pose GRAB2_END_POSE = new Pose(15 , 87, Math.toRadians(180));
     private final Pose GRAB3_END_POSE = new Pose(2 , 38, Math.toRadians(180));
     private final Pose ControlPoint1 = new Pose(50,35);
     private final Pose ControlPoint2 = new Pose(31, 62);
@@ -273,14 +273,14 @@ public class AutoVision11 extends CommandOpMode {
 
                     // CICLU 4 a treia colectare
 
-                    new InstantCommand(() -> intake.setPower(-0.3)),
+                   /*` new InstantCommand(() -> intake.setPower(-0.3)),
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab3Path, false),
                             new WaitCommand(5000)
                     ),
-                    /*new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(1)),*/
+                    /*new InstantCommand(() -> intake.setPower(0)),astea erau comentate
+                    new InstantCommand(() -> follower.setMaxPower(1)), asta era comentata
                     new InstantCommand(() -> intake.setPower(0.1)),
 
 
@@ -291,7 +291,7 @@ public class AutoVision11 extends CommandOpMode {
                     ),
                     new FollowPathCommand(follower, score3Path, false),
                     new ShootAllBallsCommand(carousel),
-                    new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> intake.setPower(0)),*/
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
