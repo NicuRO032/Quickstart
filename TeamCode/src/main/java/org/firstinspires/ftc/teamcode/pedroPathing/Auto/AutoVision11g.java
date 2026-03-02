@@ -58,15 +58,15 @@ public class AutoVision11g extends CommandOpMode {
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(21, 124, Math.toRadians(143));
     private final Pose SCORE_POSE = new Pose(52, 90.5, Math.toRadians(133));
-    private final Pose PARK_POSE = new Pose(52.5, 75.5, Math.toRadians(135));
+    private final Pose PARK_POSE = new Pose(52.5, 83, Math.toRadians(135));
     private final Pose GRAB1_END_POSE = new Pose(14, 75, Math.toRadians(160)); // set 2 artefacte
     private final Pose GRAB2_END_POSE = new Pose(8, 65, Math.toRadians(109));// artefacte gate
     private final Pose GRAB3_END_POSE = new Pose(17 , 85, Math.toRadians(180)); // set 1 artedfacte
     private final Pose ControlPoint1 = new Pose(50,35);
-    private final Pose ControlPoint2 = new Pose(31, 62);
+    private final Pose ControlPoint2 = new Pose(34, 61);
     private final Pose ControlPoint3 = new Pose(7.5, 81.5);
     private final Pose ControlPoint4 = new Pose(36.5, 57);
-    private final Pose ControlPoint5 = new Pose(64, 81);
+    private final Pose ControlPoint5 = new Pose(65, 81);
 
 
     private PathChain scorePreloadPath;
@@ -91,14 +91,15 @@ public class AutoVision11g extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // set 2 artefacte
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.55, () -> follower.setMaxPower(0.3))
-                .addParametricCallback(0.8, () -> follower.setMaxPower(1))
+                .addParametricCallback(0.55, () -> follower.setMaxPower(0.4))
+                .addParametricCallback(0.78, () -> follower.setMaxPower(0.75))
                 .build();
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
         score1Path = follower.pathBuilder()
                 .addPath(new BezierCurve(GRAB1_END_POSE, ControlPoint2, SCORE_POSE)) // Pleacă de unde a terminat colectarea
                 .setLinearHeadingInterpolation(GRAB1_END_POSE.getHeading(), SCORE_POSE.getHeading())
+                .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.90, () -> follower.setMaxPower(0.9))
                 .build();
 
@@ -130,7 +131,7 @@ public class AutoVision11g extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint5, GRAB3_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.32))
+                .addParametricCallback(0.4, () -> follower.setMaxPower(0.4))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -178,7 +179,7 @@ public class AutoVision11g extends CommandOpMode {
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(3650);
         //  turret.setTargetAngle(-55);
-        turret.setShooterAngle(0.16);
+        turret.setShooterAngle(0.15);
         vision.enableProcesor();
 
 
@@ -234,7 +235,11 @@ public class AutoVision11g extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, scorePreloadPath, false),
-                    new ShootAllBallsCommand(carousel),
+                    new ParallelRaceGroup(
+                            new ShootAllBallsCommand(carousel),
+                            new WaitCommand(1500)
+                    ),
+
 
 
 
@@ -253,11 +258,15 @@ public class AutoVision11g extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3450)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
-                    new ShootAllBallsCommand(carousel),
+                    new ParallelRaceGroup(
+                            new ShootAllBallsCommand(carousel),
+                            new WaitCommand(1500)
+                    ),
+
 
 
                     // CICLUL 3: A doua colectare si scor
@@ -292,12 +301,16 @@ public class AutoVision11g extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3450)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
                     new InstantCommand(() -> intake.setPower(0)),
-                    new ShootAllBallsCommand(carousel),
+                    new ParallelRaceGroup(
+                            new ShootAllBallsCommand(carousel),
+                            new WaitCommand(1500)
+                    ),
+
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
