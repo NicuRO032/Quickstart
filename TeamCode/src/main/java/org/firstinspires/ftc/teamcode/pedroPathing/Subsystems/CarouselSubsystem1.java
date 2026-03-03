@@ -6,26 +6,18 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import java.util.ArrayList;
-import java.util.List;
 import static org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1.intakeIsOn;
 
 import com.seattlesolvers.solverslib.controller.PIDController;
-import com.seattlesolvers.solverslib.controller.PIDFController;
 
-//import com.qualcomm.robotcore.hardware.VoltageSensor;
-import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
@@ -376,33 +368,14 @@ public class CarouselSubsystem1 extends SubsystemBase {
         this.autoEnabled = true;
     }
 
-    // --- ADAUGĂ ACESTE VARIABILE LA FINALUL CLASEI ---
-    private int[] outtakeOrder = {2, 1, 0};
-    private int outtakePtr = 0;
-    private boolean triggerReady = false;
+public boolean isReadyToShoot() {
+        return (outtakeState == OuttakeState.FINISHED || outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
+}
 
-    // --- ADAUGĂ ACESTE METODE ---
 
-    public void prepareOuttakeDirect() {
-        setShooterTargetRPM(DEFAULT_SHOOTER_RPM);
-        this.outtakeOrder = new int[]{2, 1, 0}; // Ordinea inversă cerută
-        this.outtakePtr = 0;
-        this.outtakeState = OuttakeState.PREPARING_SALVO;
-        // Mergem la primul slot din listă (care este 2)
-        int firstSlot = outtakeOrder[outtakePtr];
-        goToServoPosition(SALVO_START_POSITIONS[firstSlot], SALVO_START_FEEDBACK_MV[firstSlot]);
-    }
-
-    public int getOuttakePtr() {
-        return outtakePtr;
-    }
-
-    public boolean isReadyToShoot() {
-            return (outtakeState == OuttakeState.FINISHED || outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
-    }
 
     public void activateIntake() { autoEnabled = true; }
-    public void deactivateIntake() { autoEnabled = false; }
+
 
     public void forcePreload(BallColor s0, BallColor s1, BallColor s2) {
         occupied[0] = true; slotColor[0] = s0;
@@ -411,6 +384,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     public void setActivePattern(OuttakePattern pattern) { this.activePattern = pattern; }
+
 
     public void manualStepLeft() {
         autoEnabled = false;
@@ -425,6 +399,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         goToSlot(nextSlot);
         intakeState = IntakeState.MANUAL_MOVE;
     }
+
 
     private void handleIntake() {
         switch (intakeState) {
@@ -719,7 +694,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public SlowShootSequence getSlowShootState() {
         return this.slowShootState;
     }
-    public boolean getIsReadyToShoot() {return isReadyToShoot();}
 
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }
