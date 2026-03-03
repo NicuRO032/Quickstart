@@ -292,10 +292,10 @@ public class AutoVision12 extends CommandOpMode {
                     ),
                     new FollowPathCommand(follower, score3Path, false),
                     new ShootAllBallsCommand(carousel),
-                    new InstantCommand(() -> intake.setPower(0)),
+                    new InstantCommand(() -> intake.setPower(0))
 
-                    new InstantCommand(() -> follower.setMaxPower(1)),
-                    new FollowPathCommand(follower, parkPath, false)
+                   /* new InstantCommand(() -> follower.setMaxPower(1)),
+                    new FollowPathCommand(follower, parkPath, false)*/
 
             );
             schedule(autoSequence);
