@@ -55,6 +55,8 @@ public class TurretSubsystem extends SubsystemBase {
     private double holdPositionAngle = HOME_ANGLE;
     public static double currentShooterAnglePos;
 
+
+
     public TurretSubsystem(HardwareMap hardwareMap) {
         // Inițializare Hardware
         turretServo = hardwareMap.get(CRServo.class, "turretServo");
@@ -153,7 +155,8 @@ public class TurretSubsystem extends SubsystemBase {
         double currentPower = turretServo.getPower();
 
         if (currentState == ControlState.HOLDING_POSITION) {
-            double error = holdPositionAngle - currentAngle;
+            turretServo.setPower(0);
+            /*double error = holdPositionAngle - currentAngle;
 
             // Dacă eroarea este mai mică de 1 grad (sau cât ai setat), pune puterea 0
             if (Math.abs(error) < AIMING_TOLERANCE_DEGREES) {
@@ -161,7 +164,7 @@ public class TurretSubsystem extends SubsystemBase {
             } else {
                 double correction = turretPID.calculate(error);
                 turretServo.setPower(MathUtils.clamp(correction, -1.0, 1.0));
-            }
+            }*/
         }
 
         // --- PROTECȚIA HARDWARE (Soft Stops) ---
