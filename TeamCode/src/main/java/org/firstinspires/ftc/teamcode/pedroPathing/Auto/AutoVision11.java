@@ -21,7 +21,6 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
 @Autonomous(name = "AUTO.BIG.BLUE", group = "Pedro Pathing")
 public class AutoVision11 extends CommandOpMode {
