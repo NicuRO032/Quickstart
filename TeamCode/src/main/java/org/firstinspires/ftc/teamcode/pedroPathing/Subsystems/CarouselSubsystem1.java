@@ -6,26 +6,18 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import java.util.ArrayList;
-import java.util.List;
 import static org.firstinspires.ftc.teamcode.pedroPathing.TeleOp.TeleOpCarousel1.intakeIsOn;
 
 import com.seattlesolvers.solverslib.controller.PIDController;
-import com.seattlesolvers.solverslib.controller.PIDFController;
 
-//import com.qualcomm.robotcore.hardware.VoltageSensor;
-import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 
 @Config
 public class CarouselSubsystem1 extends SubsystemBase {
@@ -155,7 +147,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
         shooterController = new PIDController(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
 
-        for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
+        for (int i = 0; i < 3; i++) {
+            occupied[i] = false;
+            slotColor[i] = BallColor.UNKNOWN;
+        }
+
         resetForStart();
     }
 
@@ -275,7 +271,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void abortAll() {
         setShooterTargetRPM(0.0);
         autoEnabled = true;
-        for (int i = 0; i < 3; i++) { occupied[i] = false; slotColor[i] = BallColor.UNKNOWN; }
+        for (int i = 0; i < 3; i++) {
+            occupied[i] = false;
+            slotColor[i] = BallColor.UNKNOWN;
+        }
+
         resetForStart();
     }
 
@@ -343,10 +343,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
         goToServoPosition(INTAKE_POSITIONS[targetSlot], INTAKE_FEEDBACK_MV[targetSlot]);
     }
 
-
-
-
-
     // --- Funcții de conversie pentru shooter ---
     private double rpmToTicksPerSecond(double rpm) {
         return (rpm / 60.0) * SHOOTER_MOTOR_CPR;
@@ -372,30 +368,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
         this.autoEnabled = true;
     }
 
-    // --- ADAUGĂ ACESTE VARIABILE LA FINALUL CLASEI ---
-    private int[] outtakeOrder = {2, 1, 0};
-    private int outtakePtr = 0;
-    private boolean triggerReady = false;
-
-    // --- ADAUGĂ ACESTE METODE ---
-
-    public void prepareOuttakeDirect() {
-        setShooterTargetRPM(DEFAULT_SHOOTER_RPM);
-        this.outtakeOrder = new int[]{2, 1, 0}; // Ordinea inversă cerută
-        this.outtakePtr = 0;
-        this.outtakeState = OuttakeState.PREPARING_SALVO;
-        // Mergem la primul slot din listă (care este 2)
-        int firstSlot = outtakeOrder[outtakePtr];
-        goToServoPosition(SALVO_START_POSITIONS[firstSlot], SALVO_START_FEEDBACK_MV[firstSlot]);
-    }
-
-
-
-    public int getOuttakePtr() {
-        return outtakePtr;
-    }
-
-
 public boolean isReadyToShoot() {
         return (outtakeState == OuttakeState.FINISHED || outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
 }
@@ -403,7 +375,7 @@ public boolean isReadyToShoot() {
 
 
     public void activateIntake() { autoEnabled = true; }
-    public void deactivateIntake() { autoEnabled = false; }
+
 
     public void forcePreload(BallColor s0, BallColor s1, BallColor s2) {
         occupied[0] = true; slotColor[0] = s0;
@@ -494,7 +466,7 @@ public boolean isReadyToShoot() {
             //reversing the intake after we load all balls
             case REVERSE_INTAKE:
                 // Așteptăm să treacă timpul de inversare
-                if (intakeReverseTimer.milliseconds() > 300) {
+                if (intakeReverseTimer.milliseconds() > 400) {
                     intake.stop(); // Oprim motorul de intake
                     intakeState = IntakeState.IDLE; // Revenim la starea de așteptare
                 }
@@ -619,14 +591,9 @@ public boolean isReadyToShoot() {
         }
     }
 
-
-
-
     public boolean canChangeRPM(){
         return outtakeState != OuttakeState.OUT_IDLE;
     }
-
-
 
     private BallColor detectBallColor() {
         NormalizedRGBA c1 = colorSensor1.getNormalizedColors();
@@ -727,7 +694,6 @@ public boolean isReadyToShoot() {
     public SlowShootSequence getSlowShootState() {
         return this.slowShootState;
     }
-    public boolean getIsReadyToShoot() {return isReadyToShoot();}
 
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }

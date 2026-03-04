@@ -39,20 +39,8 @@ public class AutoVision13 extends CommandOpMode {
     private int aprilTagFromInit = -1;
     private double correctionAngle = 0.0d;
     private boolean autoStarted = false;
-    double coarseTurretShootingAngle = 0.0;
 
 
-    public static PathConstraints FAST_CONSTRAINTS = new PathConstraints(
-            0.1,  // 90% din viteza maximă
-            100,  // Accelerație mare
-            1.3,  // Viteză angulară mare
-            1.0);
-
-    public static PathConstraints SLOW_CONSTRAINTS = new PathConstraints(
-            0.1,  // 40% din viteza maximă
-            10,   // Accelerație mai mică, pentru mișcări line
-            0.1,  // Viteză angulară mai mică
-            0.1);
 
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(60, 10, Math.toRadians(90));
@@ -189,35 +177,35 @@ public class AutoVision13 extends CommandOpMode {
         super.run(); //OBLIGATORIU – rulează schedulerul și periodic()
         follower.update();
 
-        telemetry.addData("Correction Angle", correctionAngle);
-        telemetry.update();
-
-        TelemetryPacket packet = new TelemetryPacket();
-        packet.put("00 IntakeState", carousel.getIntakeState());
-        packet.put("01 OuttakeState", carousel.getOuttakeState());
-        packet.put("02 SlowShootState", carousel.getSlowShootState());
-        packet.put("03 IsShooterReady", carousel.isShooterReady());
-        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
-        packet.put("Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
-        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
-        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
-        packet.put("Carousel At Target", carousel.atTarget());
-
-        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
-                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-        packet.put("Slots Colors", carousel.getSlotsColorString());
-
-        packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
-        packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
-        //packet.put("Unghi Turreta: ", turret.getCurrentAngle());
-        dashboard.sendTelemetryPacket(packet);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
-
-        telemetry.update();
+//        telemetry.addData("Correction Angle", correctionAngle);
+//        telemetry.update();
+//
+//        TelemetryPacket packet = new TelemetryPacket();
+//        packet.put("00 IntakeState", carousel.getIntakeState());
+//        packet.put("01 OuttakeState", carousel.getOuttakeState());
+//        packet.put("02 SlowShootState", carousel.getSlowShootState());
+//        packet.put("03 IsShooterReady", carousel.isShooterReady());
+//        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
+//        packet.put("Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
+//        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
+//        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
+//        packet.put("Carousel At Target", carousel.atTarget());
+//
+//        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
+//                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
+//        packet.put("Slots Colors", carousel.getSlotsColorString());
+//
+//        packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
+//        packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
+//        //packet.put("Unghi Turreta: ", turret.getCurrentAngle());
+//        dashboard.sendTelemetryPacket(packet);
+//        telemetry.addData("x", follower.getPose().getX());
+//        telemetry.addData("y", follower.getPose().getY());
+//        telemetry.addData("heading", follower.getPose().getHeading());
+//
+//        telemetry.update();
 
 
         // O SINGURĂ DATĂ DUPĂ START

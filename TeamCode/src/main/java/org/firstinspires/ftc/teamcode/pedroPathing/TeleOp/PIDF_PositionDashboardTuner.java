@@ -32,9 +32,6 @@ public class PIDF_PositionDashboardTuner extends LinearOpMode {
     public float pas = 128.1666666f;
     public int targetPosition = 0;
 
-    private DigitalChannel magneticSensor;
-    boolean magnetDetectat = false;
-
     @Override
     public void runOpMode() throws InterruptedException {
 

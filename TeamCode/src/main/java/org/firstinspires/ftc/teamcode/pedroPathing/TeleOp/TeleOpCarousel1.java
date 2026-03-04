@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
-//import static org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1.velocityBeforePush;
 
 import android.annotation.SuppressLint;
 
@@ -432,9 +431,10 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("15.X:", vision.getLastX());
         packet.put("16.Y:", vision.getLastY());
         packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
-        packet.put("18.Turret Angle:", turret.getTargetAngle());
+        packet.put("18.Turret Angle:", turret.getCurrentAngle());
         packet.put("18.AprilTag Bearing:", vision.getLastBearing());
 
+        packet.put("20.Turret Feedback:", turret.getCurrentTurretFeedbackMv());
 
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());

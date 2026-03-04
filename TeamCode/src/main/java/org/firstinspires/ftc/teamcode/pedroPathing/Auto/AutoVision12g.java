@@ -1,13 +1,11 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
-import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
@@ -16,44 +14,25 @@ import com.seattlesolvers.solverslib.command.ParallelCommandGroup;
 import com.seattlesolvers.solverslib.command.ParallelRaceGroup;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
 import com.seattlesolvers.solverslib.command.WaitCommand;
-import com.seattlesolvers.solverslib.command.WaitUntilCommand;
 import com.seattlesolvers.solverslib.pedroCommand.FollowPathCommand;
-
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.AutoAimTurretCommand;
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.DetectAprilTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.PrepareOuttakeFromTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
 @Autonomous(name = "AUTO.BIG.RED.GATE", group = "Pedro Pathing")
 public class AutoVision12g extends CommandOpMode {
     private Follower follower;
     private CarouselSubsystem1 carousel;
     private TurretSubsystem turret;
-    private VisionSubsystem vision;
     private IntakeSubsystem1 intake;
     private FtcDashboard dashboard;
     private int aprilTagFromInit = -1;
     private double correctionAngle = 0.0d;
     private boolean autoStarted = false;
-    double coarseTurretShootingAngle = 0.0;
 
-
-    public static PathConstraints FAST_CONSTRAINTS = new PathConstraints(
-            0.1,  // 90% din viteza maximă
-            100,  // Accelerație mare
-            1.3,  // Viteză angulară mare
-            1.0);
-
-    public static PathConstraints SLOW_CONSTRAINTS = new PathConstraints(
-            0.1,  // 40% din viteza maximă
-            10,   // Accelerație mai mică, pentru mișcări line
-            0.1,  // Viteză angulară mai mică
-            0.1);
 
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(122, 124, Math.toRadians(36));
@@ -65,14 +44,12 @@ public class AutoVision12g extends CommandOpMode {
     private final Pose ControlPoint1 = new Pose(92,81);
     private final Pose ControlPoint2 = new Pose(89.5, 52);
     private final Pose ControlPoint3 = new Pose(87, 27);
-    private final Pose ControlPoint5 = new Pose(74, 25);
 
 
     private PathChain scorePreloadPath;
     private PathChain parkPath;
     private PathChain grab1Path;
     private PathChain grab2Path;
-    private PathChain grab2APath;
     private PathChain grab3Path;
     private PathChain score1Path;
     private PathChain score2Path;
@@ -146,7 +123,6 @@ public class AutoVision12g extends CommandOpMode {
     public void initialize() {
         dashboard = FtcDashboard.getInstance();
         follower = Constants.createFollower(hardwareMap);
-        vision = new VisionSubsystem(hardwareMap);
         //carousel = new CarouselSubsystem1(hardwareMap);
         turret = new TurretSubsystem(hardwareMap);
         intake = new IntakeSubsystem1(hardwareMap);
@@ -160,17 +136,14 @@ public class AutoVision12g extends CommandOpMode {
 
         carousel.resetForStart();
 
-        CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
         CommandScheduler.getInstance().registerSubsystem(turret);
         CommandScheduler.getInstance().registerSubsystem(intake);
 
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        //carousel.setShooterForAutoRPM(3650);
-        //  turret.setTargetAngle(-55);
         turret.setShooterAngle(0.16);
-        vision.enableProcesor();
+//        vision.enableProcesor();
 
 
 
@@ -183,32 +156,32 @@ public class AutoVision12g extends CommandOpMode {
         super.run(); //OBLIGATORIU – rulează schedulerul și periodic()
         follower.update();
 
-        telemetry.addData("Correction Angle", correctionAngle);
-        telemetry.update();
-
-        TelemetryPacket packet = new TelemetryPacket();
-        packet.put("IntakeState", carousel.getIntakeState());
-        packet.put("OuttakeState", carousel.getOuttakeState());
-        packet.put("Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
-        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
-        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
-        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
-        packet.put("Carousel At Target", carousel.atTarget());
-
-
-
-        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
-                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-        packet.put("Slots Colors", carousel.getSlotsColorString());
-        packet.put("AprilTag Vazut", aprilTagFromInit);
-
-        dashboard.sendTelemetryPacket(packet);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
-        telemetry.addData("AprilTag Vazut", aprilTagFromInit);
-        telemetry.update();
+//        telemetry.addData("Correction Angle", correctionAngle);
+//        telemetry.update();
+//
+//        TelemetryPacket packet = new TelemetryPacket();
+//        packet.put("IntakeState", carousel.getIntakeState());
+//        packet.put("OuttakeState", carousel.getOuttakeState());
+//        packet.put("Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
+//        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
+//        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
+//        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
+//        packet.put("Carousel At Target", carousel.atTarget());
+//
+//
+//
+//        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
+//                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
+//        packet.put("Slots Colors", carousel.getSlotsColorString());
+//        packet.put("AprilTag Vazut", aprilTagFromInit);
+//
+//        dashboard.sendTelemetryPacket(packet);
+//        telemetry.addData("x", follower.getPose().getX());
+//        telemetry.addData("y", follower.getPose().getY());
+//        telemetry.addData("heading", follower.getPose().getHeading());
+//        telemetry.addData("AprilTag Vazut", aprilTagFromInit);
+//        telemetry.update();
 
 
         // O SINGURĂ DATĂ DUPĂ START
