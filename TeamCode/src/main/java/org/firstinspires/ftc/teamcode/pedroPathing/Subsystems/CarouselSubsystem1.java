@@ -31,22 +31,22 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 public class CarouselSubsystem1 extends SubsystemBase {
     /* ================= CONSTANTE CARUSEL SERVO ================= */
     // Vectori pentru pozițiile de Intake (servo) - Rămân la fel
-    private static final double[] INTAKE_POSITIONS = {0.210, 0.466, 0.722};
-    private static final double[] INTAKE_FEEDBACK_MV = {838.0, 1550.0, 2277.0};
+    private static final double[] INTAKE_POSITIONS = {0.476, 0.732, 0.98};
+    private static final double[] INTAKE_FEEDBACK_MV = {1580.0, 2315.0, 3015.0};
 
     // Vectori pentru pozițiile de START ale fiecărei salve. Corespund sloturilor 0, 1, 2
-    public static final double[] SALVO_START_POSITIONS   = {1.0, 1.0,  1.0};
-    public static final double[] SALVO_START_FEEDBACK_MV = {3100.0, 3100.0, 3100.0};
+    public static final double[] SALVO_START_POSITIONS   = {0.98, 0.98,  0.98};
+    public static final double[] SALVO_START_FEEDBACK_MV = {3015.0, 3015.0, 3015.0};
 
     // Vectori pentru pozițiile de FINAL ale fiecărei salve.
-    public static final double[] SALVO_END_POSITIONS     = {0.155,  0.155,  0.155};
-    public static final double[] SALVO_END_FEEDBACK_MV   = {685.0, 685.0, 685.0};
+    public static final double[] SALVO_END_POSITIONS     = {0.112,  0.112,  0.112};
+    public static final double[] SALVO_END_FEEDBACK_MV   = {450.0, 450.0, 450.0};
 
     //Constante PENTRU SALVA LENTĂ, DE PRECIZIE
-    public static final double[] SLOW_SALVO_PAUSE1_POS       = {0.66, 0.66, 0.66};
-    public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2108.0, 2108.0, 2108.0};
-    public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.414, 0.414, 0.414};
-    public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1400.0, 1400.0, 1400.0};
+    public static final double[] SLOW_SALVO_PAUSE1_POS       = {0.65, 0.65, 0.65};
+    public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2072.0, 2072.0, 2072.0};
+    public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.392, 0.392, 0.392};
+    public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1345.0, 1345.0, 1345.0};
     public static int SLOW_SHOOT_PAUSE_MS = 500; // Pauza în milisecunde pentru recuperarea turației
 
 
