@@ -5,7 +5,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;// Librăria oficială Limelight
 import com.seattlesolvers.solverslib.command.SubsystemBase;
+
+import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
+import org.firstinspires.ftc.vision.apriltag.AprilTagPoseFtc;
+import org.firstinspires.ftc.vision.apriltag.AprilTagPoseRaw;
+import org.opencv.core.Point;
 
 @Config
 public class VisionSubsystem extends SubsystemBase {
@@ -26,7 +33,7 @@ public class VisionSubsystem extends SubsystemBase {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         // Setează pipeline-ul (0 este de obicei AprilTags în config-ul Limelight)
-        limelight.pipelineSwitch(0);
+        limelight.pipelineSwitch(8);
         limelight.start();
     }
 
@@ -58,15 +65,19 @@ public class VisionSubsystem extends SubsystemBase {
     public double getLastX() { return lastTx; }
     public double getLastY() { return lastDistance; }
 
-    public void enableProcesor() { limelight.pipelineSwitch(0); }
+    public void enableProcesor() { limelight.pipelineSwitch(8); }
     public void disableProcesor() { limelight.pipelineSwitch(1); } // Presupunând că 1 e un pipeline gol
 
     public AprilTagDetection getBestDetection() {
-        // Pentru compatibilitate cu TeleOp-ul tău actual care cere un obiect AprilTagDetection
+        // Pentru compatibilitate cu TeleOp-ul tnullău actual care cere un obiect AprilTagDetection
         if (!hasValidTarget) return null;
 
-        // Creăm un obiect dummy pentru a nu strica logica din TeleOp
-        // În viitor, recomand să modifici TeleOp-ul să ceară direct tx/ty.
-        return null;
+        // Exemplu de creare a unui obiect dummy
+        // Presupunem că valorile tale sunt deja actualizate
+        // lastTagId, lastTx (bearing), lastTy (elevation), lastDistance (range)
+
+
+        return ;
+
     }
 }
