@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
+//import static org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1.velocityBeforePush;
 
 import android.annotation.SuppressLint;
 
@@ -146,25 +147,25 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
             follower.setTeleOpDrive(
-                        0, 0, 0, true
+                    0, 0, 0, true
             );
         } else {
             if (!slowMode) follower.setTeleOpDrive(
-                        -gamepad1.left_stick_y,
-                        -gamepad1.left_stick_x,
-                        gamepad1.left_trigger - gamepad1.right_trigger,
-                        true
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    gamepad1.left_trigger - gamepad1.right_trigger,
+                    true
             );
             else follower.setTeleOpDrive(
-                        -gamepad1.left_stick_y * slowModeMultiplier,
-                        -gamepad1.left_stick_x * slowModeMultiplier,
-                        (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
-                        true
+                    -gamepad1.left_stick_y * slowModeMultiplier,
+                    -gamepad1.left_stick_x * slowModeMultiplier,
+                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
+                    true
             );
         }
 
         if (gamepad1.rightBumperWasPressed()) {
-                slowMode = !slowMode;
+            slowMode = !slowMode;
         }
 
         driver1.readButtons();
@@ -393,17 +394,17 @@ public class TeleOpCarousel1 extends OpMode {
 
         TelemetryPacket packet = new TelemetryPacket();
         /**
-        packet.put("01. Turret TeleOp State", turretTeleOpState.name());
-        packet.put("02. Turret Subsystem State", turret.getControlState().name());
-        packet.put("03. Turret Target", turret.getTargetAngle());
-        packet.put("04. Turret Current", turret.getCurrentAngle());
-        packet.put("05. AprilTag Bearing", bearing);
-        packet.put("06. Shooter Angle Mode", turret.getAngleControlState());
-        packet.put("07. Shooter Angle Pos", turret.getShooterAnglePosition());
-        packet.put("08. Global index", carousel.getGlobalIndex());
-        packet.put("09. LogicalIndex", carousel.getLogicalIndex());
-        packet.put("10. Outtake State", carousel.getOuttakeState());
-**/
+         packet.put("01. Turret TeleOp State", turretTeleOpState.name());
+         packet.put("02. Turret Subsystem State", turret.getControlState().name());
+         packet.put("03. Turret Target", turret.getTargetAngle());
+         packet.put("04. Turret Current", turret.getCurrentAngle());
+         packet.put("05. AprilTag Bearing", bearing);
+         packet.put("06. Shooter Angle Mode", turret.getAngleControlState());
+         packet.put("07. Shooter Angle Pos", turret.getShooterAnglePosition());
+         packet.put("08. Global index", carousel.getGlobalIndex());
+         packet.put("09. LogicalIndex", carousel.getLogicalIndex());
+         packet.put("10. Outtake State", carousel.getOuttakeState());
+         **/
 
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
@@ -431,10 +432,9 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("15.X:", vision.getLastX());
         packet.put("16.Y:", vision.getLastY());
         packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
-        packet.put("18.Turret Angle:", turret.getCurrentAngle());
+        packet.put("18.Turret Angle:", turret.getTargetAngle());
         packet.put("18.AprilTag Bearing:", vision.getLastBearing());
 
-        packet.put("20.Turret Feedback:", turret.getCurrentTurretFeedbackMv());
 
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
@@ -443,12 +443,12 @@ public class TeleOpCarousel1 extends OpMode {
 
 
 /**
-        packet.put("14.Turret TeleOp State", turretTeleOpState.name());
-        packet.put("15.Turret Subsystem State", turret.getControlState().name());
-        packet.put("16.Turret Target", turret.getTargetAngle());
-        packet.put("17.Turret Current", turret.getCurrentAngle());
-        packet.put("18.AprilTag Bearing", bearing);
-**/
+ packet.put("14.Turret TeleOp State", turretTeleOpState.name());
+ packet.put("15.Turret Subsystem State", turret.getControlState().name());
+ packet.put("16.Turret Target", turret.getTargetAngle());
+ packet.put("17.Turret Current", turret.getCurrentAngle());
+ packet.put("18.AprilTag Bearing", bearing);
+ **/
         dashboard.sendTelemetryPacket(packet);
     }
 }

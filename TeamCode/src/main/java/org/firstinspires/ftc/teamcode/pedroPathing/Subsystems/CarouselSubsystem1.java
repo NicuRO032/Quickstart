@@ -121,8 +121,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private double slowMoveStartPos;
     private double slowMoveTargetPos;
     private final ElapsedTime slowMoveTimer = new ElapsedTime();
-    public static double SLOW_MOVE_DURATION_MS = 1000; // Durata în milisecunde pentru mișcarea lentă.
-    public static double STABILIZATION_DURATION_MS = 1000; // Durata în milisecunde pentru stabilizare parghie.
+    public static double SLOW_MOVE_DURATION_MS = 750; // Durata în milisecunde pentru mișcarea lentă.
+    public static double STABILIZATION_DURATION_MS = 100; // Durata în milisecunde pentru stabilizare parghie.
 
     public CarouselSubsystem1(HardwareMap hardwareMap, IntakeSubsystem1 intake) {
         this.intake = intake;
