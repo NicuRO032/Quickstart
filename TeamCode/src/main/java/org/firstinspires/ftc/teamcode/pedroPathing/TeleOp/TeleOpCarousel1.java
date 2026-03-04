@@ -35,6 +35,10 @@ public class TeleOpCarousel1 extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
+    private boolean slowShoot = false, fastShoot = false;
+    private ElapsedTime delayAruncare = new ElapsedTime();
+
+
     private GamepadEx driver1;
     private GamepadEx driver2;
 
@@ -241,11 +245,26 @@ public class TeleOpCarousel1 extends OpMode {
             turret.setShooterAngle(0.06); // Unghi pentru inaltime mare
 
         // --- Control Outtake (păstrat) ---
+        // --- Ridicam un steag pentru aruncare, driverul 2 e gata sa arunce oricand robotul este ---
+        // --- Daca trec mai mult de 5 secunde consideram apasare accidentala si nu mai aruncam ---
         if (driver2.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
-            carousel.triggerShoot();
+            fastShoot = true;
+            delayAruncare.reset();
         }
         if (driver2.wasJustPressed(GamepadKeys.Button.X)) {
-            carousel.triggerSlowShoot();
+            slowShoot = false;
+            delayAruncare.reset();
+        }
+        if(carousel.isShooterReady() && delayAruncare.seconds() < 5) {
+            if(fastShoot){
+                fastShoot = false;
+                carousel.triggerShoot();
+            }
+            if(slowShoot){
+                slowShoot = false;
+                carousel.triggerSlowShoot();
+
+            }
         }
 
 
@@ -285,6 +304,7 @@ public class TeleOpCarousel1 extends OpMode {
 
                 // Comanda de ochire manuală la ținta vizibilă (păstrată)
                 // Aceasta va ochi orice tag vizibil, indiferent de alianță. Util pentru testare.
+                /**
                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
                     AprilTagDetection currentTag = vision.getBestDetection();
                     if (currentTag != null && currentTag.metadata != null) {
@@ -292,6 +312,7 @@ public class TeleOpCarousel1 extends OpMode {
                         turret.setTargetAngle(targetAngle);
                     }
                 }
+                 **/
                 break;
 
             case SEMI_AUTO_SEARCHING:
@@ -373,8 +394,7 @@ public class TeleOpCarousel1 extends OpMode {
 
     @SuppressLint("DefaultLocale")
     private void sendTelemetry() {
-        AprilTagDetection bestTag = vision.getBestDetection();
-        double bearing = (bestTag != null && bestTag.ftcPose != null) ? bestTag.ftcPose.bearing : 0.0;
+        double bearing = vision.getLastBearing();
 
         telemetry.addLine("--- TURELA ---");
         telemetry.addData("TeleOp State", turretTeleOpState);
