@@ -26,6 +26,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 @TeleOp(name="TeleOp_Final_cu_Turela")
 @Config
 public class TeleOpCarousel1 extends OpMode {
+    //private IntakeSubsystem1 intake1;
+
     private enum Alliance { BLUE, RED, UNKNOWN }
     private Alliance selectedAlliance = Alliance.UNKNOWN;
     private int targetAprilTagId = 0; // ID-ul țintei, 0 înseamnă niciuna
@@ -56,6 +58,7 @@ public class TeleOpCarousel1 extends OpMode {
     private TurretTeleOpState turretTeleOpState = TurretTeleOpState.MANUAL;
     private final ElapsedTime lockOnTimer = new ElapsedTime();
     public static boolean intakeIsOn = false;
+    //public static boolean Intake1IsOn = false;
 
     public static double SHOOT_RPM = 3000, ANGLE_SHOOT = 0;
 
@@ -66,6 +69,7 @@ public class TeleOpCarousel1 extends OpMode {
             startingPose = new Pose(0, 0, 0);
         }
         intakeIsOn = false;
+        //Intake1IsOn = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
 
@@ -73,6 +77,8 @@ public class TeleOpCarousel1 extends OpMode {
         driver2 = new GamepadEx(gamepad2);
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
+
+
         //carousel = new CarouselSubsystem1(hardwareMap);
         turret = new TurretSubsystem(hardwareMap);
         vision = new VisionSubsystem(hardwareMap);
@@ -83,7 +89,7 @@ public class TeleOpCarousel1 extends OpMode {
         carousel.activateIntake();
 
         dashboard = FtcDashboard.getInstance();
-        CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake);
+        CommandScheduler.getInstance().registerSubsystem(carousel, turret, vision, intake, intake);
 
         // Afișăm instrucțiunile o singură dată dacă alianța nu a fost încă selectată
         if (selectedAlliance == Alliance.UNKNOWN) {
@@ -185,13 +191,16 @@ public class TeleOpCarousel1 extends OpMode {
     private void handleDriver1Controls() {
         final double STICK_DEADZONE = 0.1;
         double joystickPower = driver1.getRightY() * 0.9;
+       // double joystickPower1 = driver1.getRightY() * 0.9;
 
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
             intake.setPower(joystickPower);
             intakeIsOn = false;
+            //Intake1IsOn = false;
         } else {
             if (driver1.wasJustPressed(GamepadKeys.Button.A)) {
                 intakeIsOn = !intakeIsOn;
+               // Intake1IsOn = !Intake1IsOn;
             }
 
             // Obținem starea mașinii de stări de intake din carusel
@@ -201,9 +210,11 @@ public class TeleOpCarousel1 extends OpMode {
             // Astfel, nu interferăm cu stările STORE_AND_ADVANCE sau REVERSE_INTAKE.
             if (currentIntakeState == CarouselSubsystem1.IntakeState.IDLE) {
                 if (intakeIsOn) {
-                    intake.setPower(-0.8); // Pornește intake-ul la comanda șoferului
+                    intake.setPower(-0.8);
+                   // intake.setPower(-0.8);// Pornește intake-ul la comanda șoferului
                 } else {
-                    intake.stop(); // Oprește intake-ul la comanda șoferului
+                    intake.stop();
+                   // intake.stop();// Oprește intake-ul la comanda șoferului
                 }
             }
             // Dacă starea NU este IDLE, înseamnă că subsistemul Carousel are controlul.
@@ -226,6 +237,7 @@ public class TeleOpCarousel1 extends OpMode {
             outtakePrepared = true;
             hasRumbled = false;
             intakeIsOn = false;
+           // Intake1IsOn = false;
         }
 
         if (carousel.isReadyToShoot() && !hasRumbled) {
@@ -252,7 +264,7 @@ public class TeleOpCarousel1 extends OpMode {
             delayAruncare.reset();
         }
         if (driver2.wasJustPressed(GamepadKeys.Button.X)) {
-            slowShoot = false;
+            slowShoot = true;
             delayAruncare.reset();
         }
         if(carousel.isShooterReady() && delayAruncare.seconds() < 5) {
@@ -321,8 +333,8 @@ public class TeleOpCarousel1 extends OpMode {
                 // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
                 if (vision.hasValidTag() && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
-                    turret.setShooterAngle(0.00402116 * x - 0.0283422);
+                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
+                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
                     //carousel.setShooterTargetRPM(SHOOT_RPM);
                     //turret.setShooterAngle(ANGLE_SHOOT);
                 }
@@ -351,7 +363,7 @@ public class TeleOpCarousel1 extends OpMode {
                     // 1. Schimbăm culoarea LED-ului în funcție de precizie
                     double bearingError = vision.getLastBearing();
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
-                        driver2.gamepad.setLedColor(0, 0, 1, -1); // Albastru pentru Lock-On reușit
+                        driver2.gamepad.setLedColor(255, 0, 255, -1); // Albastru pentru Lock-On reușit
                     } else {
                         driver2.gamepad.setLedColor(1, 0.5, 0, -1); // Portocaliu pentru Ajustare
                     }
@@ -359,8 +371,8 @@ public class TeleOpCarousel1 extends OpMode {
                     // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
                     if (carousel.canChangeRPM()) {
                         double x = vision.getDistance();
-                        carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
-                        turret.setShooterAngle(0.00402116 * x - 0.0283422);
+                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
+                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
                         //carousel.setShooterTargetRPM(SHOOT_RPM);
                         //turret.setShooterAngle(ANGLE_SHOOT);
                     }

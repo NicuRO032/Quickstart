@@ -219,6 +219,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         autoEnabled = false;
         intakeIsOn = false;
 
+
         int salvoToExecute;
 
         if (hasCorrectBallMix()) {
@@ -429,14 +430,14 @@ public boolean isReadyToShoot() {
                 // Verificăm dacă am umplut caruselul DUPĂ ce am adăugat bila curentă.
                 if (allSlotsOccupied()) {
                     // Caruselul s-a umplut.
-                    autoEnabled = false; // Oprește ciclul automat
-                    intakeIsOn = false; // Setează flag-ul pentru TeleOp
-                    needsAutoPrepare = true;
+                    autoEnabled = false;
+                    // IMPORTANT: Oprim orice logică de "ON" din TeleOp pentru a nu avea conflicte
+                    intakeIsOn = false;
 
-                    // Comandă direct inversarea motorului
-                    intake.setPower(0.7); // Putere pozitivă pentru a scoate bila
+                    intake.setPower(0.7); // Folosește o putere pozitivă pentru outtake
                     intakeReverseTimer.reset();
                     intakeState = IntakeState.REVERSE_INTAKE;
+                    needsAutoPrepare = true;
 
                 } else {
                     // Mai este loc. Găsim următorul slot liber.

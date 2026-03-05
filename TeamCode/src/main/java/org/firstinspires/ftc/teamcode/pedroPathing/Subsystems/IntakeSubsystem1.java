@@ -8,6 +8,7 @@ import com.seattlesolvers.solverslib.command.SubsystemBase;
 public class IntakeSubsystem1 extends SubsystemBase {
 
     private final DcMotorEx intakeMotor;
+    private final DcMotorEx intakeMotor1;
 
     /**
      * Constructor pentru subsistemul de admisie.
@@ -15,10 +16,17 @@ public class IntakeSubsystem1 extends SubsystemBase {
      */
     public IntakeSubsystem1(HardwareMap hardwareMap) {
         intakeMotor = hardwareMap.get(DcMotorEx.class, "motorIntake");
+        intakeMotor1 = hardwareMap.get(DcMotorEx.class, "motorIntake1");
+
         //intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intakeMotor.setPower(0);
+
+        intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        intakeMotor1.setPower(0);
     }
 
     /**
@@ -30,12 +38,21 @@ public class IntakeSubsystem1 extends SubsystemBase {
      */
     public void setPower(double power) {
         intakeMotor.setPower(power);
+        intakeMotor1.setPower(power);
     }
 
     /**
      * Oprește motorul de admisie.
      */
     public void stop() {
+        intakeMotor1.setPower(0);
         intakeMotor.setPower(0);
     }
+
+    public void reverseIntake() {
+        // Presupunând că 0.7 scoate bila și -0.8 o trage
+        intakeMotor.setPower(-0.8);
+        intakeMotor1.setPower(0.8);
+    }
+
 }
