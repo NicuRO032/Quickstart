@@ -26,9 +26,9 @@ public class TurretSubsystem extends SubsystemBase {
 
     // --- Coeficienți pentru noul controler PID de viteză ---
     // Aceste valori sunt un punct de pornire și vor necesita reglaj fin (tuning)
-    public static double AIMING_KP = 0.1;  // Răspunsul proporțional la eroare
+    public static double AIMING_KP = 0.4;  // Răspunsul proporțional la eroare
     public static double AIMING_KI = 0.0;  // Anulează erorile mici, persistente
-    public static double AIMING_KD = 0.0;  // Previne oscilațiile și stabilizează mișcarea
+    public static double AIMING_KD = 0.03;  // Previne oscilațiile și stabilizează mișcarea
 
     // --- Constante Unghi Shooter ---
     public static double ANGLE_MIN_POS = 0.06;
@@ -69,23 +69,40 @@ public class TurretSubsystem extends SubsystemBase {
      * Metoda principală pentru auto-aim, bazată pe controlul vitezei.
      * @param bestTag Cel mai bun AprilTag detectat.
      */
-    public void commandAutoAim(AprilTagDetection bestTag, int targetId) {
-        // Verificăm dacă avem o țintă validă ȘI dacă ID-ul ei corespunde cu cel dorit
-        if (bestTag != null && bestTag.metadata != null && bestTag.id == targetId) {
+    /**
+     * Metoda pentru auto-aim care primește date direct de la Limelight (via VisionSubsystem)
+     * @param targetVisible Dacă Limelight vede un tag valid
+     * @param seenTagId ID-ul tag-ului detectat curent
+     * @param bearingError Eroarea orizontală (tx de la Limelight)
+     * @param targetId ID-ul pe care robotul trebuie să îl urmărească (ex: 20 sau 24)
+     */
+    public void commandAutoAim(boolean targetVisible, int seenTagId, double bearingError, int targetId) {
+        // Verificăm dacă ținta este vizibilă ȘI are ID-ul corect pentru alianță
+        if (targetVisible && seenTagId == targetId) {
             currentState = ControlState.TRACKING_TAG;
-            double bearingError = bestTag.ftcPose.bearing;
 
-            // 1. PID-ul calculează o viteză de corecție necesară pentru a anula eroarea.
-            //    Ținta (setpoint) este 0.0, iar măsura este eroarea curentă (-bearingError).
-            double angularVelocityCorrection = turretPID.calculate(0.0, -bearingError);
+            // Dacă eroarea este mai mică decât toleranța, nu mai actualizăm programTargetAngle
+            // pentru a preveni tremuratul (jitter)
+            if (Math.abs(bearingError) < AIMING_TOLERANCE_DEGREES) {
+                return;
+            }
 
-            // 2. Aplicăm corecția de viteză la unghiul curent pentru a obține noua țintă.
-            programTargetAngle = getCurrentAngle() + angularVelocityCorrection;
+            // Deoarece ai un SERVO DE POZIȚIE, PID-ul calculează o "corecție"
+            // care se adaugă la unghiul actual.
+            // Setpoint este 0.0 (vrem tag-ul pe centru), măsura este bearingError.
+            double correction = turretPID.calculate(bearingError, 0.0);
+
+            // Actualizăm unghiul țintă al servoului
+            programTargetAngle = getCurrentAngle() + correction;
+
+            // Asigurăm limitarea unghiului în limitele fizice [-55, 55]
+            programTargetAngle = MathUtils.clamp(programTargetAngle, TURRET_MIN_ANGLE, TURRET_MAX_ANGLE);
 
         } else {
-            // Dacă am pierdut ținta sau nu este cea corectă, menținem ultima poziție cunoscută.
+            // Dacă am pierdut ținta, trecem în HOLDING pe ultima poziție cunoscută
             if (currentState == ControlState.TRACKING_TAG) {
                 currentState = ControlState.HOLDING_POSITION;
+                programTargetAngle = getCurrentAngle();
             }
         }
     }

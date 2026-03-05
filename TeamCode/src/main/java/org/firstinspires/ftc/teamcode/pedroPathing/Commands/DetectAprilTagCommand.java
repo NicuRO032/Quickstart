@@ -33,7 +33,7 @@ public class DetectAprilTagCommand extends CommandBase {
 
     @Override
     public void initialize() {
-        vision.enableProcesor();
+        //vision.enableProcesor();
         timer.reset();
         tagFound = false;
     }

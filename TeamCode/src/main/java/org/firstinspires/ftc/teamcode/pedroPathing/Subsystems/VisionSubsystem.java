@@ -25,15 +25,15 @@ public class VisionSubsystem extends SubsystemBase {
     private boolean hasValidTarget = false;
 
     // Constante pentru calculul distanței (Ajustează-le conform robotului tău)
-    public static double CAMERA_HEIGHT = 15.0; // Înălțimea camerei de la sol (cm)
-    public static double TARGET_HEIGHT = 30.0; // Înălțimea centrului AprilTag-ului (cm)
+    public static double CAMERA_HEIGHT = 30.0; // Înălțimea camerei de la sol (cm)
+    public static double TARGET_HEIGHT = 110.0; // Înălțimea centrului AprilTag-ului (cm)
     public static double CAMERA_PITCH = 0.0;   // Unghiul de înclinare al camerei (grade)
 
     public VisionSubsystem(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         // Setează pipeline-ul (0 este de obicei AprilTags în config-ul Limelight)
-        limelight.pipelineSwitch(8);
+        limelight.pipelineSwitch(0);
         limelight.start();
     }
 
@@ -41,43 +41,38 @@ public class VisionSubsystem extends SubsystemBase {
     public void periodic() {
         LLResult result = limelight.getLatestResult();
 
-        if (result != null && result.isValid()) {
+        // Verificăm dacă Limelight vede un AprilTag (Fiducial)
+        if (result != null && result.isValid() && !result.getFiducialResults().isEmpty()) {
             hasValidTarget = true;
-            lastTx = result.getTx(); // Unghiul orizontal direct (Bearing)
-            lastTy = result.getTy(); // Unghiul vertical
 
-            // Calcul distanță trigonometrică (mult mai precisă decât ftcPose la distanță)
+            // Luăm prima detecție din listă (cea mai relevantă)
+            com.qualcomm.hardware.limelightvision.LLResultTypes.FiducialResult fr = result.getFiducialResults().get(0);
+
+            lastTagId = (int) fr.getFiducialId(); // ID-ul real (20, 24 etc.)
+            lastTx = fr.getTargetXDegrees();     // Unghiul orizontal (bearing)
+            lastTy = fr.getTargetYDegrees();     // Unghiul vertical (pitch)
+
+            // Calcul distanță
             double angleToTarget = Math.toRadians(CAMERA_PITCH + lastTy);
             lastDistance = (TARGET_HEIGHT - CAMERA_HEIGHT) / Math.tan(angleToTarget);
-
-            // Notă: Limelight v3 returnează ID-ul tag-ului principal prin result.getBotpose()
-            // sau prin parsarea rezultatelor detaliate. Pentru simplitate:
-            lastTagId = (int) result.getTx(); // Simulare ID - Limelight v3 trimite ID-ul în rezultate
         } else {
             hasValidTarget = false;
         }
     }
 
+    // Metode simple pentru a citi datele din exterior
     public boolean hasValidTag() { return hasValidTarget; }
     public int getLastTagId() { return lastTagId; }
-    public double getLastBearing() { return lastTx; } // tx este bearing-ul direct
+    public double getLastBearing() { return lastTx; }
+
+
+
     public double getDistance() { return lastDistance; }
     public double getLastX() { return lastTx; }
     public double getLastY() { return lastDistance; }
 
-    public void enableProcesor() { limelight.pipelineSwitch(8); }
-    public void disableProcesor() { limelight.pipelineSwitch(1); } // Presupunând că 1 e un pipeline gol
-
-    public AprilTagDetection getBestDetection() {
-        // Pentru compatibilitate cu TeleOp-ul tnullău actual care cere un obiect AprilTagDetection
-        if (!hasValidTarget) return null;
-
-        // Exemplu de creare a unui obiect dummy
-        // Presupunem că valorile tale sunt deja actualizate
-        // lastTagId, lastTx (bearing), lastTy (elevation), lastDistance (range)
+    //public void enableProcesor() { limelight.pipelineSwitch(8); }
+    //public void disableProcesor() { limelight.pipelineSwitch(1); } // Presupunând că 1 e un pipeline gol
 
 
-        return ;
-
-    }
 }

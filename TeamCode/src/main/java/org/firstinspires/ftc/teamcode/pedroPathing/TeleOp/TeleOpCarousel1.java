@@ -135,7 +135,7 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addLine("========================================");
         telemetry.update();
 
-        vision.disableProcesor();
+        //vision.disableProcesor();
     }
 
     @Override
@@ -273,22 +273,19 @@ public class TeleOpCarousel1 extends OpMode {
             if (turretTeleOpState == TurretTeleOpState.MANUAL) {
                 // Permitem trecerea la auto-aim DOAR dacă o alianță a fost selectată în init()
                 if (selectedAlliance != Alliance.UNKNOWN) {
-                    vision.enableProcesor();
+                    //vision.enableProcesor();
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
                 }
             } else {
                 // Ieșim din modul auto-aim și ne întoarcem la manual
-                vision.disableProcesor();
+                //vision.disableProcesor();
                 turretTeleOpState = TurretTeleOpState.MANUAL;
                 turret.setManualControl(0); // Oprește mișcarea turelei la ieșirea din mod
             }
         }
 
-        AprilTagDetection bestTag = vision.getBestDetection();
-        // NOU: 'hasValidTarget' verifică acum și ID-ul țintei selectate la inițializare
-        boolean hasValidTarget = (bestTag != null && bestTag.metadata != null && bestTag.id == targetAprilTagId);
 
-        switch (turretTeleOpState) {
+           switch (turretTeleOpState) {
             case MANUAL:
                 driver2.gamepad.setLedColor(0, 1, 0, -1); // Verde pentru control Manual
 
@@ -322,7 +319,7 @@ public class TeleOpCarousel1 extends OpMode {
                 turret.setManualControl(-driver2.getRightX());
 
                 // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
-                if (bestTag != null && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
+                if (vision.hasValidTag() && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
                     carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
                     turret.setShooterAngle(0.00402116 * x - 0.0283422);
@@ -331,23 +328,28 @@ public class TeleOpCarousel1 extends OpMode {
                 }
 
                 // Dacă am găsit ȚINTA CORECTĂ, trecem la LOCKING
-                if (hasValidTarget) {
+                if (vision.hasValidTag()) {
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_LOCKING;
                     driver2.gamepad.rumble(50);
                     lockOnTimer.reset();
                     // NOU: Apelăm commandAutoAim cu ID-ul țintei
-                    turret.commandAutoAim(bestTag, targetAprilTagId);
+                    turret.commandAutoAim(
+                            vision.hasValidTag(),
+                            vision.getLastTagId(),
+                            vision.getLastBearing(),
+                            targetAprilTagId
+                    );
                 }
                 break;
 
             case SEMI_AUTO_LOCKING:
                 // ▼▼▼ AICI ESTE MODIFICAREA PRINCIPALĂ ▼▼▼
                 // Verificăm MAI ÎNTÂI dacă avem o țintă validă.
-                if (hasValidTarget) {
+                if (vision.hasValidTag()) {
                     // ---- Dacă avem țintă, executăm toată logica de ochire și feedback ----
 
                     // 1. Schimbăm culoarea LED-ului în funcție de precizie
-                    double bearingError = bestTag.ftcPose.bearing;
+                    double bearingError = vision.getLastBearing();
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {
                         driver2.gamepad.setLedColor(0, 0, 1, -1); // Albastru pentru Lock-On reușit
                     } else {
@@ -364,7 +366,12 @@ public class TeleOpCarousel1 extends OpMode {
                     }
 
                     // 3. Comandăm turelei să continue ochirea
-                    turret.commandAutoAim(bestTag, targetAprilTagId);
+                    turret.commandAutoAim(
+                            vision.hasValidTag(),
+                            vision.getLastTagId(),
+                            vision.getLastBearing(),
+                            targetAprilTagId
+                    );
 
                     // 4. Activăm rumble-ul dacă suntem pe țintă de suficient timp
                     if (Math.abs(bearingError) < TurretSubsystem.AIMING_TOLERANCE_DEGREES) {

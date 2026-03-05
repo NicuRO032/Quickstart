@@ -145,7 +145,7 @@ public class AutoVision13 extends CommandOpMode {
         intake = new IntakeSubsystem1(hardwareMap);
         carousel = new CarouselSubsystem1(hardwareMap, intake);
 
-        vision.enableProcesor();
+        //vision.enableProcesor();
 
 
         // Apelează buildPaths() AICI, după ce follower-ul a fost inițializat

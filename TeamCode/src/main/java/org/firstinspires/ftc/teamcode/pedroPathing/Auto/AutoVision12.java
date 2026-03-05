@@ -148,7 +148,7 @@ public class AutoVision12 extends CommandOpMode {
         //carousel.setShooterForAutoRPM(3650);
         //  turret.setTargetAngle(-55);
         turret.setShooterAngle(0.16);
-        vision.enableProcesor();
+        //vision.enableProcesor();
 
 
 
