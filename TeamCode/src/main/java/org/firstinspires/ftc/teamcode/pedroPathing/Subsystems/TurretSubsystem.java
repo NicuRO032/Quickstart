@@ -21,14 +21,15 @@ public class TurretSubsystem extends SubsystemBase {
     public static double TURRET_MIN_ANGLE = -55.0;
     public static double TURRET_MAX_ANGLE = 55.0;
     public static double HOME_ANGLE = 0.0;
+    public static double SERVO_CENTER_OFFSET = -0.021; // Ajustează fin (+ sau -)
     public static double MANUAL_SPEED_MULTIPLIER = 1.0;
     public static double AIMING_TOLERANCE_DEGREES = 1.0; // Toleranță mai mică pentru o ochire mai precisă
 
     // --- Coeficienți pentru noul controler PID de viteză ---
     // Aceste valori sunt un punct de pornire și vor necesita reglaj fin (tuning)
-    public static double AIMING_KP = 0.4;  // Răspunsul proporțional la eroare
+    public static double AIMING_KP = 0.35;  // Răspunsul proporțional la eroare
     public static double AIMING_KI = 0.0;  // Anulează erorile mici, persistente
-    public static double AIMING_KD = 0.03;  // Previne oscilațiile și stabilizează mișcarea
+    public static double AIMING_KD = 0.005;  // Previne oscilațiile și stabilizează mișcarea
 
     // --- Constante Unghi Shooter ---
     public static double ANGLE_MIN_POS = 0.06;
@@ -174,13 +175,15 @@ public class TurretSubsystem extends SubsystemBase {
     // --- Convertoare și Gettere (Neschimbate) ---
     private double turretAngleToServoPosition(double turretAngle) {
         double servoAngle = turretAngle * GEAR_RATIO;
-        double servoPosition = 0.5 + (servoAngle / SERVO_RANGE_DEGREES);
+        // Adăugăm offset-ul direct la poziția finală (0.5 este centrul teoretic)
+        double servoPosition = 0.5 + (servoAngle / SERVO_RANGE_DEGREES) + SERVO_CENTER_OFFSET;
         return MathUtils.clamp(servoPosition, 0.0, 1.0);
     }
 
     public double getCurrentAngle() {
         double servoPosition = turretServo.getPosition();
-        double servoAngle = (servoPosition - 0.5) * SERVO_RANGE_DEGREES;
+        // Scădem offset-ul când citim poziția pentru a avea unghiul corect
+        double servoAngle = (servoPosition - SERVO_CENTER_OFFSET - 0.5) * SERVO_RANGE_DEGREES;
         return servoAngle / GEAR_RATIO;
     }
 
