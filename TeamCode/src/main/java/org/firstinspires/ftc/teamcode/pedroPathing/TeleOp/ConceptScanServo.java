@@ -13,6 +13,8 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.seattlesolvers.solverslib.controller.PIDController;
 import com.seattlesolvers.solverslib.util.MathUtils;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 //git
 @TeleOp(name = "ConceptScanServo", group = "TeleOp")
 @Config
@@ -119,6 +121,9 @@ public class ConceptScanServo extends LinearOpMode {
             double servo2TargetPos = servoPos + servo2Offset; // <-- AICI ESTE MODIFICAREA
             servo2.setPosition(MathUtils.clamp(servo2TargetPos, 0.0, 1.0));
 
+            double currentMotor1 = shooterMotor1.getCurrent(CurrentUnit.AMPS);
+            double currentMotor2 = shooterMotor1.getCurrent(CurrentUnit.AMPS);
+
 
             // ================== TELEMETRIE ==================
             double feedbackVoltage = analogFeedback.getVoltage();
@@ -144,6 +149,9 @@ public class ConceptScanServo extends LinearOpMode {
             // Adăugăm și datele de tuning pentru servo
             packet.put("Servo2 Offset", servo2Offset);
             packet.put("Servo2 Target", servo2TargetPos);
+
+            packet.put("Motor 1 Amps", String.format("%.3f", currentMotor1));
+            packet.put("Motor 2 Amps", String.format("%.3f", currentMotor2));
             dashboard.sendTelemetryPacket(packet);
         }
     }

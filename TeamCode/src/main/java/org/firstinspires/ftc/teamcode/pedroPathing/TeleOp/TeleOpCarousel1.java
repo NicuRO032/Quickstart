@@ -11,11 +11,13 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
@@ -184,7 +186,8 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        sendTelemetry();
+        //sendTelemetry();
+        sendTelemetryMotorsCurrent();
 
     }
 
@@ -489,5 +492,39 @@ public class TeleOpCarousel1 extends OpMode {
  packet.put("18.AprilTag Bearing", bearing);
  **/
         dashboard.sendTelemetryPacket(packet);
+    }
+
+    private void sendTelemetryMotorsCurrent() {
+        // --- Citire Motoare Drivetrain ---
+        // Folosim numele din Constants.java: "rf", "rr", "lr", "lf"
+        DcMotorEx mRF = hardwareMap.get(DcMotorEx.class, "rf");
+        DcMotorEx mRR = hardwareMap.get(DcMotorEx.class, "rr");
+        DcMotorEx mLF = hardwareMap.get(DcMotorEx.class, "lf");
+        DcMotorEx mLR = hardwareMap.get(DcMotorEx.class, "lr");
+
+        double currentRF = mRF.getCurrent(CurrentUnit.AMPS);
+        double currentRR = mRR.getCurrent(CurrentUnit.AMPS);
+        double currentLF = mLF.getCurrent(CurrentUnit.AMPS);
+        double currentLR = mLR.getCurrent(CurrentUnit.AMPS);
+        double totalCurrent = currentRF + currentRR + currentLF + currentLR;
+
+        // --- Afișare în Telemetria de pe Driver Station ---
+        telemetry.addLine("\n--- DRIVETRAIN CURRENT (Amps) ---");
+        telemetry.addData("Total Drivetrain", "%.2f A", totalCurrent);
+        telemetry.addData("FL / FR", "%.2f A | %.2f A", currentLF, currentRF);
+        telemetry.addData("RL / RR", "%.2f A | %.2f A", currentLR, currentRR);
+
+        // --- Afișare în FTC Dashboard (Grafice) ---
+        TelemetryPacket packet = new TelemetryPacket();
+        // ... codul tău existent pentru packet.put ...
+
+        packet.put("Drivetrain Total Amps", String.format("%.3f", totalCurrent));
+        packet.put("Motor RF Amps", String.format("%.3f", currentRF));
+        packet.put("Motor RR Amps", String.format("%.3f", currentRR));
+        packet.put("Motor LF Amps", String.format("%.3f", currentLF));
+        packet.put("Motor LR Amps", String.format("%.3f", currentLR));
+
+        dashboard.sendTelemetryPacket(packet);
+        telemetry.update();
     }
 }
