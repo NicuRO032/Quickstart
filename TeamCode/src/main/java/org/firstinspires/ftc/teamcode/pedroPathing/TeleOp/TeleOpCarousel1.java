@@ -194,40 +194,43 @@ public class TeleOpCarousel1 extends OpMode {
     private void handleDriver1Controls() {
         final double STICK_DEADZONE = 0.1;
         double joystickPower = driver1.getRightY() * 0.9;
-       // double joystickPower1 = driver1.getRightY() * 0.9;
 
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
+            // Control manual (Override): Folosește metoda cu protecție electrică
             intake.setPower(joystickPower);
             intakeIsOn = false;
-            //Intake1IsOn = false;
         } else {
+            // Logica butonului A (Toggle)
             if (driver1.wasJustPressed(GamepadKeys.Button.A)) {
-                intakeIsOn = !intakeIsOn;
-               // Intake1IsOn = !Intake1IsOn;
+                // Nu permitem activarea dacă robotul este deja plin (prevenire penalty)
+                if (!carousel.allSlotsOccupied()) {
+                    intakeIsOn = !intakeIsOn;
+                } else {
+                    intakeIsOn = false;
+                    gamepad1.rumble(200); // Feedback că e plin
+                }
             }
 
             // Obținem starea mașinii de stări de intake din carusel
             CarouselSubsystem1.IntakeState currentIntakeState = carousel.getIntakeStateEnum();
 
-            // Acționăm asupra motorului DOAR dacă caruselul este în starea IDLE (așteptare).
-            // Astfel, nu interferăm cu stările STORE_AND_ADVANCE sau REVERSE_INTAKE.
+            // Controlăm motoarele DOAR dacă caruselul este în IDLE
+            // Dacă e în STORE_AND_ADVANCE sau CLEANUP_EXCESS, lăsăm automatizarea să lucreze
             if (currentIntakeState == CarouselSubsystem1.IntakeState.IDLE) {
                 if (intakeIsOn) {
-                    intake.setPower(-0.8);
-                   // intake.setPower(-0.8);// Pornește intake-ul la comanda șoferului
+                    intake.collect(); // Folosește starea COLLECTING (ambele motoare -0.8)
                 } else {
-                    intake.stop();
-                   // intake.stop();// Oprește intake-ul la comanda șoferului
+                    intake.stop();    // Folosește starea IDLE (0.0 cu protecție)
                 }
             }
-            // Dacă starea NU este IDLE, înseamnă că subsistemul Carousel are controlul.
-            // Nu facem nimic și îl lăsăm să-și termine treaba (ex: să ruleze în marșarier).
         }
 
+        // --- Restul butoanelor rămân la fel ---
         if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {
             carousel.abortAll();
             outtakePrepared = false;
             hasRumbled = false;
+            intakeIsOn = false; // Resetăm și variabila de control
         }
 
         if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) carousel.manualStepLeft();
@@ -461,8 +464,9 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("043.Carousel At Target", carousel.atTarget());
 
         // --- Secțiunea 05: Senzori Distanță și Culori ---
-        packet.put("050. Main Distance (mm)", clean(carousel.getMainDistance()));
+        packet.put("050. Slot Distance (mm)", clean(carousel.getSlotDistance()));
         packet.put("053. Entry Slot Has Ball", carousel.entrySlotHasBall());
+        packet.put("054. Gate Distance (mm)", clean(carousel.getGateDistance()));
         packet.put("06.Occupied 0", carousel.getOccupied(0));
         packet.put("07.Occupied 1", carousel.getOccupied(1));
         packet.put("08.Occupied 2", carousel.getOccupied(2));

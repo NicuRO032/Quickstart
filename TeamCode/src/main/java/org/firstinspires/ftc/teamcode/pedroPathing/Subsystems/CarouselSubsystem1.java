@@ -70,11 +70,12 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     private final AnalogInput carouselFeedback;
     private final DistanceSensor entrySensor;
+    private final DistanceSensor intakeGateSensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final IntakeSubsystem1 intake;
 
     /* ================= STATES ================= */
-    public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE, REVERSE_INTAKE}
+    public enum IntakeState { IDLE, CLEANUP_EXCESS, STORE_AND_ADVANCE, REVERSE_INTAKE, MANUAL_MOVE }
     private IntakeState intakeState = IntakeState.IDLE;
 
     public enum OuttakeState { OUT_IDLE, PREPARING_SALVO, RELAXING_SERVO, SHOOTING_SALVO, FINISHED }
@@ -133,7 +134,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
         shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motorShooter1");
         shooterMotor2 = hardwareMap.get(DcMotorEx.class, "motorShooter2");
-        entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
+        entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_slot");
+        intakeGateSensor = hardwareMap.get(DistanceSensor.class, "sensor_gate");
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
 
@@ -271,12 +273,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
      */
     public void abortAll() {
         setShooterTargetRPM(0.0);
+        intake.stop(); // OPREȘTE MOTOARELE
         autoEnabled = true;
+        intakeIsOn = false; // Resetează variabila globală din TeleOp
         for (int i = 0; i < 3; i++) {
             occupied[i] = false;
             slotColor[i] = BallColor.UNKNOWN;
         }
-
         resetForStart();
     }
 
@@ -401,83 +404,111 @@ public boolean isReadyToShoot() {
         intakeState = IntakeState.MANUAL_MOVE;
     }
 
+    private void finalizeSlot() {
+        occupied[logicalIndex] = true;
+        slotColor[logicalIndex] = detectBallColor();
+    }
+    private void handleIntake() {    // Calculăm câte bile avem deja stocate
+        int occupiedCount = 0;
+        for (boolean b : occupied) if (b) occupiedCount++;
 
-    private void handleIntake() {
         switch (intakeState) {
             /**
-             * STAREA 1: Așteaptă sosirea unei bile.
-             * Stăm aici până când o bilă este detectată stabil la intrare ȘI caruselul nu e plin.
+             * STAREA 1: IDLE - Așteaptă ca senzorul de la poartă (intakeGateSensor) să vadă o bilă.
              */
             case IDLE:
-                // Condiția de pornire: este activat modul automat, o bilă a sosit și mai este loc.
-                if (autoEnabled && entrySlotHasBall() && !allSlotsOccupied()) {
-                    // O bilă a sosit. Trecem la pasul 2: stocare și avansare.
-                    intakeState = IntakeState.STORE_AND_ADVANCE;
+                if (autoEnabled && !allSlotsOccupied()) {
+                    // Verificăm dacă o bilă a ajuns la "poarta" de intrare
+                    boolean ballAtGate = intakeGateSensor.getDistance(DistanceUnit.MM) < 150.0;
+
+                    if (ballAtGate) {
+                        if (occupiedCount == 2) {
+                            // Caz special: Avem 2 bile, vine a treia. Activăm Cleanup.
+                            intake.cleanup(); // Sus TRAGE, Jos SCOATE
+                            intakeState = IntakeState.CLEANUP_EXCESS;
+                        } else {
+                            // Caz normal: Bila 1 sau 2. Pornim colectarea normală.
+                            intake.collect(); // Ambele TRAG
+                            intakeState = IntakeState.STORE_AND_ADVANCE;
+                        }
+                    }
                 }
                 break;
 
             /**
-             * STAREA 2: Marchează slotul, citește culoarea și avansează la următorul.
-             * Această stare se execută o singură dată per bilă.
+             * STAREA 2: CLEANUP_EXCESS - Așteaptă ca bila 3 să ajungă efectiv în slot.
              */
-            case STORE_AND_ADVANCE:
-                // a) Marcăm slotul curent (logicalIndex) ca fiind ocupat.
-                occupied[logicalIndex] = true;
+            case CLEANUP_EXCESS:
+                // Folosim metoda ta entrySlotHasBall() care verifică senzorul din carusel
+                if (entrySlotHasBall()) {
+                    finalizeSlot(); // Înregistrăm bila 3 (occupied[2] = true)
 
-                // b) Citim și salvăm culoarea bilei.
-                slotColor[logicalIndex] = detectBallColor();
-
-                // Verificăm dacă am umplut caruselul DUPĂ ce am adăugat bila curentă.
-                if (allSlotsOccupied()) {
-                    // Caruselul s-a umplut.
-                    autoEnabled = false;
-                    // IMPORTANT: Oprim orice logică de "ON" din TeleOp pentru a nu avea conflicte
-                    intakeIsOn = false;
-
-                    intake.setPower(0.7); // Folosește o putere pozitivă pentru outtake
+                    // Imediat ce e în slot, evacuăm surplusul (bila 4) pentru siguranță
+                    intake.eject();
                     intakeReverseTimer.reset();
                     intakeState = IntakeState.REVERSE_INTAKE;
+
+                    autoEnabled = false; // Oprim automatizarea (suntem plini)
+                    intakeIsOn = false;
                     needsAutoPrepare = true;
+                }
+                break;
 
-                } else {
-                    // Mai este loc. Găsim următorul slot liber.
-                    int nextEmptySlot = -1;
-                    for (int i = 0; i < 3; i++) {
-                        // Căutăm pornind de la slotul următor celui curent, pentru eficiență.
-                        int checkIndex = (logicalIndex + 1 + i) % 3;
-                        if (!occupied[checkIndex]) {
-                            nextEmptySlot = checkIndex;
-                            break;
+            /**
+             * STAREA 3: STORE_AND_ADVANCE - Așteaptă bila 1 sau 2 și rotește caruselul.
+             */
+            case STORE_AND_ADVANCE:
+                // Așteptăm ca bila să se așeze stabil în slot
+                if (entrySlotHasBall()) {
+                    finalizeSlot(); // Marchează ocupat și citește culoarea
+
+                    if (allSlotsOccupied()) {
+                        // Dacă s-a umplut neașteptat aici
+                        intake.eject();
+                        intakeReverseTimer.reset();
+                        intakeState = IntakeState.REVERSE_INTAKE;
+                        autoEnabled = false;
+                        intakeIsOn = false;
+                    } else {
+                        // LOGICA DE AVANSARE: Găsim următorul slot liber
+                        int nextEmptySlot = -1;
+                        for (int i = 0; i < 3; i++) {
+                            int checkIndex = (logicalIndex + 1 + i) % 3;
+                            if (!occupied[checkIndex]) {
+                                nextEmptySlot = checkIndex;
+                                break;
+                            }
                         }
-                    }
 
-                    // Dacă am găsit un slot gol (ceea ce ar trebui să se întâmple mereu aici),
-                    // comandăm rotirea caruselului pentru a-l aduce la ora 12.
-                    if (nextEmptySlot != -1) {
-                        goToSlot(nextEmptySlot);
-                    }
+                        if (nextEmptySlot != -1) {
+                            goToSlot(nextEmptySlot); // Rotim caruselul
+                        }
 
-                    // IMPORTANT: După ce am comandat mișcarea, ne întoarcem IMEDIAT la IDLE.
-                    // Mașina de stări de intake și-a terminat treaba pentru această bilă.
-                    // Acum așteaptă dispariția bilei curente și apariția uneia noi.
+                        // Ne întoarcem la IDLE pentru a aștepta următoarea bilă
+                        intakeState = IntakeState.IDLE;
+
+                        // Oprim motoarele scurt (opțional) până vine următoarea bilă la poartă
+                        // sau le lăsăm să meargă dacă intakeIsOn este true.
+                        // Pentru siguranță, dacă nu e nicio bilă la poartă, le punem în IDLE.
+                        /*if (intakeGateSensor.getDistance(DistanceUnit.MM) > 100.0) {
+                            intake.stop();
+                        }*/
+                    }
+                }
+                break;
+
+            /**
+             * STAREA 4: REVERSE_INTAKE - Curățare finală după ce caruselul e plin.
+             */
+            case REVERSE_INTAKE:
+                if (intakeReverseTimer.milliseconds() > 400) {
+                    intake.stop();
                     intakeState = IntakeState.IDLE;
                 }
                 break;
 
-            //reversing the intake after we load all balls
-            case REVERSE_INTAKE:
-                // Așteptăm să treacă timpul de inversare
-                if (intakeReverseTimer.milliseconds() > 400) {
-                    intake.stop(); // Oprim motorul de intake
-                    intakeState = IntakeState.IDLE; // Revenim la starea de așteptare
-                }
-                break;
-
-
             /**
-             * STAREA 4: Control Manual.
-             * Această stare este activată de funcțiile manualStep. Așteaptă finalizarea
-             * mișcării și apoi reactivează automat intake-ul.
+             * STAREA 5: MANUAL_MOVE - Așteaptă terminarea rotației comandate manual.
              */
             case MANUAL_MOVE:
                 if (atTarget()) {
@@ -733,8 +764,10 @@ public boolean isReadyToShoot() {
     }
 
 
-    public double getMainDistance() {
+    public double getSlotDistance() {
         return entrySensor.getDistance(DistanceUnit.MM);
+    }
+    public double getGateDistance() { return intakeGateSensor.getDistance(DistanceUnit.MM);
     }
 
     public double getColor1Distance() {
