@@ -37,7 +37,7 @@ public class TeleOpCarousel1 extends OpMode {
     private Follower follower;
     public static Pose startingPose;
     private boolean slowMode = false;
-    private double slowModeMultiplier = 0.5;
+    public static double slowModeMultiplier = 0.5;
 
     private boolean slowShoot = false, fastShoot = false;
     private ElapsedTime delayAruncare = new ElapsedTime();

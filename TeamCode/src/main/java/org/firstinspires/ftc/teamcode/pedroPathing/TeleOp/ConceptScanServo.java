@@ -78,6 +78,8 @@ public class ConceptScanServo extends LinearOpMode {
 
         telemetry.addData("Status", "Initializat. Astept START.");
         telemetry.update();
+        //shooterMotor1.setCurrentAlert(5, CurrentUnit.AMPS);
+        //shooterMotor2.setCurrentAlert(5, CurrentUnit.AMPS);
 
         waitForStart();
 
