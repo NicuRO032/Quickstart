@@ -186,8 +186,8 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        //sendTelemetry();
-        sendTelemetryMotorsCurrent();
+        sendTelemetry();
+        //sendTelemetryMotorsCurrent();
 
     }
 
@@ -448,40 +448,45 @@ public class TeleOpCarousel1 extends OpMode {
          packet.put("10. Outtake State", carousel.getOuttakeState());
          **/
 
+        // --- Secțiunea 00-02: Stări și Indecși (String/Int - nu au nevoie de clean) ---
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
         packet.put("101.SlowShootState", carousel.getSlowShootState());
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
 
-        packet.put("040.Carousel Target Feedback (mV)", String.format("%.3f", carousel.getTargetFeedbackMv()));
-        packet.put("041.Carousel Current Feedback (mV)", String.format("%.3f", carousel.getCurrentFeedbackMv()));
-        packet.put("042.Carousel Feedback Error (mV)", String.format("%.3f", carousel.getFeedbackError()));
-        packet.put("043.Carousel At Target", carousel.atTarget()); // Foarte util de monitorizat
+        // --- Secțiunea 04: Feedback Carusel (3 zecimale) ---
+        packet.put("040.Carousel Target Feedback (mV)", clean(carousel.getTargetFeedbackMv()));
+        packet.put("041.Carousel Current Feedback (mV)", clean(carousel.getCurrentFeedbackMv()));
+        packet.put("042.Carousel Feedback Error (mV)", clean(carousel.getFeedbackError()));
+        packet.put("043.Carousel At Target", carousel.atTarget());
 
-
-        packet.put("050. Main Distance (mm)", carousel.getMainDistance());
-        packet.put("051. Color1 Distance (mm)", String.format("%.3f", carousel.getColor1Distance()));
-        packet.put("052. Color2 Distance (mm)", String.format("%.3f", carousel.getColor2Distance()));
+        // --- Secțiunea 05: Senzori Distanță și Culori ---
+        packet.put("050. Main Distance (mm)", clean(carousel.getMainDistance()));
         packet.put("053. Entry Slot Has Ball", carousel.entrySlotHasBall());
         packet.put("06.Occupied 0", carousel.getOccupied(0));
         packet.put("07.Occupied 1", carousel.getOccupied(1));
         packet.put("08.Occupied 2", carousel.getOccupied(2));
-        packet.put("09.Hue1", carousel.getHue1());
-        packet.put("10.Hue2", carousel.getHue2());
-        packet.put("11.HueMax", carousel.getHueMax());
-        packet.put("12.Slot colors", carousel.getSlotsColorString());
-        packet.put("14.Distance: ", vision.getDistance());
-        packet.put("15.X:", vision.getLastX());
-        packet.put("16.Y:", vision.getLastY());
-        packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
-        packet.put("18.Turret Angle:", turret.getTargetAngle());
-        packet.put("18.AprilTag Bearing:", vision.getLastBearing());
 
+        // --- Secțiunea 14-18: Vision și Turelă (Aici erau numerele mari) ---
+        packet.put("14.Distance: ", clean(vision.getDistance()));
+        packet.put("15.X Offset", clean(vision.getLastX()));
+        packet.put("16.Y Offset", clean(vision.getLastY()));
+        packet.put("17.Shooter Angle Pos", clean(turret.getCurrentShooterAngle()));
+        packet.put("18.Turret Target Angle", clean(turret.getTargetAngle()));
+        packet.put("18.AprilTag Bearing", clean(vision.getLastBearing()));
 
-        // Adaugă telemetria pentru viteza shooter-ului aici
-        packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
-        packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
-        packet.put("Shooter Power", carousel.getShooterPower());
+        // --- Secțiunea 20-24: Status Shooter ---
+        packet.put("20 Carousel Target feedback", clean(carousel.getTargetFeedbackMv()));
+        packet.put("21 Carousel Current feedback", clean(carousel.getCurrentFeedbackMv()));
+        packet.put("22 Carousel Feedback Error", clean(carousel.getFeedbackError()));
+        packet.put("23 Carousel At Target", carousel.atTarget());
+        packet.put("24 IsShooterReady", carousel.isShooterReady());
+        packet.put("04 IsReadyToShoot", carousel.isReadyToShoot());
+
+        // --- Viteze Shooter ---
+        packet.put("Shooter Target Velocity", clean(carousel.getShooterTargetRPM()));
+        packet.put("Shooter Current Velocity", clean(carousel.getShooterCurrentRPM()));
+        packet.put("Shooter Power", clean(carousel.getShooterPower()));
 
 
 /**
@@ -526,5 +531,10 @@ public class TeleOpCarousel1 extends OpMode {
 
         dashboard.sendTelemetryPacket(packet);
         telemetry.update();
+    }
+
+    private double clean(double val) {
+        if (Double.isNaN(val) || Double.isInfinite(val)) return 0;
+        return Math.round(val * 1000.0) / 1000.0;
     }
 }

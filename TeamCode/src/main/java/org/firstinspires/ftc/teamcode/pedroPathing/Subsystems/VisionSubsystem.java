@@ -27,7 +27,7 @@ public class VisionSubsystem extends SubsystemBase {
     // Constante pentru calculul distanței (Ajustează-le conform robotului tău)
     public static double CAMERA_HEIGHT = 37.0; // Înălțimea camerei de la sol (cm)
     public static double TARGET_HEIGHT = 74.0; // Înălțimea centrului AprilTag-ului (cm)
-    public static double CAMERA_PITCH = 14.5;   // Unghiul de înclinare al camerei (grade)
+    public static double CAMERA_PITCH = 16.4;   // Unghiul de înclinare al camerei (grade)
 
     public VisionSubsystem(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
