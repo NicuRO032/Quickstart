@@ -20,7 +20,7 @@ public class ShootAllBallsCommand extends SequentialCommandGroup {
                 new InstantCommand(carousel::triggerShoot),
 
                 // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
-                new WaitUntilCommand(() -> carousel.getOuttakeStateEnum() == CarouselSubsystem1.OuttakeState.OUT_IDLE)
+                new WaitUntilCommand(() -> carousel.getOuttakeStateEnum() == CarouselSubsystem1.OuttakeState.OUT_IDLE || carousel.getOuttakeStateEnum() == CarouselSubsystem1.OuttakeState.FINISHED)
         );
         addRequirements(carousel);
     }

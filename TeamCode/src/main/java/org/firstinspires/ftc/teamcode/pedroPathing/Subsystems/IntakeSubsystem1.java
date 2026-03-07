@@ -27,8 +27,8 @@ public class IntakeSubsystem1 extends SubsystemBase {
     public void periodic() {
         switch (currentState) {
             case IDLE:          applyPowerWithProtection(0, 0); break;
-            case COLLECTING:    applyPowerWithProtection(-0.8, -0.8); break;
-            case CLEANUP_BALL3: applyPowerWithProtection(-0.8, 0.8); break; // Sus trage, Jos scuipă
+            case COLLECTING:    applyPowerWithProtection(-0.9, -0.9); break;
+            case CLEANUP_BALL3: applyPowerWithProtection(-0.9, 0.9); break; // Sus trage, Jos scuipă
             case EJECTING:      applyPowerWithProtection(0.7, 0.7); break;
             case MANUAL:        break;
         }

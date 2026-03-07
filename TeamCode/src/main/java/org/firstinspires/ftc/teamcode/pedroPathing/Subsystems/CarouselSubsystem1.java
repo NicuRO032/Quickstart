@@ -705,6 +705,8 @@ public boolean isReadyToShoot() {
         return this.slowShootState;
     }
 
+    public void setCarouselForIntake() { intakeState = IntakeState.IDLE; }
+
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }
     public String getSlotsColorString() {

@@ -15,11 +15,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(15.2)
-            .forwardZeroPowerAcceleration(-39.35178023754977)
-            .lateralZeroPowerAcceleration(-93.72026224226218)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0, 0.05))
-            .headingPIDFCoefficients(new PIDFCoefficients(1, 0, 0, 0.03))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.02,0.0,0.0001,0.6,0.001))
+            .forwardZeroPowerAcceleration(-37.52281264191782)
+            .lateralZeroPowerAcceleration(-85.59019991472208)
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.0007, 0.02))
+            .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.007, 0.02))
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.01,0.0,0.0001,0.6,0.001))
             .centripetalScaling(0.00009)
             ;
 
@@ -33,8 +33,8 @@ public class Constants {
             .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .xVelocity(65.40908707694332)
-            .yVelocity(43.127309423616545)
+            .xVelocity(59.37373176328448)
+            .yVelocity(49.22411938673432)
             ;
 
     public static ThreeWheelConstants localizerConstants = new ThreeWheelConstants()

@@ -1,12 +1,14 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Auto;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.command.InstantCommand;
@@ -15,12 +17,16 @@ import com.seattlesolvers.solverslib.command.ParallelRaceGroup;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
 import com.seattlesolvers.solverslib.command.WaitCommand;
 import com.seattlesolvers.solverslib.pedroCommand.FollowPathCommand;
+
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.IntakeBallsAuto;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.PrepareOuttakeFromTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
+
+
 
 @Autonomous(name = "AUTO.BIG.BLUE", group = "Pedro Pathing")
 public class AutoVision11 extends CommandOpMode {
@@ -84,7 +90,7 @@ public class AutoVision11 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint4, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.4))
+                .addParametricCallback(0.4, () -> follower.setMaxPower(0.2))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -119,6 +125,7 @@ public class AutoVision11 extends CommandOpMode {
     }
 
 
+
     @Override
     public void initialize() {
         dashboard = FtcDashboard.getInstance();
@@ -139,7 +146,6 @@ public class AutoVision11 extends CommandOpMode {
         CommandScheduler.getInstance().registerSubsystem(carousel);
         CommandScheduler.getInstance().registerSubsystem(turret);
         CommandScheduler.getInstance().registerSubsystem(intake);
-
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(3650);
@@ -161,27 +167,26 @@ public class AutoVision11 extends CommandOpMode {
 //        telemetry.addData("Correction Angle", correctionAngle);
 //        telemetry.update();
 //
-//        TelemetryPacket packet = new TelemetryPacket();
-//        packet.put("01 IntakeState", carousel.getIntakeState());
-//        packet.put("02 OuttakeState", carousel.getOuttakeState());
-//        packet.put("02 SlowShootState", carousel.getSlowShootState());
-//        packet.put("03 IsShooterReady", carousel.isShooterReady());
-//        packet.put("04 IsReadyToShoot", carousel.getIsReadyToShoot());
-//        packet.put("Logical Index", carousel.getLogicalIndex());
-//        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
-//        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
-//        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
-//        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
-//        packet.put("Carousel At Target", carousel.atTarget());
+        TelemetryPacket packet = new TelemetryPacket();
+        packet.put("01 IntakeState", carousel.getIntakeState());
+        packet.put("02 OuttakeState", carousel.getOuttakeState());
+        packet.put("02 SlowShootState", carousel.getSlowShootState());
+        packet.put("03 IsShooterReady", carousel.isShooterReady());
+        packet.put("Logical Index", carousel.getLogicalIndex());
+        packet.put("Carousel Logical Index", carousel.getLogicalIndex());
+        packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
+        packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
+        packet.put("Carousel Feedback Error (mV)", carousel.getFeedbackError());
+        packet.put("Carousel At Target", carousel.atTarget());
+
+
+
+        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
+                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
+        packet.put("Slots Colors", carousel.getSlotsColorString());
+        packet.put("AprilTag Vazut", aprilTagFromInit);
 //
-//
-//
-//        packet.put("Slots Occupied", String.format("[%b, %b, %b]",
-//                carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-//        packet.put("Slots Colors", carousel.getSlotsColorString());
-//        packet.put("AprilTag Vazut", aprilTagFromInit);
-//
-//        dashboard.sendTelemetryPacket(packet);
+        dashboard.sendTelemetryPacket(packet);
 //        telemetry.addData("x", follower.getPose().getX());
 //        telemetry.addData("y", follower.getPose().getY());
 //        telemetry.addData("heading", follower.getPose().getHeading());
@@ -196,6 +201,7 @@ public class AutoVision11 extends CommandOpMode {
             telemetry.addData("START cu AprilTag", aprilTagFromInit);
             telemetry.update();
 
+
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     new ParallelCommandGroup(
                         new InstantCommand(() -> follower.setMaxPower(1)),
@@ -205,20 +211,14 @@ public class AutoVision11 extends CommandOpMode {
                     new FollowPathCommand(follower, scorePreloadPath, false),
                     new ShootAllBallsCommand(carousel),
 
-
-
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
-                    new InstantCommand(() -> intake.setPower(-0.3)),
 
                     new ParallelRaceGroup(
-                            //new WaitUntilCommand(carousel::allSlotsOccupied),
                             new FollowPathCommand(follower, grab1Path, false),
+                            new IntakeBallsAuto(carousel, intake),
                             new WaitCommand(5000)
                     ),
-                    /*new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(1)),*/
-                    new InstantCommand(() -> intake.setPower(0.1)),
-
+                    new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
@@ -229,15 +229,17 @@ public class AutoVision11 extends CommandOpMode {
                     new ShootAllBallsCommand(carousel),
 
 
-                    // CICLUL 3: A doua colectare si scor
-                    new InstantCommand(() -> intake.setPower(-0.3)),
+                    // CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false),
+                            new IntakeBallsAuto(carousel, intake),
                             new WaitCommand(5000)
                     ),
                     /*new InstantCommand(() -> intake.setPower(0)),
                     new InstantCommand(() -> follower.setMaxPower(1)),*/
-                    new InstantCommand(() -> intake.setPower(0.1)),
+
+
+
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
@@ -249,15 +251,14 @@ public class AutoVision11 extends CommandOpMode {
 
                     // CICLU 4 a treia colectare
 
-                   new InstantCommand(() -> intake.setPower(-0.3)),
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab3Path, false),
+                            new IntakeBallsAuto(carousel, intake),
                             new WaitCommand(5000)
                     ),
                     /*new InstantCommand(() -> intake.setPower(0)),astea erau comentate
                     new InstantCommand(() -> follower.setMaxPower(1)), asta era comentata*/
-                    new InstantCommand(() -> intake.setPower(0.1)),
 
 
                     new ParallelCommandGroup(
@@ -267,7 +268,6 @@ public class AutoVision11 extends CommandOpMode {
                     ),
                     new FollowPathCommand(follower, score3Path, false),
                     new ShootAllBallsCommand(carousel),
-                    new InstantCommand(() -> intake.setPower(0)),
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
