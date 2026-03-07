@@ -47,7 +47,7 @@ public class AutoVision11g extends CommandOpMode {
     private final Pose GRAB3_END_POSE = new Pose(17 , 85, Math.toRadians(180)); // set 1 artedfacte
     private final Pose ControlPoint1 = new Pose(50,35);
     private final Pose ControlPoint2 = new Pose(34, 61);
-    private final Pose ControlPoint5 = new Pose(65, 81);
+    private final Pose ControlPoint3 = new Pose(65, 81);
 
 
     private PathChain scorePreloadPath;
@@ -102,7 +102,7 @@ public class AutoVision11g extends CommandOpMode {
 */
         // 6. Traiectoria de la score 2 la COLECTARE 3
         grab3Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, ControlPoint5, GRAB3_END_POSE)) //  primul set
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB3_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.4, () -> follower.setMaxPower(0.4))

@@ -27,14 +27,14 @@ public class TurretSubsystem extends SubsystemBase {
 
     // --- Coeficienți pentru noul controler PID de viteză ---
     // Aceste valori sunt un punct de pornire și vor necesita reglaj fin (tuning)
-    public static double AIMING_KP = 0.35;  // Răspunsul proporțional la eroare
+    public static double AIMING_KP = 0.2;  // Răspunsul proporțional la eroare
     public static double AIMING_KI = 0.0;  // Anulează erorile mici, persistente
     public static double AIMING_KD = 0.005;  // Previne oscilațiile și stabilizează mișcarea
 
     // --- Constante Unghi Shooter ---
     public static double ANGLE_MIN_POS = 0.06;
     public static double ANGLE_MAX_POS = 0.37;
-    public static double ANGLE_MANUAL_SENSITIVITY = 0.02;
+    public static double ANGLE_MANUAL_SENSITIVITY = 0.04;
     public static double ANGLE_HOME_POS = 0.06;
     public static double ANGLE_SERVO2_OFFSET = 0.07;
 

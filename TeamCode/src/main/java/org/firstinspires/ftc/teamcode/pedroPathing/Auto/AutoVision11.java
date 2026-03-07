@@ -44,7 +44,7 @@ public class AutoVision11 extends CommandOpMode {
     private final Pose ControlPoint1 = new Pose(50,39);
     private final Pose ControlPoint2 = new Pose(31, 62);
     private final Pose ControlPoint3 = new Pose(81, 37);
-    private final Pose ControlPoint5 = new Pose(65, 81);
+    private final Pose ControlPoint4 = new Pose(65, 81);
 
 
     private PathChain scorePreloadPath;
@@ -81,7 +81,7 @@ public class AutoVision11 extends CommandOpMode {
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         grab2Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, ControlPoint5, GRAB2_END_POSE)) //  primul set
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint4, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.4, () -> follower.setMaxPower(0.4))

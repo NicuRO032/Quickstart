@@ -62,6 +62,9 @@ public class TeleOpCarousel1 extends OpMode {
     public static boolean intakeIsOn = false;
     //public static boolean Intake1IsOn = false;
 
+    //folosim pentru vibrat maneta daca avem 3 bile in carusel
+    private boolean prevAllBalls = false, curAllBalls = false;
+
     public static double SHOOT_RPM = 3000, ANGLE_SHOOT = 0;
 
     @Override
@@ -140,6 +143,7 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
         telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
         telemetry.addLine("GATA DE START!");
+        telemetry.addLine("NUMA BILE!");
         telemetry.addLine("========================================");
         telemetry.update();
 
@@ -178,7 +182,16 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (gamepad1.rightBumperWasPressed()) {
             slowMode = !slowMode;
+            gamepad1.rumble(200);
         }
+
+        curAllBalls = carousel.allSlotsOccupied();
+
+        if(curAllBalls && !prevAllBalls){
+            gamepad1.rumbleBlips(3);
+        }
+
+        prevAllBalls = curAllBalls;
 
         driver1.readButtons();
         driver2.readButtons();
@@ -186,14 +199,15 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        sendTelemetry();
+        sendTelemetryMatches();
+        //sendTelemetry();
         //sendTelemetryMotorsCurrent();
 
     }
 
     private void handleDriver1Controls() {
         final double STICK_DEADZONE = 0.1;
-        double joystickPower = driver1.getRightY() * 0.9;
+        double joystickPower = driver1.getRightY();
 
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
             // Control manual (Override): Folosește metoda cu protecție electrică
@@ -303,7 +317,7 @@ public class TeleOpCarousel1 extends OpMode {
         }
 
 
-           switch (turretTeleOpState) {
+        switch (turretTeleOpState) {
             case MANUAL:
                 driver2.gamepad.setLedColor(0, 1, 0, -1); // Verde pentru control Manual
 
@@ -535,6 +549,11 @@ public class TeleOpCarousel1 extends OpMode {
 
         dashboard.sendTelemetryPacket(packet);
         telemetry.update();
+    }
+
+    private void sendTelemetryMatches(){
+        telemetry.addData("Slow mode: ", slowMode);
+        telemetry.addData("Bile ", carousel.getNoBalls());
     }
 
     private double clean(double val) {

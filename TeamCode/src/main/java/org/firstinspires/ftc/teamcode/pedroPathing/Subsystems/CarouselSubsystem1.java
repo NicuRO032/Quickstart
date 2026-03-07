@@ -39,7 +39,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2072.0, 2072.0, 2072.0};
     public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.392, 0.392, 0.392};
     public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1345.0, 1345.0, 1345.0};
-    public static int SLOW_SHOOT_PAUSE_MS = 500; // Pauza în milisecunde pentru recuperarea turației
+    public static int SLOW_SHOOT_PAUSE_MS = 400; // Pauza în milisecunde pentru recuperarea turației
 
 
     // Toleranța pentru atTarget
@@ -754,6 +754,16 @@ public boolean isReadyToShoot() {
 
     public double getColor2Distance() {
         return ((DistanceSensor) colorSensor2).getDistance(DistanceUnit.MM);
+    }
+
+    public int getNoBalls(){
+        int ans = 0;
+
+        for(int i = 0; i < 3; i++)
+            if(occupied[i])
+                ans++;
+
+        return ans;
     }
 
 

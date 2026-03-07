@@ -10,7 +10,7 @@ public class IntakeSubsystem1 extends SubsystemBase {
     private final DcMotorEx intakeMotorJos;
     private double lastPowerSus = 0, lastPowerJos = 0;
 
-    public enum IntakeState { IDLE, COLLECTING, CLEANUP_BALL3, EJECTING }
+    public enum IntakeState { IDLE, COLLECTING, CLEANUP_BALL3, EJECTING, MANUAL }
     private IntakeState currentState = IntakeState.IDLE;
 
     public IntakeSubsystem1(HardwareMap hardwareMap) {
@@ -30,6 +30,7 @@ public class IntakeSubsystem1 extends SubsystemBase {
             case COLLECTING:    applyPowerWithProtection(-0.8, -0.8); break;
             case CLEANUP_BALL3: applyPowerWithProtection(-0.8, 0.8); break; // Sus trage, Jos scuipă
             case EJECTING:      applyPowerWithProtection(0.7, 0.7); break;
+            case MANUAL:        break;
         }
     }
 
@@ -51,6 +52,6 @@ public class IntakeSubsystem1 extends SubsystemBase {
 
     public void setPower(double power) { // Pentru override manual
         applyPowerWithProtection(power, power);
-        currentState = IntakeState.IDLE;
+        currentState = IntakeState.MANUAL;
     }
 }
