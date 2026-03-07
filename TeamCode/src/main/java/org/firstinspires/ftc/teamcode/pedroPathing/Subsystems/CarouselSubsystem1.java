@@ -75,7 +75,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private final IntakeSubsystem1 intake;
 
     /* ================= STATES ================= */
-    public enum IntakeState { IDLE, CLEANUP_EXCESS, STORE_AND_ADVANCE, REVERSE_INTAKE, MANUAL_MOVE }
+    public enum IntakeState { IDLE, CLEANUP_EXCESS, STORE_AND_ADVANCE, REVERSE_INTAKE }
     private IntakeState intakeState = IntakeState.IDLE;
 
     public enum OuttakeState { OUT_IDLE, PREPARING_SALVO, RELAXING_SERVO, SHOOTING_SALVO, FINISHED }
@@ -390,20 +390,6 @@ public boolean isReadyToShoot() {
     public void setActivePattern(OuttakePattern pattern) { this.activePattern = pattern; }
 
 
-    public void manualStepLeft() {
-        autoEnabled = false;
-        int nextSlot = (logicalIndex - 1 + 3) % 3;
-        goToSlot(nextSlot);
-        intakeState = IntakeState.MANUAL_MOVE;
-    }
-
-    public void manualStepRight() {////////////Aici trebuie refacut true-->false si logivalIndex+1
-        autoEnabled = false;
-        int nextSlot = (logicalIndex +1 ) % 3;
-        goToSlot(nextSlot);
-        intakeState = IntakeState.MANUAL_MOVE;
-    }
-
     private void finalizeSlot() {
         occupied[logicalIndex] = true;
         slotColor[logicalIndex] = detectBallColor();
@@ -504,16 +490,6 @@ public boolean isReadyToShoot() {
                 if (intakeReverseTimer.milliseconds() > 400) {
                     intake.stop();
                     intakeState = IntakeState.IDLE;
-                }
-                break;
-
-            /**
-             * STAREA 5: MANUAL_MOVE - Așteaptă terminarea rotației comandate manual.
-             */
-            case MANUAL_MOVE:
-                if (atTarget()) {
-                    intakeState = IntakeState.IDLE;
-                    autoEnabled = true;
                 }
                 break;
         }
@@ -680,6 +656,8 @@ public boolean isReadyToShoot() {
     }
 
     public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 500; }
+
+    public boolean getReadyToShootCarousel() { return outtakeState == OuttakeState.FINISHED; }
 
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {

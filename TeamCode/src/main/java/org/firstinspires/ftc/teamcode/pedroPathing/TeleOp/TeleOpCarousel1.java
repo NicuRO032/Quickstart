@@ -233,8 +233,6 @@ public class TeleOpCarousel1 extends OpMode {
             intakeIsOn = false; // Resetăm și variabila de control
         }
 
-        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) carousel.manualStepLeft();
-        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) carousel.manualStepRight();
         if (driver1.wasJustPressed(GamepadKeys.Button.X)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.GPP);
         if (driver1.wasJustPressed(GamepadKeys.Button.Y)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PGP);
         if (driver1.wasJustPressed(GamepadKeys.Button.B)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PPG);
@@ -273,13 +271,15 @@ public class TeleOpCarousel1 extends OpMode {
             slowShoot = true;
             delayAruncare.reset();
         }
-        if(carousel.isShooterReady() && delayAruncare.seconds() < 5) {
+        if(carousel.getReadyToShootCarousel() && delayAruncare.seconds() < 5) {
             if(fastShoot){
                 fastShoot = false;
+                slowShoot = false;
                 carousel.triggerShoot();
             }
             if(slowShoot){
                 slowShoot = false;
+                fastShoot = false;
                 carousel.triggerSlowShoot();
 
             }
