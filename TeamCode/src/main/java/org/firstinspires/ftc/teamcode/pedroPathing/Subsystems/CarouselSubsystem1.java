@@ -49,7 +49,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
     // Constante shooter
-    public static double SHOOTER_kP = 0.005;
+    public static double SHOOTER_kP = 0.008;
     public static double SHOOTER_kI = 0.0;
     public static double SHOOTER_kD = 0.00001;
     public static double SHOOTER_kF = 0.00046;
@@ -759,13 +759,25 @@ public boolean isReadyToShoot() {
 
     @Override
     public void periodic() {
-                // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
-        shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
-        double currentShooterVelo = shooterMotor1.getVelocity(); // În ticks/sec
-        double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
-        double pidCorrection = shooterController.calculate(currentShooterVelo,targetShooterVelo);
-        double feedforward = targetShooterVelo * SHOOTER_kF;
-        double shooterPower = feedforward + pidCorrection;
+        // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual cu oprire prin inerție) ---
+        double shooterPower; // Declarăm variabila aici
+
+        // Verificăm dacă vrem să oprim motorul sau să-l turăm
+        if (currentTargetRPM > 0) {
+            // CAZ 1: Pornire și menținere turație (folosim PIDF)
+            shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
+            double currentShooterVelo = shooterMotor1.getVelocity(); // În ticks/sec
+            double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
+            double pidCorrection = shooterController.calculate(currentShooterVelo, targetShooterVelo);
+            double feedforward = targetShooterVelo * SHOOTER_kF;
+            shooterPower = feedforward + pidCorrection;
+        } else {
+            // CAZ 2: Oprire (targetRPM este 0)
+            // Setăm puterea la 0 și lăsăm motorul să încetinească natural (coast)
+            shooterPower = 0.0;
+        }
+
+        // Comandăm puterea calculată la ambele motoare
         shooterMotor1.setPower(shooterPower);
         shooterMotor2.setPower(shooterPower);
 
