@@ -44,12 +44,12 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     // Toleranța pentru atTarget
     public static double FEEDBACK_TOLERANCE_MV = 120;
-    public static long AT_TARGET_STABILITY_MS = 20;
+    public static long AT_TARGET_STABILITY_MS = 50;
     public static double CAROUSEL_SERVO2_OFFSET = 0.02;
 
 
     // Constante shooter
-    public static double SHOOTER_kP = 0.01;
+    public static double SHOOTER_kP = 0.005;
     public static double SHOOTER_kI = 0.0;
     public static double SHOOTER_kD = 0.00001;
     public static double SHOOTER_kF = 0.00046;
@@ -60,7 +60,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public static final double SLOT_OCCUPIED_MM = 120.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
-    public static final long SENSOR_DELAY_MS = 10;
+    public static final long SENSOR_DELAY_MS = 120;
 
 
 
@@ -99,6 +99,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private OuttakePattern activePattern = OuttakePattern.GPP;
     private int activeSalvoIndex = 0; // Indexul salvei (0, 1, 2) care se va executa
     private boolean needsAutoPrepare = false; //Flag pentru a cere pregătirea automată a outtake-ului
+    private boolean ballWasAtGate = false;
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
     public enum OuttakePattern { GPP, PGP, PPG }
@@ -404,90 +405,76 @@ public boolean isReadyToShoot() {
              */
             case IDLE:
                 if (autoEnabled && !allSlotsOccupied()) {
-                    // Verificăm dacă o bilă a ajuns la "poarta" de intrare
                     boolean ballAtGate = intakeGateSensor.getDistance(DistanceUnit.MM) < 150.0;
 
                     if (ballAtGate) {
+                        ballWasAtGate = true; // REȚINEM că o bilă a intrat în sistem
                         if (occupiedCount == 2) {
-                            // Caz special: Avem 2 bile, vine a treia. Activăm Cleanup.
-                            intake.cleanup(); // Sus TRAGE, Jos SCOATE
+                            intake.cleanup();
                             intakeState = IntakeState.CLEANUP_EXCESS;
                         } else {
-                            // Caz normal: Bila 1 sau 2. Pornim colectarea normală.
-                            intake.collect(); // Ambele TRAG
+                            intake.collect();
                             intakeState = IntakeState.STORE_AND_ADVANCE;
                         }
                     }
                 }
                 break;
 
-            /**
-             * STAREA 2: CLEANUP_EXCESS - Așteaptă ca bila 3 să ajungă efectiv în slot.
-             */
-            case CLEANUP_EXCESS:
-                // Folosim metoda ta entrySlotHasBall() care verifică senzorul din carusel
+            case STORE_AND_ADVANCE:
                 if (entrySlotHasBall()) {
-                    finalizeSlot(); // Înregistrăm bila 3 (occupied[2] = true)
+                    // PROTECȚIA 1: Verificăm dacă slotul curent (logicalIndex) este gol
+                    // PROTECȚIA 2: Verificăm dacă bila a trecut anterior prin poartă
+                    if (!occupied[logicalIndex] && ballWasAtGate) {
+                        finalizeSlot();
+                        ballWasAtGate = false; // Resetăm flag-ul după ce am înregistrat bila
 
-                    // Imediat ce e în slot, evacuăm surplusul (bila 4) pentru siguranță
-                    intake.eject();
-                    intakeReverseTimer.reset();
-                    intakeState = IntakeState.REVERSE_INTAKE;
-
-                    autoEnabled = false; // Oprim automatizarea (suntem plini)
-                    intakeIsOn = false;
-                    needsAutoPrepare = true;
+                        if (allSlotsOccupied()) {
+                            intake.eject();
+                            intakeReverseTimer.reset();
+                            intakeState = IntakeState.REVERSE_INTAKE;
+                            autoEnabled = false;
+                            intakeIsOn = false;
+                        } else {
+                            // Logica de găsire a următorului slot rămâne la fel...
+                            int nextEmptySlot = -1;
+                            for (int i = 0; i < 3; i++) {
+                                int checkIndex = (logicalIndex + 1 + i) % 3;
+                                if (!occupied[checkIndex]) {
+                                    nextEmptySlot = checkIndex;
+                                    break;
+                                }
+                            }
+                            if (nextEmptySlot != -1) goToSlot(nextEmptySlot);
+                            intakeState = IntakeState.IDLE;
+                        }
+                    } else if (occupied[logicalIndex]) {
+                        // Dacă senzorul vede ceva, dar slotul e deja plin, ignorăm (e bila veche)
+                        return;
+                    }
                 }
                 break;
 
-            /**
-             * STAREA 3: STORE_AND_ADVANCE - Așteaptă bila 1 sau 2 și rotește caruselul.
-             */
-            case STORE_AND_ADVANCE:
-                // Așteptăm ca bila să se așeze stabil în slot
+            case CLEANUP_EXCESS:
                 if (entrySlotHasBall()) {
-                    finalizeSlot(); // Marchează ocupat și citește culoarea
+                    // Aceeași protecție dublă
+                    if (!occupied[logicalIndex] && ballWasAtGate) {
+                        finalizeSlot();
+                        ballWasAtGate = false;
 
-                    if (allSlotsOccupied()) {
-                        // Dacă s-a umplut neașteptat aici
                         intake.eject();
                         intakeReverseTimer.reset();
                         intakeState = IntakeState.REVERSE_INTAKE;
                         autoEnabled = false;
                         intakeIsOn = false;
-                    } else {
-                        // LOGICA DE AVANSARE: Găsim următorul slot liber
-                        int nextEmptySlot = -1;
-                        for (int i = 0; i < 3; i++) {
-                            int checkIndex = (logicalIndex + 1 + i) % 3;
-                            if (!occupied[checkIndex]) {
-                                nextEmptySlot = checkIndex;
-                                break;
-                            }
-                        }
-
-                        if (nextEmptySlot != -1) {
-                            goToSlot(nextEmptySlot); // Rotim caruselul
-                        }
-
-                        // Ne întoarcem la IDLE pentru a aștepta următoarea bilă
-                        intakeState = IntakeState.IDLE;
-
-                        // Oprim motoarele scurt (opțional) până vine următoarea bilă la poartă
-                        // sau le lăsăm să meargă dacă intakeIsOn este true.
-                        // Pentru siguranță, dacă nu e nicio bilă la poartă, le punem în IDLE.
-                        /*if (intakeGateSensor.getDistance(DistanceUnit.MM) > 100.0) {
-                            intake.stop();
-                        }*/
+                        needsAutoPrepare = true;
                     }
                 }
                 break;
-
             /**
              * STAREA 4: REVERSE_INTAKE - Curățare finală după ce caruselul e plin.
              */
             case REVERSE_INTAKE:
-                if (intakeReverseTimer.milliseconds() > 400) {
+                if (intakeReverseTimer.milliseconds() > 1000) {
                     intake.stop();
                     intakeState = IntakeState.IDLE;
                 }
