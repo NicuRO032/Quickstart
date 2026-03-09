@@ -74,7 +74,6 @@ public class TeleOpCarousel1 extends OpMode {
             startingPose = new Pose(0, 0, 0);
         }
         intakeIsOn = false;
-        //Intake1IsOn = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
 
@@ -255,7 +254,6 @@ public class TeleOpCarousel1 extends OpMode {
             outtakePrepared = true;
             hasRumbled = false;
             intakeIsOn = false;
-           // Intake1IsOn = false;
         }
 
         if (carousel.isReadyToShoot() && !hasRumbled) {
