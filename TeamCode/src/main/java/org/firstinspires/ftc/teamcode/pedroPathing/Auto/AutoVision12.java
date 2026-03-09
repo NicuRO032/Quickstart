@@ -84,7 +84,7 @@ public class AutoVision12 extends CommandOpMode {
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         grab2Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, GRAB2_END_POSE)) //  primul set
+                .addPath(new BezierLine(SCORE_POSE, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.25, () -> follower.setMaxPower(0.25))
