@@ -55,6 +55,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double SHOOTER_kF = 0.00046;
     public static final double SHOOTER_MOTOR_CPR = 28.0;
     public static double DEFAULT_SHOOTER_RPM = 3200.0;
+    public static double SHOOTER_IDLE_RPM = 2000.0; // Turația de menținere (ajustează să fie silențioasă)
+
 
     /* ================= CONSTANTE ================= */
 
@@ -273,7 +275,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
      * Oprește totul și resetează sistemul.
      */
     public void abortAll() {
-        setShooterTargetRPM(0.0);
+        setShooterTargetRPM(SHOOTER_IDLE_RPM);
         intake.stop(); // OPREȘTE MOTOARELE
         autoEnabled = true;
         intakeIsOn = false; // Resetează variabila globală din TeleOp
@@ -759,25 +761,28 @@ public boolean isReadyToShoot() {
 
     @Override
     public void periodic() {
-        // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual cu oprire prin inerție) ---
-        double shooterPower; // Declarăm variabila aici
+        double shooterPower;
+        double currentVelo = shooterMotor1.getVelocity();
 
-        // Verificăm dacă vrem să oprim motorul sau să-l turăm
-        if (currentTargetRPM > 0) {
-            // CAZ 1: Pornire și menținere turație (folosim PIDF)
+        // Dacă avem o țintă mare (comandă de tragere), folosim PID-ul complet
+        if (currentTargetRPM > SHOOTER_IDLE_RPM + 100) {
             shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
-            double currentShooterVelo = shooterMotor1.getVelocity(); // În ticks/sec
-            double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
-            double pidCorrection = shooterController.calculate(currentShooterVelo, targetShooterVelo);
-            double feedforward = targetShooterVelo * SHOOTER_kF;
-            shooterPower = feedforward + pidCorrection;
-        } else {
-            // CAZ 2: Oprire (targetRPM este 0)
-            // Setăm puterea la 0 și lăsăm motorul să încetinească natural (coast)
-            shooterPower = 0.0;
+            double targetVeloTicks = rpmToTicksPerSecond(currentTargetRPM);
+            double pidCorrection = shooterController.calculate(currentVelo, targetVeloTicks);
+            double ff = targetVeloTicks * SHOOTER_kF;
+            shooterPower = ff + pidCorrection;
+        }
+        // Dacă suntem în restul timpului (Idle), menținem volanta folosind DOAR Feedforward
+        else if (currentTargetRPM > 0 || autoEnabled) {
+            // Folosim doar kF pentru a-i da un curent minim constant
+            double idleVeloTicks = rpmToTicksPerSecond(SHOOTER_IDLE_RPM);
+            shooterPower = idleVeloTicks * SHOOTER_kF;
+        }
+        // Oprim de tot doar dacă RPM-ul țintă a fost pus pe 0 (ex: abortAll)
+        else {
+            shooterPower = 0;
         }
 
-        // Comandăm puterea calculată la ambele motoare
         shooterMotor1.setPower(shooterPower);
         shooterMotor2.setPower(shooterPower);
 
