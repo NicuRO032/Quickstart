@@ -47,10 +47,10 @@ public class AutoVision13 extends CommandOpMode {
     private final Pose SCORE_POSE1 = new Pose(60, 8.5, Math.toRadians(115));
     private final Pose SCORE_POSE = new Pose(56, 15.5, Math.toRadians(115));
     private final Pose PARK_POSE = new Pose(50, 15, Math.toRadians(110));
-    private final Pose ControlPoint1 = new Pose(66, 39);
+    private final Pose ControlPoint1 = new Pose(66, 35);
     private final Pose ControlPoint2 = new Pose(7, 1);
     private final Pose ControlPoint2_1 = new Pose(2, 21);
-    private final Pose GRAB1_END_POSE = new Pose(12, 36, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE = new Pose(11, 30, Math.toRadians(180));
     private final Pose GRAB2_END_POSE = new Pose(8, 12, Math.toRadians(180));
     private final Pose GRAB3_END_POSE = new Pose(12, 23, Math.toRadians(165));
 
@@ -67,7 +67,7 @@ public class AutoVision13 extends CommandOpMode {
         // 1. De la START la SCOR (Preload)
         scorePreloadPath = follower.pathBuilder()
                 .addPath(new BezierLine(START_POSE, SCORE_POSE1))
-                .setLinearHeadingInterpolation(START_POSE.getHeading(), SCORE_POSE.getHeading())
+                .setLinearHeadingInterpolation(START_POSE.getHeading(), SCORE_POSE1.getHeading())
                 .build();
 
         // 2. Traiectoria de colectare 1 (de la SCOR la zona de colectare)
@@ -147,7 +147,7 @@ public class AutoVision13 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(3650);
-        //turret.setTargetAngle(-49);
+        turret.setTargetAngle(-2.35);
         turret.setShooterAngle(0.3);
         //vision.enableProcesor();
 
@@ -201,35 +201,44 @@ public class AutoVision13 extends CommandOpMode {
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                             //new InstantCommand(() -> turret.setTargetAngle(-49))
                     ),
                     new FollowPathCommand(follower, scorePreloadPath, false),
                     new ShootAllBallsSlowCommand(carousel),
 
-                    //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
+                    ///--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1Path, false),
-                            new IntakeBallsAuto(carousel, intake),
+
+                            new SequentialCommandGroup(
+                                    new IntakeBallsAuto(carousel, intake),
+                                    new WaitCommand(1000)
+                            ),
+
                             new WaitCommand(5000)
                     ),
                     new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
                     new ShootAllBallsSlowCommand(carousel),
 
 
-                    // CICLUL 3: A doua colectare si score
+                    /// CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false),
-                            new IntakeBallsAuto(carousel, intake),
+
+                            new SequentialCommandGroup(
+                                new IntakeBallsAuto(carousel, intake)
+                            ),
+
                             new WaitCommand(5000)
                     ),
                     /*new InstantCommand(() -> intake.setPower(0)),
@@ -240,7 +249,7 @@ public class AutoVision13 extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score2Path, false),
@@ -252,7 +261,10 @@ public class AutoVision13 extends CommandOpMode {
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab3Path, false),
-                            new IntakeBallsAuto(carousel, intake),
+
+                            new SequentialCommandGroup(
+                                new IntakeBallsAuto(carousel, intake)
+                            ),
                             new WaitCommand(5000)
                     ),
 
@@ -261,7 +273,7 @@ public class AutoVision13 extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
