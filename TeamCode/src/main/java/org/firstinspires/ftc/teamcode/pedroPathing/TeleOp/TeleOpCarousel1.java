@@ -142,7 +142,7 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
         telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
         telemetry.addLine("GATA DE START!");
-        telemetry.addLine("NUMA BILE!");
+        telemetry.addLine("NUMA BILE!"); //iancurobila
         telemetry.addLine("========================================");
         telemetry.update();
 

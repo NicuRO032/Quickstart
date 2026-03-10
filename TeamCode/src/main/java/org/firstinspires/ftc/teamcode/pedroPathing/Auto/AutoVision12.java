@@ -88,7 +88,7 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierLine(SCORE_POSE, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(0.7))
-                .addParametricCallback(0.22, () -> follower.setMaxPower(0.25))
+                .addParametricCallback(0.2, () -> follower.setMaxPower(0.25))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -106,7 +106,7 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB3_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.52, () -> follower.setMaxPower(0.25))
+                .addParametricCallback(0.5, () -> follower.setMaxPower(0.25))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3

@@ -50,7 +50,7 @@ public class AutoVision11 extends CommandOpMode {
     private final Pose GRAB3_END_POSE = new Pose(5 , 45, Math.toRadians(178));
     private final Pose ControlPoint1 = new Pose(63,59);
     private final Pose ControlPoint2 = new Pose(31, 62);
-    private final Pose ControlPoint3 = new Pose(63, 35);
+    private final Pose ControlPoint3 = new Pose(65, 35);
     private final Pose ControlPoint4 = new Pose(61, 82);
 
     private PathChain scorePreloadPath;
@@ -90,7 +90,7 @@ public class AutoVision11 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint4, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.25, () -> follower.setMaxPower(0.22))
+                .addParametricCallback(0.15, () -> follower.setMaxPower(0.22))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -106,7 +106,7 @@ public class AutoVision11 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB3_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.6, () -> follower.setMaxPower(0.25))
+                .addParametricCallback(0.55, () -> follower.setMaxPower(0.2))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -125,7 +125,6 @@ public class AutoVision11 extends CommandOpMode {
     }
 
 
-
     @Override
     public void initialize() {
         dashboard = FtcDashboard.getInstance();
@@ -142,7 +141,7 @@ public class AutoVision11 extends CommandOpMode {
 
         carousel.resetForStart();
 
-       // CommandScheduler.getInstance().registerSubsystem(vision);
+        // CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
         CommandScheduler.getInstance().registerSubsystem(turret);
         CommandScheduler.getInstance().registerSubsystem(intake);
@@ -183,7 +182,7 @@ public class AutoVision11 extends CommandOpMode {
 
         packet.put("Slots Occupied", String.format("[%b, %b, %b]",
                 carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-        packet.put("Slots Colors", carousel.getSlotsColorString());
+        //packet.put("Slots Colors", carousel.getSlotsColorString());
         packet.put("AprilTag Vazut", aprilTagFromInit);
 //
         dashboard.sendTelemetryPacket(packet);
@@ -204,9 +203,9 @@ public class AutoVision11 extends CommandOpMode {
 
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     new ParallelCommandGroup(
-                        new InstantCommand(() -> follower.setMaxPower(1)),
-                        new InstantCommand(() -> carousel.setShooterForAutoRPM(3400)),
-                        new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
+                            new InstantCommand(() -> follower.setMaxPower(1)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
+                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, scorePreloadPath, false),
                     new ShootAllBallsCommand(carousel),
@@ -217,18 +216,17 @@ public class AutoVision11 extends CommandOpMode {
                             new FollowPathCommand(follower, grab1Path, false),
 
                             new SequentialCommandGroup(
-                                    new intakeTest(carousel, intake)
+                                    new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::eject),
                     new InstantCommand(intake::stop),
 
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3400)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
@@ -240,17 +238,16 @@ public class AutoVision11 extends CommandOpMode {
                             new FollowPathCommand(follower, grab2Path, false),
 
                             new SequentialCommandGroup(
-                                    new intakeTest(carousel, intake)
+                                    new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::eject),
                     new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3400)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score2Path, false),
@@ -263,24 +260,23 @@ public class AutoVision11 extends CommandOpMode {
                             new FollowPathCommand(follower, grab3Path, false),
 
                             new SequentialCommandGroup(
-                                    new intakeTest(carousel, intake)
+                                    new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::eject),
-                    new InstantCommand(intake::stop),
+
+                    new InstantCommand(intake::cleanup),
 
 
                     new ParallelCommandGroup(
-                            new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3400)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
                     new ShootAllBallsCommand(carousel),
 
-                    new InstantCommand(intake::stop),
+                    new InstantCommand(() -> intake.stop()),
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)
