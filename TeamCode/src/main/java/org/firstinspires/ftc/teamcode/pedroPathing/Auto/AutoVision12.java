@@ -20,7 +20,6 @@ import com.seattlesolvers.solverslib.pedroCommand.FollowPathCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.IntakeBallsAuto;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.PrepareOuttakeFromTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsCommand;
-import org.firstinspires.ftc.teamcode.pedroPathing.Commands.intakeTest;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
@@ -41,11 +40,11 @@ public class AutoVision12 extends CommandOpMode {
 
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(122, 126.5, Math.toRadians(36));
-    private final Pose SCORE_POSE = new Pose(86, 87, Math.toRadians(0));
+    private final Pose SCORE_POSE = new Pose(90, 87, Math.toRadians(0));
     private final Pose PARK_POSE  = new Pose(100, 91, Math.toRadians(0));
     private final Pose GRAB1_END_POSE = new Pose(140, 70, Math.toRadians(0));
-    private final Pose GRAB2_END_POSE = new Pose(130, 91, Math.toRadians(0));
-    private final Pose GRAB3_END_POSE = new Pose(135 , 45, Math.toRadians(0));
+    private final Pose GRAB2_END_POSE = new Pose(140, 91, Math.toRadians(0));
+    private final Pose GRAB3_END_POSE = new Pose(140 , 45, Math.toRadians(5));
     private final Pose ControlPoint1 = new Pose(81,65);
     private final Pose ControlPoint2 = new Pose(89.5, 52);
     private final Pose ControlPoint3 = new Pose(65, 40);
@@ -72,24 +71,24 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // set 2 artefacte
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.3))
+                .addParametricCallback(0.3, () -> follower.setMaxPower(0.2))
                 //.addParametricCallback(0.8, () -> follower.setMaxPower(1))
                 .build();
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
         score1Path = follower.pathBuilder()
-                .addPath(new BezierCurve(GRAB1_END_POSE, ControlPoint2, SCORE_POSE)) // Pleacă de unde a terminat colectarea
+                .addPath(new BezierCurve(GRAB1_END_POSE,ControlPoint2, SCORE_POSE)) // Pleacă de unde a terminat colectarea
                 .setLinearHeadingInterpolation(GRAB1_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.85, () -> follower.setMaxPower(0.9))
+                .addParametricCallback(0.85, () -> follower.setMaxPower(0.8))
                 .build();
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         grab2Path = follower.pathBuilder()
                 .addPath(new BezierLine(SCORE_POSE, GRAB2_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
-                .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.25, () -> follower.setMaxPower(0.25))
+                .addParametricCallback(0.0, () -> follower.setMaxPower(0.7))
+                .addParametricCallback(0.22, () -> follower.setMaxPower(0.25))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -98,6 +97,8 @@ public class AutoVision12 extends CommandOpMode {
                 .setLinearHeadingInterpolation(GRAB2_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
                 .addParametricCallback(0.85, () -> follower.setMaxPower(0.9))
+                .addParametricCallback(0.0, () -> intake.cleanup())
+                .addParametricCallback(0.15, () -> intake.stop())
                 .build();
 
         // 6. Traiectoria de la score 2 la COLECTARE 3
@@ -105,7 +106,7 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB3_END_POSE)) // Pleacă de la SCORE_POSE
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.65, () -> follower.setMaxPower(0.25))
+                .addParametricCallback(0.52, () -> follower.setMaxPower(0.25))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -113,6 +114,8 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierLine(GRAB3_END_POSE, SCORE_POSE))
                 .setLinearHeadingInterpolation(GRAB3_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
+                .addParametricCallback(0.0, () -> intake.cleanup())
+                .addParametricCallback(0.15, () -> intake.stop())
                 .build();
 
         // Traiectoria de parcare
@@ -148,7 +151,7 @@ public class AutoVision12 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(3650);
-        turret.setTargetAngle(49);
+        turret.setTargetAngle(53);
         turret.setShooterAngle(0.15);
         //vision.enableProcesor();
 
@@ -182,7 +185,7 @@ public class AutoVision12 extends CommandOpMode {
 
         packet.put("Slots Occupied", String.format("[%b, %b, %b]",
                 carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
-        packet.put("Slots Colors", carousel.getSlotsColorString());
+        //packet.put("Slots Colors", carousel.getSlotsColorString());
         packet.put("AprilTag Vazut", aprilTagFromInit);
 //
         dashboard.sendTelemetryPacket(packet);
@@ -216,12 +219,11 @@ public class AutoVision12 extends CommandOpMode {
                             new FollowPathCommand(follower, grab1Path, false),
 
                             new SequentialCommandGroup(
-                                    new intakeTest(carousel, intake)
+                                    new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::eject),
                     new InstantCommand(intake::stop),
 
 
@@ -239,12 +241,11 @@ public class AutoVision12 extends CommandOpMode {
                             new FollowPathCommand(follower, grab2Path, false),
 
                             new SequentialCommandGroup(
-                                    new intakeTest(carousel, intake)
+                                    new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::eject),
                     new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
@@ -262,24 +263,23 @@ public class AutoVision12 extends CommandOpMode {
                             new FollowPathCommand(follower, grab3Path, false),
 
                             new SequentialCommandGroup(
-                                    new intakeTest(carousel, intake)
+                                    new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::eject),
-                    new InstantCommand(intake::stop),
+
+                    new InstantCommand(intake::cleanup),
 
 
                     new ParallelCommandGroup(
-                            new InstantCommand(() -> follower.setMaxPower(1)),
                             new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
                     new ShootAllBallsCommand(carousel),
 
-                    new InstantCommand(intake::stop),
+                    new InstantCommand(() -> intake.stop()),
 
                     new InstantCommand(() -> follower.setMaxPower(1)),
                     new FollowPathCommand(follower, parkPath, false)

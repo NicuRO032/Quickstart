@@ -18,7 +18,19 @@ public class intakeTest extends SequentialCommandGroup {
                     intake.collect();
                 }),
 
-                new WaitUntilCommand(carousel::allSlotsOccupied)
+                new WaitUntilCommand(carousel::allSlotsOccupied),
+
+
+                 new InstantCommand(() -> {
+                   if (carousel.allSlotsOccupied()) {
+                       intake.eject();
+                   }
+/*
+                   else if (carousel.getOccupied(2)){
+                       intake.cleanup();
+                   } */
+        })
+
         );
         addRequirements(carousel, intake);
     }

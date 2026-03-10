@@ -63,7 +63,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public static final double SLOT_OCCUPIED_MM = 120.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
-    public static final long SENSOR_DELAY_MS = 20   ;
+    public static final long SENSOR_DELAY_MS = 100   ;
 
 
 
