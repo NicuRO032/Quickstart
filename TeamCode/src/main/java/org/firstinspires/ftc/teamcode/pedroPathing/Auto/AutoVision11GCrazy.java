@@ -44,7 +44,7 @@ public class AutoVision11GCrazy extends CommandOpMode {
     private final Pose START_POSE = new Pose(21, 124, Math.toRadians(143));
     private final Pose SCORE_POSE = new Pose(52, 90.5, Math.toRadians(180));
     private final Pose PARK_POSE = new Pose(48, 78, Math.toRadians(180));
-    private final Pose GRAB1_END_POSE = new Pose(5, 64, Math.toRadians(178)); // set 2 artefacte
+    private final Pose GRAB1_END_POSE = new Pose(2, 64, Math.toRadians(178)); // set 2 artefacte
     private final Pose GRAB2_END_POSE = new Pose(11, 65, Math.toRadians(127));// artefacte gate
     private final Pose GRAB3_END_POSE = new Pose(6, 85, Math.toRadians(180)); // set 1 artedfacte
     private final Pose ControlPoint1 = new Pose(63,59);
@@ -226,8 +226,6 @@ public class AutoVision11GCrazy extends CommandOpMode {
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::stop),
-
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
@@ -237,17 +235,20 @@ public class AutoVision11GCrazy extends CommandOpMode {
                     new FollowPathCommand(follower, score1Path, false),
                     new ShootAllBallsCommand(carousel),
 
-
                     // CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab2Path, true),
+                            new SequentialCommandGroup(
+                                    new FollowPathCommand(follower, grab2Path, true),
+                                    new WaitCommand(1000)
+                            ),
 
                             new SequentialCommandGroup(
                                     new IntakeBallsAuto(carousel, intake)
                             ),
-                            new WaitCommand(6000)
+                            new WaitCommand(6500)
 
                     ),
+
                     new ParallelRaceGroup(
                             new WaitCommand(2000),
                             new InstantCommand(carousel::allSlotsOccupied)

@@ -371,20 +371,17 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public void resetForStart() {
         goToSlot(0);
-        this.intakeState = IntakeState.IDLE;
-        this.outtakeState = OuttakeState.OUT_IDLE;
+        intakeState = IntakeState.IDLE;
+        outtakeState = OuttakeState.OUT_IDLE;
         slowShootState = SlowShootSequence.INACTIVE;
-        this.autoEnabled = true;
+        autoEnabled = true;
     }
 
-public boolean isReadyToShoot() {
+    public boolean isReadyToShoot() {
         return (outtakeState == OuttakeState.FINISHED || outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
-}
-
-
+    }
 
     public void activateIntake() { autoEnabled = true; }
-
 
     public void forcePreload(BallColor s0, BallColor s1, BallColor s2) {
         occupied[0] = true; slotColor[0] = s0;
@@ -750,6 +747,12 @@ public boolean isReadyToShoot() {
 
     public double getColor2Distance() {
         return ((DistanceSensor) colorSensor2).getDistance(DistanceUnit.MM);
+    }
+
+    public void initAuto(){
+        for(int i = 0; i < 3; i++){
+            occupied[i] = true;
+        }
     }
 
     public int getNoBalls(){

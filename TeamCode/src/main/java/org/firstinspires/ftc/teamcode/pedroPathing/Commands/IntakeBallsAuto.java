@@ -21,8 +21,7 @@ public class IntakeBallsAuto extends SequentialCommandGroup {
                         }),
 
                         // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
-                        new WaitUntilCommand(() -> intake.getState() == IntakeSubsystem1.IntakeState.CLEANUP_BALL3),
-                        new WaitCommand(300)
+                        new WaitUntilCommand(carousel::allSlotsOccupied)
                 )
         );
         addRequirements(carousel, intake);

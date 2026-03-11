@@ -50,11 +50,11 @@ public class AutoVision13 extends CommandOpMode {
     private final Pose SCORE_POSE = new Pose(56, 15.5, Math.toRadians(115));
     private final Pose PARK_POSE = new Pose(50, 15, Math.toRadians(110));
     private final Pose ControlPoint1 = new Pose(66, 35);
-    private final Pose ControlPoint2 = new Pose(7, 35);
+    private final Pose ControlPoint2 = new Pose(23, 26);
     private final Pose ControlPoint2_1 = new Pose(10, 21);
     private final Pose GRAB1_END_POSE = new Pose(11, 30, Math.toRadians(180));
-    private final Pose GRAB2_START_POSE = new Pose(14, 13, Math.toRadians(220));
-    private final Pose GRAB2_END_POSE = new Pose(7,0,Math.toRadians(260));
+    private final Pose GRAB2_START_POSE = new Pose(15, 13, Math.toRadians(220));
+    private final Pose GRAB2_END_POSE = new Pose(15,10,Math.toRadians(240));
     private final Pose GRAB3_END_POSE = new Pose(12, 23, Math.toRadians(165));
 
     private PathChain scorePreloadPath;
@@ -92,12 +92,13 @@ public class AutoVision13 extends CommandOpMode {
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         grab2Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_END_POSE)) //  primul set
-                .setHeadingInterpolation(HeadingInterpolator.piecewise(
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_START_POSE))
+                .addPath(new BezierLine(GRAB2_START_POSE, GRAB2_END_POSE))
+                /*.setHeadingInterpolation(HeadingInterpolator.piecewise(
                         new HeadingInterpolator.PiecewiseNode(
                                 0, 0.4, HeadingInterpolator.linear(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading()).reverse()
                         )
-                ))
+                ))*/
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.6, () -> follower.setMaxPower(0.5))
                 .build();
@@ -147,6 +148,7 @@ public class AutoVision13 extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
+        carousel.initAuto();
 
         // CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
@@ -155,7 +157,7 @@ public class AutoVision13 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(4300);
-        turret.setTargetAngle(-1.8);
+        turret.setTargetAngle(-5);
         turret.setShooterAngle(0.25);
         //vision.enableProcesor();
 
