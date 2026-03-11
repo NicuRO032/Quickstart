@@ -146,8 +146,8 @@ public class AutoVision13 extends CommandOpMode {
         CommandScheduler.getInstance().registerSubsystem(intake);
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        //carousel.setShooterForAutoRPM(3650);
-        turret.setTargetAngle(-2.35);
+        carousel.setShooterForAutoRPM(4600);
+        //turret.setTargetAngle(-2.35);
         turret.setShooterAngle(0.3);
         //vision.enableProcesor();
 
@@ -201,7 +201,7 @@ public class AutoVision13 extends CommandOpMode {
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                             //new InstantCommand(() -> turret.setTargetAngle(-49))
                     ),
@@ -215,7 +215,7 @@ public class AutoVision13 extends CommandOpMode {
 
                             new SequentialCommandGroup(
                                     new IntakeBallsAuto(carousel, intake),
-                                    new WaitCommand(1000)
+                                    new WaitCommand(500)
                             ),
 
                             new WaitCommand(5000)
@@ -224,7 +224,7 @@ public class AutoVision13 extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
@@ -249,7 +249,7 @@ public class AutoVision13 extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score2Path, false),
@@ -273,7 +273,7 @@ public class AutoVision13 extends CommandOpMode {
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4500)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
