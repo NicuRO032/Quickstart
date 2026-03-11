@@ -26,8 +26,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
 
-@Autonomous(name = "AUTO.BIG.BLUE.GATE", group = "Pedro Pathing")
-public class AutoVision11g extends CommandOpMode {
+@Autonomous(name = "AUTO.BIG.BLUE.GATE.CRAZY", group = "Pedro Pathing")
+public class AutoVision11GCrazy extends CommandOpMode {
     private Follower follower;
     private CarouselSubsystem1 carousel;
     private TurretSubsystem turret;
@@ -43,14 +43,14 @@ public class AutoVision11g extends CommandOpMode {
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(21, 124, Math.toRadians(143));
     private final Pose SCORE_POSE = new Pose(52, 90.5, Math.toRadians(180));
-    private final Pose PARK_POSE = new Pose(49, 80, Math.toRadians(180));
-    private final Pose GRAB1_END_POSE = new Pose(14, 75, Math.toRadians(160)); // set 2 artefacte
-    private final Pose GRAB2_END_POSE = new Pose(6, 64, Math.toRadians(178));// artefacte gate
-    private final Pose GRAB3_END_POSE = new Pose(17 , 85, Math.toRadians(180)); // set 1 artedfacte
-    private final Pose ControlPoint1 = new Pose(50,35);
+    private final Pose PARK_POSE = new Pose(48, 78, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE = new Pose(5, 64, Math.toRadians(178)); // set 2 artefacte
+    private final Pose GRAB2_END_POSE = new Pose(11, 65, Math.toRadians(127));// artefacte gate
+    private final Pose GRAB3_END_POSE = new Pose(6, 85, Math.toRadians(180)); // set 1 artedfacte
+    private final Pose ControlPoint1 = new Pose(63,59);
     private final Pose ControlPoint2 = new Pose(34, 61);
-    private final Pose ControlPoint3 = new Pose(65, 81);
-    private final Pose ControlPoint4 = new Pose(63, 59);
+    private final Pose ControlPoint3 = new Pose(61, 82);
+    private final Pose ControlPoint4 = new Pose(48, 43.7, Math.toRadians(128));
 
 
     private PathChain scorePreloadPath;
@@ -74,8 +74,8 @@ public class AutoVision11g extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // set 2 artefacte
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.55, () -> follower.setMaxPower(0.4))
-                .addParametricCallback(0.78, () -> follower.setMaxPower(0.75))
+                .addParametricCallback(0.37, () -> follower.setMaxPower(0.35))
+               // .addParametricCallback(0.8, () -> follower.setMaxPower(0.75))
                 .build();
 
         // 3. Traiectoria de scor 1 (de la COLECTARE înapoi la SCOR)
@@ -93,7 +93,7 @@ public class AutoVision11g extends CommandOpMode {
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))  // porneste cu putere maxima
 //                .addParametricCallback(0.45, () -> follower.setMaxPower(0.5)) // la 45% din path reduce viteza pentru a intra in gate
 //                .addParametricCallback(0.65, () -> follower.setMaxPower(1)) // la 65% din path revine la viteza maxima
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.35))
+                //.addParametricCallback(0.7, () -> follower.setMaxPower(0.8))
                 .build();
 
         // 5. Traiectoria de scor 2 (de la COLECTARE 2 înapoi la SCOR)
@@ -109,7 +109,7 @@ public class AutoVision11g extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint3, GRAB3_END_POSE)) //  primul set
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB3_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.4, () -> follower.setMaxPower(0.4))
+                .addParametricCallback(0.2, () -> follower.setMaxPower(0.3))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -240,13 +240,17 @@ public class AutoVision11g extends CommandOpMode {
 
                     // CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab2Path, false),
+                            new FollowPathCommand(follower, grab2Path, true),
 
                             new SequentialCommandGroup(
                                     new IntakeBallsAuto(carousel, intake)
                             ),
                             new WaitCommand(6000)
 
+                    ),
+                    new ParallelRaceGroup(
+                            new WaitCommand(2000),
+                            new InstantCommand(carousel::allSlotsOccupied)
                     ),
                     new InstantCommand(intake::stop),
 

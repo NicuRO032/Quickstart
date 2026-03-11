@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;import com.pedropath
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -40,6 +41,7 @@ public class AutoVision13 extends CommandOpMode {
     private int aprilTagFromInit = -1;
     private double correctionAngle = 0.0d;
     private boolean autoStarted = false;
+    private final double shootSpeed = 4200;
 
 
     // Definește toate punctele cheie ale autonomiei
@@ -48,16 +50,18 @@ public class AutoVision13 extends CommandOpMode {
     private final Pose SCORE_POSE = new Pose(56, 15.5, Math.toRadians(115));
     private final Pose PARK_POSE = new Pose(50, 15, Math.toRadians(110));
     private final Pose ControlPoint1 = new Pose(66, 35);
-    private final Pose ControlPoint2 = new Pose(7, 1);
-    private final Pose ControlPoint2_1 = new Pose(2, 21);
+    private final Pose ControlPoint2 = new Pose(7, 35);
+    private final Pose ControlPoint2_1 = new Pose(10, 21);
     private final Pose GRAB1_END_POSE = new Pose(11, 30, Math.toRadians(180));
-    private final Pose GRAB2_END_POSE = new Pose(8, 12, Math.toRadians(180));
+    private final Pose GRAB2_START_POSE = new Pose(14, 13, Math.toRadians(220));
+    private final Pose GRAB2_END_POSE = new Pose(7,0,Math.toRadians(260));
     private final Pose GRAB3_END_POSE = new Pose(12, 23, Math.toRadians(165));
 
     private PathChain scorePreloadPath;
     private PathChain parkPath;
     private PathChain grab1Path;
     private PathChain grab2Path;
+    private PathChain grab2aPath;
     private PathChain grab3Path;
     private PathChain score1Path;
     private PathChain score2Path;
@@ -66,8 +70,8 @@ public class AutoVision13 extends CommandOpMode {
     public void buildPaths() {
         // 1. De la START la SCOR (Preload)
         scorePreloadPath = follower.pathBuilder()
-                .addPath(new BezierLine(START_POSE, SCORE_POSE1))
-                .setLinearHeadingInterpolation(START_POSE.getHeading(), SCORE_POSE1.getHeading())
+                .addPath(new BezierLine(START_POSE, SCORE_POSE))
+                .setLinearHeadingInterpolation(START_POSE.getHeading(), SCORE_POSE.getHeading())
                 .build();
 
         // 2. Traiectoria de colectare 1 (de la SCOR la zona de colectare)
@@ -75,7 +79,7 @@ public class AutoVision13 extends CommandOpMode {
                 .addPath(new BezierCurve(SCORE_POSE, ControlPoint1, GRAB1_END_POSE)) // set 2 artefacte
                 .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB1_END_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.3, () -> follower.setMaxPower(0.4))
+                .addParametricCallback(0.3, () -> follower.setMaxPower(0.3))
                 //.addParametricCallback(0.8, () -> follower.setMaxPower(1))
                 .build();
 
@@ -88,8 +92,12 @@ public class AutoVision13 extends CommandOpMode {
 
         // 4. Traiectoria de colectare 2 (de la SCOR la a doua zonă de colectare)
         grab2Path = follower.pathBuilder()
-                .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, ControlPoint2_1, GRAB2_END_POSE)) //  primul set
-                .setLinearHeadingInterpolation(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading())
+                .addPath(new BezierCurve(SCORE_POSE, ControlPoint2, GRAB2_END_POSE)) //  primul set
+                .setHeadingInterpolation(HeadingInterpolator.piecewise(
+                        new HeadingInterpolator.PiecewiseNode(
+                                0, 0.4, HeadingInterpolator.linear(SCORE_POSE.getHeading(), GRAB2_END_POSE.getHeading()).reverse()
+                        )
+                ))
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
                 .addParametricCallback(0.6, () -> follower.setMaxPower(0.5))
                 .build();
@@ -146,9 +154,9 @@ public class AutoVision13 extends CommandOpMode {
         CommandScheduler.getInstance().registerSubsystem(intake);
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
-        carousel.setShooterForAutoRPM(4600);
-        //turret.setTargetAngle(-2.35);
-        turret.setShooterAngle(0.3);
+        //carousel.setShooterForAutoRPM(4300);
+        turret.setTargetAngle(-1.8);
+        turret.setShooterAngle(0.25);
         //vision.enableProcesor();
 
 
@@ -199,9 +207,9 @@ public class AutoVision13 extends CommandOpMode {
 
 
             SequentialCommandGroup autoSequence = new SequentialCommandGroup(
+                    new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                             //new InstantCommand(() -> turret.setTargetAngle(-49))
                     ),
@@ -213,18 +221,14 @@ public class AutoVision13 extends CommandOpMode {
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1Path, false),
 
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake),
-                                    new WaitCommand(500)
-                            ),
+                            new IntakeBallsAuto(carousel, intake),
 
-                            new WaitCommand(5000)
+                            new WaitCommand(6000)
                     ),
-                    new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
@@ -235,27 +239,20 @@ public class AutoVision13 extends CommandOpMode {
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false),
 
-                            new SequentialCommandGroup(
-                                new IntakeBallsAuto(carousel, intake)
-                            ),
+                            new IntakeBallsAuto(carousel, intake),
 
-                            new WaitCommand(5000)
+                            new WaitCommand(7000) // Timeout de siguranță
                     ),
-                    /*new InstantCommand(() -> intake.setPower(0)),
-                    new InstantCommand(() -> follower.setMaxPower(1)),*/
-
-                    new InstantCommand(intake::stop),
-
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score2Path, false),
                     new ShootAllBallsSlowCommand(carousel),
 
-                    new InstantCommand(intake::stop),
+//                    new InstantCommand(intake::stop),
 
                     ///CICLUL 4: A treia colectare (opional)
 
@@ -268,12 +265,12 @@ public class AutoVision13 extends CommandOpMode {
                             new WaitCommand(5000)
                     ),
 
-                    new InstantCommand(intake::stop),
+//                    new InstantCommand(intake::stop),
 
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(4600)),
+                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),

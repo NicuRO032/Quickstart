@@ -13,15 +13,17 @@ public class IntakeBallsAuto extends SequentialCommandGroup {
 
     public IntakeBallsAuto (CarouselSubsystem1 carousel, IntakeSubsystem1 intake){
         addCommands(
-                new InstantCommand(() -> {
-                    carousel.activateIntake();
-                    carousel.setCarouselForIntake();
-                    intake.collect();
-                }),
+                new SequentialCommandGroup(
+                        new InstantCommand(() -> {
+                            carousel.activateIntake();
+                            carousel.setCarouselForIntake();
+                            intake.collect();
+                        }),
 
-                // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
-                new WaitUntilCommand(() -> intake.getState() == IntakeSubsystem1.IntakeState.CLEANUP_BALL3)
-
+                        // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
+                        new WaitUntilCommand(() -> intake.getState() == IntakeSubsystem1.IntakeState.CLEANUP_BALL3),
+                        new WaitCommand(300)
+                )
         );
         addRequirements(carousel, intake);
     }

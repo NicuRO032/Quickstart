@@ -55,7 +55,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static double SHOOTER_kF = 0.00046;
     public static final double SHOOTER_MOTOR_CPR = 28.0;
     public static double DEFAULT_SHOOTER_RPM = 3200.0;
-    public static double SHOOTER_IDLE_RPM = 2000; // Turația de menținere (ajustează să fie silențioasă)
+    public static double SHOOTER_IDLE_RPM = 0; // Turația de menținere (ajustează să fie silențioasă)
 
 
 
@@ -280,6 +280,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
         intake.stop(); // OPREȘTE MOTOARELE
         autoEnabled = true;
         intakeIsOn = false; // Resetează variabila globală din TeleOp
+
         for (int i = 0; i < 3; i++) {
             occupied[i] = false;
             slotColor[i] = BallColor.UNKNOWN;
@@ -548,41 +549,44 @@ public boolean isReadyToShoot() {
         switch (slowShootState) {
             case STEP_1:
                 // Nu dăm comandă aici (a fost dată în triggerSlowShoot)
-                if (atTarget()) {
+                if (atTarget() || !occupied[logicalIndex]) {
                     outtakeTimer.reset();
                     slowShootState = SlowShootSequence.PAUSE_1;
                 }
                 break;
 
             case PAUSE_1:
-                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
+                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS || !occupied[logicalIndex]) {
                     // COMANDĂM AICI (o singură dată, înainte să plecăm din stare)
                     goToServoPosition(SLOW_SALVO_PAUSE2_POS[activeSalvoIndex], SLOW_SALVO_PAUSE2_FEEDBACK[activeSalvoIndex]);
                     slowShootState = SlowShootSequence.STEP_2;
+                    logicalIndex = (logicalIndex + 1) % 3;
                 }
                 break;
 
             case STEP_2:
                 // DOAR AȘTEPTĂM. Nu punem goToServoPosition aici!
-                if (atTarget()) {
+                if (atTarget() || !occupied[logicalIndex]) {
                     outtakeTimer.reset();
                     slowShootState = SlowShootSequence.PAUSE_2;
                 }
                 break;
 
             case PAUSE_2:
-                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
+                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS || !occupied[logicalIndex]) {
                     // COMANDĂM POZIȚIA FINALĂ AICI
                     goToServoPosition(SALVO_END_POSITIONS[activeSalvoIndex], SALVO_END_FEEDBACK_MV[activeSalvoIndex]);
                     slowShootState = SlowShootSequence.STEP_3;
+                    logicalIndex = (logicalIndex + 1) % 3;
                 }
                 break;
 
             case STEP_3:
                 // Așteptăm confirmarea finală
-                if (atTarget()) {
+                if (atTarget() || !occupied[logicalIndex]) {
                     //outtakeState = OuttakeState.SHOOTING_SALVO; // Opțional, poți pune direct FINISHED
                     //slowShootState = SlowShootSequence.INACTIVE;
+                    logicalIndex = (logicalIndex + 1) % 3;
                     abortAll();
                 }
                 break;
