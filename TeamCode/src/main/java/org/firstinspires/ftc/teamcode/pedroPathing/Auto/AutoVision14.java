@@ -157,7 +157,7 @@ public class AutoVision14 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(4300);
-        turret.setTargetAngle(-5);
+        turret.setTargetAngle(5);
         turret.setShooterAngle(0.25);
         //vision.enableProcesor();
 
@@ -236,6 +236,7 @@ public class AutoVision14 extends CommandOpMode {
                     new FollowPathCommand(follower, score1Path, false),
                     new ShootAllBallsSlowCommand(carousel),
 
+                    new InstantCommand(carousel::forceIdle),
 
                     /// CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(

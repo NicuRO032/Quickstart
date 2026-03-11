@@ -686,6 +686,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     public boolean allSlotsOccupied() { return occupied[0] && occupied[1] && occupied[2]; }
+    public boolean allSlotsEmpty() { return !occupied[0] && !occupied[1] && !occupied[2]; }
     public String getIntakeState() { return intakeState.name(); }
     public String getOuttakeState() { return outtakeState.name(); }
     public int getLogicalIndex() { return logicalIndex; }
@@ -765,7 +766,12 @@ public class CarouselSubsystem1 extends SubsystemBase {
         return ans;
     }
 
-
+    public void forceIdle() {
+        outtakeState = OuttakeState.OUT_IDLE;
+        slowShootState = SlowShootSequence.INACTIVE;
+        currentTargetRPM = 0;
+        // Opțional: oprește și motoarele shooter-ului dacă vrei
+    }
 
     @Override
     public void periodic() {
