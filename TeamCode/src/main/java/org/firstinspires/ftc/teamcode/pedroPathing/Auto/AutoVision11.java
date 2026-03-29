@@ -47,10 +47,10 @@ public class AutoVision11 extends CommandOpMode {
     private final Pose PARK_POSE  = new Pose(40, 84, Math.toRadians(180));
     private final Pose GRAB1_END_POSE = new Pose(6, 64, Math.toRadians(178));
     private final Pose GRAB2_END_POSE = new Pose(6 , 85, Math.toRadians(180));
-    private final Pose GRAB3_END_POSE = new Pose(5 , 45, Math.toRadians(178));
+    private final Pose GRAB3_END_POSE = new Pose(3 , 46.5, Math.toRadians(178));
     private final Pose ControlPoint1 = new Pose(63,59);
     private final Pose ControlPoint2 = new Pose(31, 62);
-    private final Pose ControlPoint3 = new Pose(65, 35);
+    private final Pose ControlPoint3 = new Pose(63.5, 34);
     private final Pose ControlPoint4 = new Pose(61, 82);
 
     private PathChain scorePreloadPath;
@@ -149,7 +149,7 @@ public class AutoVision11 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(3650);
-        turret.setTargetAngle(-49);
+        turret.setTargetAngle(-51);
         turret.setShooterAngle(0.15);
         //vision.enableProcesor();
 
@@ -211,19 +211,19 @@ public class AutoVision11 extends CommandOpMode {
                     new FollowPathCommand(follower, scorePreloadPath, false),
                     new ShootAllBallsCommand(carousel),
 
+                    new IntakeBallsAuto(carousel, intake),
+
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1Path, false),
 
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake)
-                            ),
+//                            new SequentialCommandGroup(
+//                                    new IntakeBallsAuto(carousel, intake)
+//                            ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::stop),
-
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
@@ -233,18 +233,21 @@ public class AutoVision11 extends CommandOpMode {
                     new FollowPathCommand(follower, score1Path, false),
                     new ShootAllBallsCommand(carousel),
 
+                    new InstantCommand(() -> intake.stop()),
 
+
+                    new IntakeBallsAuto(carousel, intake),
                     // CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false),
 
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake)
-                            ),
+//                            new SequentialCommandGroup(
+//                                    new IntakeBallsAuto(carousel, intake)
+//                            ),
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::stop),
+//                    new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
@@ -254,15 +257,19 @@ public class AutoVision11 extends CommandOpMode {
                     new FollowPathCommand(follower, score2Path, false),
                     new ShootAllBallsCommand(carousel),
 
+                    new InstantCommand(() -> intake.stop()),
+
+
                     // CICLU 4 a treia colectare
 
+                    new IntakeBallsAuto(carousel, intake),
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab3Path, false),
 
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake)
-                            ),
+//                            new SequentialCommandGroup(
+//                                    new IntakeBallsAuto(carousel, intake)
+//                            ),
                             new WaitCommand(6000)
 
                     ),
