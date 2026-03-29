@@ -20,6 +20,7 @@ import com.seattlesolvers.solverslib.pedroCommand.FollowPathCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.IntakeBallsAuto;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.PrepareOuttakeFromTagCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsCommand;
+import org.firstinspires.ftc.teamcode.pedroPathing.Commands.ShootAllBallsSlowCommand;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
@@ -44,10 +45,10 @@ public class AutoVision11g extends CommandOpMode {
     private final Pose START_POSE = new Pose(21, 124, Math.toRadians(143));
     private final Pose SCORE_POSE = new Pose(52, 90.5, Math.toRadians(180));
     private final Pose PARK_POSE = new Pose(49, 80, Math.toRadians(180));
-    private final Pose GRAB1_END_POSE = new Pose(14, 75, Math.toRadians(160)); // set 2 artefacte
+    private final Pose GRAB1_END_POSE = new Pose(14, 70, Math.toRadians(150)); // set 2 artefacte
     private final Pose GRAB2_END_POSE = new Pose(6, 64, Math.toRadians(178));// artefacte gate
     private final Pose GRAB3_END_POSE = new Pose(17 , 85, Math.toRadians(180)); // set 1 artedfacte
-    private final Pose ControlPoint1 = new Pose(50,35);
+    private final Pose ControlPoint1 = new Pose(53,40);
     private final Pose ControlPoint2 = new Pose(34, 61);
     private final Pose ControlPoint3 = new Pose(65, 81);
     private final Pose ControlPoint4 = new Pose(63, 59);
@@ -147,6 +148,7 @@ public class AutoVision11g extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
+        carousel.initAuto();
 
         CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
@@ -213,20 +215,18 @@ public class AutoVision11g extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, scorePreloadPath, false),
-                    new ShootAllBallsCommand(carousel),
+                    new ShootAllBallsSlowCommand(carousel),
 
                     //--- CICLUL 2: PRIMA COLECTARE ȘI SCOR ---
 
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab1Path, false),
 
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake)
-                            ),
+                            new IntakeBallsAuto(carousel, intake),
+
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::stop),
 
 
                     new ParallelCommandGroup(
@@ -235,20 +235,19 @@ public class AutoVision11g extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score1Path, false),
-                    new ShootAllBallsCommand(carousel),
+                    new ShootAllBallsSlowCommand(carousel),
 
 
                     // CICLUL 3: A doua colectare si score
+
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false),
 
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake)
-                            ),
+                            new IntakeBallsAuto(carousel, intake),
+
                             new WaitCommand(6000)
 
                     ),
-                    new InstantCommand(intake::stop),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> follower.setMaxPower(1)),
@@ -256,7 +255,8 @@ public class AutoVision11g extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score2Path, false),
-                    new ShootAllBallsCommand(carousel),
+                    new ShootAllBallsSlowCommand(carousel),
+
                     // CICLU 4 a treia colectare
 
 
@@ -278,7 +278,7 @@ public class AutoVision11g extends CommandOpMode {
                             new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
                     ),
                     new FollowPathCommand(follower, score3Path, false),
-                    new ShootAllBallsCommand(carousel),
+                    new ShootAllBallsSlowCommand(carousel),
 
                     new InstantCommand(() -> intake.stop()),
 

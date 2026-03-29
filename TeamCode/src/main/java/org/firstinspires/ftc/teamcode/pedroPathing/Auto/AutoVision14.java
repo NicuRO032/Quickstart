@@ -47,7 +47,7 @@ public class AutoVision14 extends CommandOpMode {
     // Definește toate punctele cheie ale autonomiei
     private final Pose START_POSE = new Pose(84, 8, Math.toRadians(90));
     private final Pose SCORE_POSE1 = new Pose(84, 8.5, Math.toRadians(65));
-    private final Pose SCORE_POSE = new Pose(88, 15.5, Math.toRadians(65));
+    private final Pose SCORE_POSE = new Pose(88, 14, Math.toRadians(65));
     private final Pose PARK_POSE = new Pose(94, 15, Math.toRadians(70));
     private final Pose ControlPoint1 = new Pose(78, 35);
     private final Pose ControlPoint2 = new Pose(121, 26);
@@ -100,7 +100,7 @@ public class AutoVision14 extends CommandOpMode {
                         )
                 ))*/
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.6, () -> follower.setMaxPower(0.5))
+                .addParametricCallback(0.4, () -> follower.setMaxPower(0.3))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -157,7 +157,7 @@ public class AutoVision14 extends CommandOpMode {
         // Setare bile preîncărcate chiar înainte de start
         //carousel.forcePreload(CarouselSubsystem1.BallColor.GREEN, CarouselSubsystem1.BallColor.PURPLE, CarouselSubsystem1.BallColor.PURPLE);
         //carousel.setShooterForAutoRPM(4300);
-        turret.setTargetAngle(5);
+        turret.setTargetAngle(3);
         turret.setShooterAngle(0.25);
         //vision.enableProcesor();
 
@@ -236,8 +236,6 @@ public class AutoVision14 extends CommandOpMode {
                     new FollowPathCommand(follower, score1Path, false),
                     new ShootAllBallsSlowCommand(carousel),
 
-                    new InstantCommand(carousel::forceIdle),
-
                     /// CICLUL 3: A doua colectare si score
                     new ParallelRaceGroup(
                             new FollowPathCommand(follower, grab2Path, false),
@@ -259,25 +257,25 @@ public class AutoVision14 extends CommandOpMode {
 
                     ///CICLUL 4: A treia colectare (opional)
 
-                    new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab3Path, false),
-
-                            new SequentialCommandGroup(
-                                    new IntakeBallsAuto(carousel, intake)
-                            ),
-                            new WaitCommand(5000)
-                    ),
-
-//                    new InstantCommand(intake::stop),
-
-
-                    new ParallelCommandGroup(
-                            new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
-                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
-                    ),
-                    new FollowPathCommand(follower, score3Path, false),
-                    new ShootAllBallsSlowCommand(carousel),
+//                    new ParallelRaceGroup(
+//                            new FollowPathCommand(follower, grab3Path, false),
+//
+//                            new SequentialCommandGroup(
+//                                    new IntakeBallsAuto(carousel, intake)
+//                            ),
+//                            new WaitCommand(5000)
+//                    ),
+//
+////                    new InstantCommand(intake::stop),
+//
+//
+//                    new ParallelCommandGroup(
+//                            new InstantCommand(() -> follower.setMaxPower(1)),
+//                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
+//                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
+//                    ),
+//                    new FollowPathCommand(follower, score3Path, false),
+//                    new ShootAllBallsSlowCommand(carousel),
 
                     new InstantCommand(intake::stop),
 

@@ -43,7 +43,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
 
     // Toleranța pentru atTarget
-    public static double FEEDBACK_TOLERANCE_MV = 120;
+    public static double FEEDBACK_TOLERANCE_MV = 500;
     public static long AT_TARGET_STABILITY_MS = 50;
     public static double CAROUSEL_SERVO2_OFFSET = 0.02;
 
@@ -61,7 +61,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     /* ================= CONSTANTE ================= */
 
-    public static final double SLOT_OCCUPIED_MM = 120.0;
+    public static final double SLOT_OCCUPIED_MM = 100.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
     public static final long SENSOR_DELAY_MS = 45;
 
@@ -406,7 +406,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
              */
             case IDLE:
                 if (autoEnabled && !allSlotsOccupied()) {
-                    boolean ballAtGate = intakeGateSensor.getDistance(DistanceUnit.MM) < 150.0;
+                    boolean ballAtGate = intakeGateSensor.getDistance(DistanceUnit.MM) < 150.0 || entrySlotHasBall();
 
                     if (ballAtGate) {
                         ballWasAtGate = true; // REȚINEM că o bilă a intrat în sistem
@@ -425,32 +425,27 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 if (entrySlotHasBall()) {
                     // PROTECȚIA 1: Verificăm dacă slotul curent (logicalIndex) este gol
                     // PROTECȚIA 2: Verificăm dacă bila a trecut anterior prin poartă
-                    if (!occupied[logicalIndex] && ballWasAtGate) {
-                        finalizeSlot();
-                        ballWasAtGate = false; // Resetăm flag-ul după ce am înregistrat bila
+                    finalizeSlot();
+                    ballWasAtGate = false; // Resetăm flag-ul după ce am înregistrat bila
 
-                        if (allSlotsOccupied()) {
-                            intake.eject();
-                            intakeReverseTimer.reset();
-                            intakeState = IntakeState.REVERSE_INTAKE;
-                            autoEnabled = false;
-                            intakeIsOn = false;
-                        } else {
-                            // Logica de găsire a următorului slot rămâne la fel...
-                            int nextEmptySlot = -1;
-                            for (int i = 0; i < 3; i++) {
-                                int checkIndex = (logicalIndex + 1 + i) % 3;
-                                if (!occupied[checkIndex]) {
-                                    nextEmptySlot = checkIndex;
-                                    break;
-                                }
+                    if (allSlotsOccupied()) {
+                        intake.eject();
+                        intakeReverseTimer.reset();
+                        intakeState = IntakeState.REVERSE_INTAKE;
+                        autoEnabled = false;
+                        intakeIsOn = false;
+                    } else {
+                        // Logica de găsire a următorului slot rămâne la fel...
+                        int nextEmptySlot = -1;
+                        for (int i = 0; i < 3; i++) {
+                            int checkIndex = (logicalIndex + 1 + i) % 3;
+                            if (!occupied[checkIndex]) {
+                                nextEmptySlot = checkIndex;
+                                break;
                             }
-                            if (nextEmptySlot != -1) goToSlot(nextEmptySlot);
-                            intakeState = IntakeState.IDLE;
                         }
-                    } else if (occupied[logicalIndex]) {
-                        // Dacă senzorul vede ceva, dar slotul e deja plin, ignorăm (e bila veche)
-                        return;
+                        if (nextEmptySlot != -1) goToSlot(nextEmptySlot);
+                        intakeState = IntakeState.IDLE;
                     }
                 }
                 break;
@@ -510,7 +505,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 if (outtakeTimer.milliseconds() > STABILIZATION_DURATION_MS) {
                     // A trecut timpul de stabilizare, Pornim MIȘCAREA LENTĂ de relaxare.
                     double currentTarget = targetServoPosition;
-                    double newTarget = currentTarget - 0.07; // Micșorăm poziția
+                    double newTarget = currentTarget - 0.06; // Micșorăm poziția
 
                     // Comandăm MIȘCAREA LENTĂ în loc de cea instantanee
                     startSlowMove(newTarget);
@@ -766,11 +761,9 @@ public class CarouselSubsystem1 extends SubsystemBase {
         return ans;
     }
 
-    public void forceIdle() {
-        outtakeState = OuttakeState.OUT_IDLE;
-        slowShootState = SlowShootSequence.INACTIVE;
-        currentTargetRPM = 0;
-        // Opțional: oprește și motoarele shooter-ului dacă vrei
+    public void setAllSlotsOccupied(){
+        for(int i = 0; i < 3; i++)
+            occupied[i] = true;
     }
 
     @Override

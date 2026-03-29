@@ -140,6 +140,7 @@ public class AutoVision11 extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
+        carousel.initAuto();
 
         // CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
@@ -184,7 +185,7 @@ public class AutoVision11 extends CommandOpMode {
                 carousel.getOccupied(0), carousel.getOccupied(1), carousel.getOccupied(2)));
         //packet.put("Slots Colors", carousel.getSlotsColorString());
         packet.put("AprilTag Vazut", aprilTagFromInit);
-//
+
         dashboard.sendTelemetryPacket(packet);
 //        telemetry.addData("x", follower.getPose().getX());
 //        telemetry.addData("y", follower.getPose().getY());

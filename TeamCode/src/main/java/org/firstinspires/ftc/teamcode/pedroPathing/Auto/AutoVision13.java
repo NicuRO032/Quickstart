@@ -41,7 +41,7 @@ public class AutoVision13 extends CommandOpMode {
     private int aprilTagFromInit = -1;
     private double correctionAngle = 0.0d;
     private boolean autoStarted = false;
-    private final double shootSpeed = 4200;
+    private final double shootSpeed =4300;
 
 
     // Definește toate punctele cheie ale autonomiei
@@ -52,7 +52,7 @@ public class AutoVision13 extends CommandOpMode {
     private final Pose ControlPoint1 = new Pose(66, 35);
     private final Pose ControlPoint2 = new Pose(23, 26);
     private final Pose ControlPoint2_1 = new Pose(10, 21);
-    private final Pose GRAB1_END_POSE = new Pose(11, 30, Math.toRadians(180));
+    private final Pose GRAB1_END_POSE = new Pose(9, 30, Math.toRadians(180));
     private final Pose GRAB2_START_POSE = new Pose(15, 13, Math.toRadians(220));
     private final Pose GRAB2_END_POSE = new Pose(15,10,Math.toRadians(240));
     private final Pose GRAB3_END_POSE = new Pose(12, 23, Math.toRadians(165));
@@ -100,7 +100,7 @@ public class AutoVision13 extends CommandOpMode {
                         )
                 ))*/
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1))
-                .addParametricCallback(0.6, () -> follower.setMaxPower(0.5))
+                .addParametricCallback(0.4, () -> follower.setMaxPower(0.1))
                 .build();
 
         //7. Traiectoria de la Colectare 3 la score 3
@@ -179,7 +179,8 @@ public class AutoVision13 extends CommandOpMode {
         packet.put("02 OuttakeState", carousel.getOuttakeState());
         packet.put("02 SlowShootState", carousel.getSlowShootState());
         packet.put("03 IsShooterReady", carousel.isShooterReady());
-        packet.put("Logical Index", carousel.getLogicalIndex());
+        packet.put("Logical " +
+                "Index", carousel.getLogicalIndex());
         packet.put("Carousel Logical Index", carousel.getLogicalIndex());
         packet.put("Carousel Target Feedback (mV)", carousel.getTargetFeedbackMv());
         packet.put("Carousel Current Feedback (mV)", carousel.getCurrentFeedbackMv());
@@ -258,25 +259,25 @@ public class AutoVision13 extends CommandOpMode {
 
                     ///CICLUL 4: A treia colectare (opional)
 
-                    new ParallelRaceGroup(
-                            new FollowPathCommand(follower, grab3Path, false),
-
-                            new SequentialCommandGroup(
-                                new IntakeBallsAuto(carousel, intake)
-                            ),
-                            new WaitCommand(5000)
-                    ),
-
-//                    new InstantCommand(intake::stop),
-
-
-                    new ParallelCommandGroup(
-                            new InstantCommand(() -> follower.setMaxPower(1)),
-                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
-                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
-                    ),
-                    new FollowPathCommand(follower, score3Path, false),
-                    new ShootAllBallsSlowCommand(carousel),
+//                    new ParallelRaceGroup(
+//                            new FollowPathCommand(follower, grab3Path, false),
+//
+//                            new SequentialCommandGroup(
+//                                new IntakeBallsAuto(carousel, intake)
+//                            ),
+//                            new WaitCommand(5000)
+//                    ),
+//
+////                    new InstantCommand(intake::stop),
+//
+//
+//                    new ParallelCommandGroup(
+//                            new InstantCommand(() -> follower.setMaxPower(1)),
+//                            new InstantCommand(() -> carousel.setShooterForAutoRPM(shootSpeed)),
+//                            new PrepareOuttakeFromTagCommand(carousel, () -> this.aprilTagFromInit)
+//                    ),
+//                    new FollowPathCommand(follower, score3Path, false),
+//                    new ShootAllBallsSlowCommand(carousel),
 
                     new InstantCommand(intake::stop),
 
