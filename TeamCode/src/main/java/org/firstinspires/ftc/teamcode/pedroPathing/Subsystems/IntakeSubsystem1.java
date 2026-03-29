@@ -6,54 +6,53 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
 public class IntakeSubsystem1 extends SubsystemBase {
-    private final DcMotorEx intakeMotorSus;
-    private final DcMotorEx intakeMotorJos;
-    private double lastPowerSus = 0, lastPowerJos = 0;
 
-    public enum IntakeState { IDLE, COLLECTING, CLEANUP_BALL3, EJECTING, MANUAL }
-    private IntakeState currentState = IntakeState.IDLE;
+    private final DcMotorEx intakeMotor;
+    private final DcMotorEx intakeMotor1;
 
+    /**
+     * Constructor pentru subsistemul de admisie.
+     * @param hardwareMap Obiectul hardwareMap de la OpMode.
+     */
     public IntakeSubsystem1(HardwareMap hardwareMap) {
-        intakeMotorSus = hardwareMap.get(DcMotorEx.class, "motorIntakeSus");
-        intakeMotorJos = hardwareMap.get(DcMotorEx.class, "motorIntakeJos");
-        intakeMotorSus.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intakeMotorJos.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intakeMotorJos.setDirection(DcMotor.Direction.REVERSE);
+        intakeMotor = hardwareMap.get(DcMotorEx.class, "motorIntake");
+        intakeMotor1 = hardwareMap.get(DcMotorEx.class, "motorIntake1");
+
+        //intakeMotor.setDirection(DcMotor.Direction.REVERSE);
+        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        intakeMotor.setPower(0);
+
+        intakeMotor1.setDirection(DcMotor.Direction.REVERSE);
+        intakeMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        intakeMotor1.setPower(0);
     }
 
-    public void setState(IntakeState state) { this.currentState = state; }
-
-    @Override
-    public void periodic() {
-        switch (currentState) {
-            case IDLE:          applyPowerWithProtection(0, 0); break;
-            case COLLECTING:    applyPowerWithProtection(-0.8, -0.8); break;
-            case CLEANUP_BALL3: applyPowerWithProtection(-0.8, 0.8); break; // Sus trage, Jos scuipă
-            case EJECTING:      applyPowerWithProtection(0.7, 0.7); break;
-            case MANUAL:        break;
-        }
+    /**
+     * Setează puterea motorului de admisie.
+     * O valoare pozitivă va rula motorul într-o direcție (ex: admisie),
+     * o valoare negativă în direcția opusă (ex: evacuare).
+     *
+     * @param power Puterea de setat, între -1.0 și 1.0.
+     */
+    public void setPower(double power) {
+        intakeMotor.setPower(power);
+        intakeMotor1.setPower(power);
     }
 
-    private void applyPowerWithProtection(double targetSus, double targetJos) {
-        // Protecție: dacă sensul se schimbă față de ultima comandă, punem 0 scurt
-        if ((lastPowerSus < 0 && targetSus > 0) || (lastPowerSus > 0 && targetSus < 0)) intakeMotorSus.setPower(0);
-        else intakeMotorSus.setPower(targetSus);
-
-        if ((lastPowerJos < 0 && targetJos > 0) || (lastPowerJos > 0 && targetJos < 0)) intakeMotorJos.setPower(0);
-        else intakeMotorJos.setPower(targetJos);
-
-        lastPowerSus = targetSus; lastPowerJos = targetJos;
+    /**
+     * Oprește motorul de admisie.
+     */
+    public void stop() {
+        intakeMotor1.setPower(0);
+        intakeMotor.setPower(0);
     }
 
-    public void collect() { setState(IntakeState.COLLECTING); }
-    public void cleanup() { setState(IntakeState.CLEANUP_BALL3); }
-    public void eject()   { setState(IntakeState.EJECTING); }
-    public void stop()    { setState(IntakeState.IDLE); }
-
-    public IntakeState getState() { return currentState; }
-
-    public void setPower(double power) { // Pentru override manual
-        applyPowerWithProtection(power, power);
-        currentState = IntakeState.MANUAL;
+    public void reverseIntake() {
+        // Presupunând că 0.7 scoate bila și -0.8 o trage
+        intakeMotor.setPower(-0.8);
+        intakeMotor1.setPower(0.8);
     }
+
 }

@@ -97,7 +97,7 @@ public class AutoVision12 extends CommandOpMode {
                 .setLinearHeadingInterpolation(GRAB2_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
                 .addParametricCallback(0.85, () -> follower.setMaxPower(0.9))
-                .addParametricCallback(0.0, () -> intake.cleanup())
+//                .addParametricCallback(0.0, () -> intake.cleanup())
                 .addParametricCallback(0.15, () -> intake.stop())
                 .build();
 
@@ -114,7 +114,7 @@ public class AutoVision12 extends CommandOpMode {
                 .addPath(new BezierLine(GRAB3_END_POSE, SCORE_POSE))
                 .setLinearHeadingInterpolation(GRAB3_END_POSE.getHeading(), SCORE_POSE.getHeading())
                 .addParametricCallback(0.0, () -> follower.setMaxPower(1.0))
-                .addParametricCallback(0.0, () -> intake.cleanup())
+//                .addParametricCallback(0.0, () -> intake.cleanup())
                 .addParametricCallback(0.15, () -> intake.stop())
                 .build();
 
@@ -143,7 +143,7 @@ public class AutoVision12 extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
-        carousel.initAuto();
+//        carousel.initAuto();
 
         // CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
@@ -270,7 +270,7 @@ public class AutoVision12 extends CommandOpMode {
 
                     ),
 
-                    new InstantCommand(intake::cleanup),
+//                    new InstantCommand(intake::cleanup),
 
 
                     new ParallelCommandGroup(

@@ -147,7 +147,7 @@ public class AutoVision12g extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
-        carousel.initAuto();
+//        carousel.initAuto();
 
         CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
@@ -265,7 +265,7 @@ public class AutoVision12g extends CommandOpMode {
 
                     ),
 
-                    new InstantCommand(carousel::setAllSlotsOccupied),
+//                    new InstantCommand(carousel::setAllSlotsOccupied),
 
                     new ParallelCommandGroup(
                             new InstantCommand(() -> carousel.setShooterForAutoRPM(3500)),

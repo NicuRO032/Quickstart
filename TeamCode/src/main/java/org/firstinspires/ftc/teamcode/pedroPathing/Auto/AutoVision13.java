@@ -148,7 +148,7 @@ public class AutoVision13 extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
-        carousel.initAuto();
+//        carousel.initAuto();
 
         // CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);

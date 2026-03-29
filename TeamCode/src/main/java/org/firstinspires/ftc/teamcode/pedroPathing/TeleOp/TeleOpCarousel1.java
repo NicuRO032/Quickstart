@@ -11,13 +11,11 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
@@ -37,7 +35,7 @@ public class TeleOpCarousel1 extends OpMode {
     private Follower follower;
     public static Pose startingPose;
     private boolean slowMode = false;
-    public static double slowModeMultiplier = 0.5;
+    private double slowModeMultiplier = 0.5;
 
     private boolean slowShoot = false, fastShoot = false;
     private ElapsedTime delayAruncare = new ElapsedTime();
@@ -62,9 +60,6 @@ public class TeleOpCarousel1 extends OpMode {
     public static boolean intakeIsOn = false;
     //public static boolean Intake1IsOn = false;
 
-    //folosim pentru vibrat maneta daca avem 3 bile in carusel
-    private boolean prevAllBalls = false, curAllBalls = false;
-
     public static double SHOOT_RPM = 3000, ANGLE_SHOOT = 0;
 
     @Override
@@ -74,6 +69,7 @@ public class TeleOpCarousel1 extends OpMode {
             startingPose = new Pose(0, 0, 0);
         }
         intakeIsOn = false;
+        //Intake1IsOn = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
 
@@ -142,7 +138,6 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addData("ALIANTĂ SELECTATĂ", selectedAlliance);
         telemetry.addData("ID AprilTag Țintă", targetAprilTagId);
         telemetry.addLine("GATA DE START!");
-        telemetry.addLine("NUMA BILE!"); //iancurobila
         telemetry.addLine("========================================");
         telemetry.update();
 
@@ -181,16 +176,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (gamepad1.rightBumperWasPressed()) {
             slowMode = !slowMode;
-            gamepad1.rumble(200);
         }
-
-        curAllBalls = carousel.allSlotsOccupied();
-
-        if(curAllBalls && !prevAllBalls){
-            gamepad1.rumbleBlips(3);
-        }
-
-        prevAllBalls = curAllBalls;
 
         driver1.readButtons();
         driver2.readButtons();
@@ -198,54 +184,51 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        //sendTelemetryMatches();
         sendTelemetry();
-        //sendTelemetryMotorsCurrent();
 
     }
 
     private void handleDriver1Controls() {
         final double STICK_DEADZONE = 0.1;
-        double joystickPower = driver1.getRightY();
+        double joystickPower = driver1.getRightY() * 0.9;
+        // double joystickPower1 = driver1.getRightY() * 0.9;
 
         if (Math.abs(joystickPower) > STICK_DEADZONE) {
-            // Control manual (Override): Folosește metoda cu protecție electrică
             intake.setPower(joystickPower);
             intakeIsOn = false;
+            //Intake1IsOn = false;
         } else {
-            // Logica butonului A (Toggle)
             if (driver1.wasJustPressed(GamepadKeys.Button.A)) {
-                // Nu permitem activarea dacă robotul este deja plin (prevenire penalty)
-                if (!carousel.allSlotsOccupied()) {
-                    intakeIsOn = !intakeIsOn;
-                } else {
-                    intakeIsOn = false;
-                    gamepad1.rumble(200); // Feedback că e plin
-                }
+                intakeIsOn = !intakeIsOn;
+                // Intake1IsOn = !Intake1IsOn;
             }
 
             // Obținem starea mașinii de stări de intake din carusel
             CarouselSubsystem1.IntakeState currentIntakeState = carousel.getIntakeStateEnum();
 
-            // Controlăm motoarele DOAR dacă caruselul este în IDLE
-            // Dacă e în STORE_AND_ADVANCE sau CLEANUP_EXCESS, lăsăm automatizarea să lucreze
+            // Acționăm asupra motorului DOAR dacă caruselul este în starea IDLE (așteptare).
+            // Astfel, nu interferăm cu stările STORE_AND_ADVANCE sau REVERSE_INTAKE.
             if (currentIntakeState == CarouselSubsystem1.IntakeState.IDLE) {
                 if (intakeIsOn) {
-                    intake.collect(); // Folosește starea COLLECTING (ambele motoare -0.8)
+                    intake.setPower(-0.8);
+                    // intake.setPower(-0.8);// Pornește intake-ul la comanda șoferului
                 } else {
-                    intake.stop();    // Folosește starea IDLE (0.0 cu protecție)
+                    intake.stop();
+                    // intake.stop();// Oprește intake-ul la comanda șoferului
                 }
             }
+            // Dacă starea NU este IDLE, înseamnă că subsistemul Carousel are controlul.
+            // Nu facem nimic și îl lăsăm să-și termine treaba (ex: să ruleze în marșarier).
         }
 
-        // --- Restul butoanelor rămân la fel ---
         if (driver1.wasJustPressed(GamepadKeys.Button.BACK)) {
             carousel.abortAll();
             outtakePrepared = false;
             hasRumbled = false;
-            intakeIsOn = false; // Resetăm și variabila de control
         }
 
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) carousel.manualStepLeft();
+        if (driver1.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) carousel.manualStepRight();
         if (driver1.wasJustPressed(GamepadKeys.Button.X)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.GPP);
         if (driver1.wasJustPressed(GamepadKeys.Button.Y)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PGP);
         if (driver1.wasJustPressed(GamepadKeys.Button.B)) carousel.setActivePattern(CarouselSubsystem1.OuttakePattern.PPG);
@@ -254,6 +237,7 @@ public class TeleOpCarousel1 extends OpMode {
             outtakePrepared = true;
             hasRumbled = false;
             intakeIsOn = false;
+            // Intake1IsOn = false;
         }
 
         if (carousel.isReadyToShoot() && !hasRumbled) {
@@ -283,15 +267,13 @@ public class TeleOpCarousel1 extends OpMode {
             slowShoot = true;
             delayAruncare.reset();
         }
-        if(carousel.getReadyToShootCarousel() && delayAruncare.seconds() < 5) {
+        if(carousel.isShooterReady() && delayAruncare.seconds() < 5) {
             if(fastShoot){
                 fastShoot = false;
-                slowShoot = false;
                 carousel.triggerShoot();
             }
             if(slowShoot){
                 slowShoot = false;
-                fastShoot = false;
                 carousel.triggerSlowShoot();
 
             }
@@ -332,13 +314,13 @@ public class TeleOpCarousel1 extends OpMode {
                 // Comanda de ochire manuală la ținta vizibilă (păstrată)
                 // Aceasta va ochi orice tag vizibil, indiferent de alianță. Util pentru testare.
                 /**
-                if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
-                    AprilTagDetection currentTag = vision.getBestDetection();
-                    if (currentTag != null && currentTag.metadata != null) {
-                        double targetAngle = turret.getCurrentAngle() - currentTag.ftcPose.bearing;
-                        turret.setTargetAngle(targetAngle);
-                    }
-                }
+                 if (driver2.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
+                 AprilTagDetection currentTag = vision.getBestDetection();
+                 if (currentTag != null && currentTag.metadata != null) {
+                 double targetAngle = turret.getCurrentAngle() - currentTag.ftcPose.bearing;
+                 turret.setTargetAngle(targetAngle);
+                 }
+                 }
                  **/
                 break;
 
@@ -351,12 +333,10 @@ public class TeleOpCarousel1 extends OpMode {
                 // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
                 if (vision.hasValidTag() && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(9.97723 * x + 2280.80533);
-                    turret.setShooterAngle(0.00160864 * x - 0.0544748);
-//                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
-//                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
-//                    carousel.setShooterTargetRPM(SHOOT_RPM);
-//                    turret.setShooterAngle(ANGLE_SHOOT);
+                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
+                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
+                    //carousel.setShooterTargetRPM(SHOOT_RPM);
+                    //turret.setShooterAngle(ANGLE_SHOOT);
                 }
 
                 // Dacă am găsit ȚINTA CORECTĂ, trecem la LOCKING
@@ -391,12 +371,10 @@ public class TeleOpCarousel1 extends OpMode {
                     // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
                     if (carousel.canChangeRPM()) {
                         double x = vision.getDistance();
-                        carousel.setShooterTargetRPM(9.97723 * x + 2280.80533);
-                        turret.setShooterAngle(0.00160864 * x - 0.0544748);
-//                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
-//                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
-//                        carousel.setShooterTargetRPM(SHOOT_RPM);
-//                        turret.setShooterAngle(ANGLE_SHOOT);
+                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
+                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
+                        //carousel.setShooterTargetRPM(SHOOT_RPM);
+                        //turret.setShooterAngle(ANGLE_SHOOT);
                     }
 
                     // 3. Comandăm turelei să continue ochirea
@@ -451,7 +429,6 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.addLine("\n--- SHOOTER VELOCITY RPM---");
         telemetry.addData("Target Velo", "%.2f", carousel.getShooterTargetRPM());
         telemetry.addData("Current Velo", "%.2f", carousel.getShooterCurrentRPM());
-        telemetry.addData("Distance sensor", "%.2f", carousel.getSlotDistance());
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
@@ -468,46 +445,40 @@ public class TeleOpCarousel1 extends OpMode {
          packet.put("10. Outtake State", carousel.getOuttakeState());
          **/
 
-        // --- Secțiunea 00-02: Stări și Indecși (String/Int - nu au nevoie de clean) ---
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
         packet.put("101.SlowShootState", carousel.getSlowShootState());
         packet.put("02.LogicalIndex", carousel.getLogicalIndex());
 
-        // --- Secțiunea 04: Feedback Carusel (3 zecimale) ---
-        packet.put("040.Carousel Target Feedback (mV)", clean(carousel.getTargetFeedbackMv()));
-        packet.put("041.Carousel Current Feedback (mV)", clean(carousel.getCurrentFeedbackMv()));
-        packet.put("042.Carousel Feedback Error (mV)", clean(carousel.getFeedbackError()));
-        packet.put("043.Carousel At Target", carousel.atTarget());
+        packet.put("040.Carousel Target Feedback (mV)", String.format("%.3f", carousel.getTargetFeedbackMv()));
+        packet.put("041.Carousel Current Feedback (mV)", String.format("%.3f", carousel.getCurrentFeedbackMv()));
+        packet.put("042.Carousel Feedback Error (mV)", String.format("%.3f", carousel.getFeedbackError()));
+        packet.put("043.Carousel At Target", carousel.atTarget()); // Foarte util de monitorizat
 
-        // --- Secțiunea 05: Senzori Distanță și Culori ---
-        packet.put("050. Slot Distance (mm)", clean(carousel.getSlotDistance()));
+
+        packet.put("050. Main Distance (mm)", carousel.getMainDistance());
+        packet.put("051. Color1 Distance (mm)", String.format("%.3f", carousel.getColor1Distance()));
+        packet.put("052. Color2 Distance (mm)", String.format("%.3f", carousel.getColor2Distance()));
         packet.put("053. Entry Slot Has Ball", carousel.entrySlotHasBall());
-        packet.put("054. Gate Distance (mm)", clean(carousel.getGateDistance()));
         packet.put("06.Occupied 0", carousel.getOccupied(0));
         packet.put("07.Occupied 1", carousel.getOccupied(1));
         packet.put("08.Occupied 2", carousel.getOccupied(2));
+        packet.put("09.Hue1", carousel.getHue1());
+        packet.put("10.Hue2", carousel.getHue2());
+        packet.put("11.HueMax", carousel.getHueMax());
+        packet.put("12.Slot colors", carousel.getSlotsColorString());
+        packet.put("14.Distance: ", vision.getDistance());
+        packet.put("15.X:", vision.getLastX());
+        packet.put("16.Y:", vision.getLastY());
+        packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
+        packet.put("18.Turret Angle:", turret.getTargetAngle());
+        packet.put("18.AprilTag Bearing:", vision.getLastBearing());
 
-        // --- Secțiunea 14-18: Vision și Turelă (Aici erau numerele mari) ---
-        packet.put("14.Distance: ", clean(vision.getDistance()));
-        packet.put("15.X Offset", clean(vision.getLastX()));
-        packet.put("16.Y Offset", clean(vision.getLastY()));
-        packet.put("17.Shooter Angle Pos", clean(turret.getCurrentShooterAngle()));
-        packet.put("18.Turret Target Angle", clean(turret.getTargetAngle()));
-        packet.put("18.AprilTag Bearing", clean(vision.getLastBearing()));
 
-        // --- Secțiunea 20-24: Status Shooter ---
-        packet.put("20 Carousel Target feedback", clean(carousel.getTargetFeedbackMv()));
-        packet.put("21 Carousel Current feedback", clean(carousel.getCurrentFeedbackMv()));
-        packet.put("22 Carousel Feedback Error", clean(carousel.getFeedbackError()));
-        packet.put("23 Carousel At Target", carousel.atTarget());
-        packet.put("24 IsShooterReady", carousel.isShooterReady());
-        packet.put("04 IsReadyToShoot", carousel.isReadyToShoot());
-
-        // --- Viteze Shooter ---
-        packet.put("Shooter Target Velocity", clean(carousel.getShooterTargetRPM()));
-        packet.put("Shooter Current Velocity", clean(carousel.getShooterCurrentRPM()));
-        packet.put("Shooter Power", clean(carousel.getShooterPower()));
+        // Adaugă telemetria pentru viteza shooter-ului aici
+        packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
+        packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
+        packet.put("Shooter Power", carousel.getShooterPower());
 
 
 /**
@@ -518,49 +489,5 @@ public class TeleOpCarousel1 extends OpMode {
  packet.put("18.AprilTag Bearing", bearing);
  **/
         dashboard.sendTelemetryPacket(packet);
-    }
-
-    private void sendTelemetryMotorsCurrent() {
-        // --- Citire Motoare Drivetrain ---
-        // Folosim numele din Constants.java: "rf", "rr", "lr", "lf"
-        DcMotorEx mRF = hardwareMap.get(DcMotorEx.class, "rf");
-        DcMotorEx mRR = hardwareMap.get(DcMotorEx.class, "rr");
-        DcMotorEx mLF = hardwareMap.get(DcMotorEx.class, "lf");
-        DcMotorEx mLR = hardwareMap.get(DcMotorEx.class, "lr");
-
-        double currentRF = mRF.getCurrent(CurrentUnit.AMPS);
-        double currentRR = mRR.getCurrent(CurrentUnit.AMPS);
-        double currentLF = mLF.getCurrent(CurrentUnit.AMPS);
-        double currentLR = mLR.getCurrent(CurrentUnit.AMPS);
-        double totalCurrent = currentRF + currentRR + currentLF + currentLR;
-
-        // --- Afișare în Telemetria de pe Driver Station ---
-        telemetry.addLine("\n--- DRIVETRAIN CURRENT (Amps) ---");
-        telemetry.addData("Total Drivetrain", "%.2f A", totalCurrent);
-        telemetry.addData("FL / FR", "%.2f A | %.2f A", currentLF, currentRF);
-        telemetry.addData("RL / RR", "%.2f A | %.2f A", currentLR, currentRR);
-
-        // --- Afișare în FTC Dashboard (Grafice) ---
-        TelemetryPacket packet = new TelemetryPacket();
-        // ... codul tău existent pentru packet.put ...
-
-        packet.put("Drivetrain Total Amps", String.format("%.3f", totalCurrent));
-        packet.put("Motor RF Amps", String.format("%.3f", currentRF));
-        packet.put("Motor RR Amps", String.format("%.3f", currentRR));
-        packet.put("Motor LF Amps", String.format("%.3f", currentLF));
-        packet.put("Motor LR Amps", String.format("%.3f", currentLR));
-
-        dashboard.sendTelemetryPacket(packet);
-        telemetry.update();
-    }
-
-    private void sendTelemetryMatches(){
-        telemetry.addData("Slow mode: ", slowMode);
-        telemetry.addData("Bile ", carousel.getNoBalls());
-    }
-
-    private double clean(double val) {
-        if (Double.isNaN(val) || Double.isInfinite(val)) return 0;
-        return Math.round(val * 1000.0) / 1000.0;
     }
 }

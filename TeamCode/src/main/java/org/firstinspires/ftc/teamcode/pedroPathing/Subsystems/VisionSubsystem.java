@@ -1,78 +1,150 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.Limelight3A;// Librăria oficială Limelight
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
-import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import android.util.Size;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
-import org.firstinspires.ftc.vision.apriltag.AprilTagPoseFtc;
-import org.firstinspires.ftc.vision.apriltag.AprilTagPoseRaw;
-import org.opencv.core.Point;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 @Config
 public class VisionSubsystem extends SubsystemBase {
-    private Limelight3A limelight;
+    public static int EXPOSURE_MS = 2;
+    public static int GAIN = 230;
+    public static double FOCUS = 0.0;
+
+    private VisionPortal visionPortal;
+    private AprilTagProcessor aprilTag;
 
     private int lastTagId = 0;
-    private double lastTx = 0.0; // Horizontal offset (echivalent bearing)
-    private double lastTy = 0.0; // Vertical offset (folosit pentru distanță)
-    private double lastDistance = 0.0;
-    private boolean hasValidTarget = false;
+    private double lastBearing = 0.0, lastX = 0.0, lastY = 0.0, lastDistance = 0.0;
+    private boolean hasValidTag = false;
 
-    // Constante pentru calculul distanței (Ajustează-le conform robotului tău)
-    public static double CAMERA_HEIGHT = 37.0; // Înălțimea camerei de la sol (cm)
-    public static double TARGET_HEIGHT = 74.0; // Înălțimea centrului AprilTag-ului (cm)
-    public static double CAMERA_PITCH = 16.4;   // Unghiul de înclinare al camerei (grade)
+    /* private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
+            0, -90, 0, 0);*/
 
     public VisionSubsystem(HardwareMap hardwareMap) {
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        aprilTag = new AprilTagProcessor.Builder().build();
 
-        // Setează pipeline-ul (0 este de obicei AprilTags în config-ul Limelight)
-        limelight.pipelineSwitch(0);
-        limelight.start();
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .addProcessor(aprilTag)
+                .setCameraResolution(new Size(960, 720))
+                .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
+                .build();
+        // ▼▼▼ ADAUGĂ ACEST APEL ▼▼▼
+        // Așteptăm ca portalul să fie gata și apoi setăm controalele manuale
+        // Valorile de start: expunere 6ms, gain 100, focus fixat la infinit (0.0)
+        //setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
     }
+
+    // ▼▼▼ ADAUGĂ ACEASTĂ METODĂ NOUĂ COMPLETĂ ▼▼▼
+    public boolean setManualCameraControls(int exposureMS, int gain, double focus) {
+        // Asigură-te că portalul de viziune este deschis și camera face streaming
+        if (visionPortal == null || visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            // Poți adăuga un telemetry.log.add("Aștept camera...") aici pentru debug
+            return false;
+        }
+
+        // --- Setare Expunere și Gain ---
+        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+        if (exposureControl.getMode() != ExposureControl.Mode.Manual) {
+            exposureControl.setMode(ExposureControl.Mode.Manual);
+        }
+        exposureControl.setExposure((long)exposureMS, TimeUnit.MILLISECONDS);
+
+        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+        gainControl.setGain(gain);
+
+        // --- Setare Focalizare ---
+        FocusControl focusControl = visionPortal.getCameraControl(FocusControl.class);
+        if (focusControl.getMode() != FocusControl.Mode.Fixed) {
+            focusControl.setMode(FocusControl.Mode.Fixed);
+        }
+        focusControl.setFocusLength(focus); // Valoare între 0.0 (infinit) și 1.0 (apropiat)
+
+        return true;
+    }
+    // ▲▲▲ SFÂRȘIT METODĂ NOUĂ ▲▲▲
 
     @Override
     public void periodic() {
-        LLResult result = limelight.getLatestResult();
+        //setManualCameraControls(EXPOSURE_MS, GAIN, FOCUS);
+        updateAprilTagData();
+    }
 
-        // Verificăm dacă Limelight vede un AprilTag (Fiducial)
-        if (result != null && result.isValid() && !result.getFiducialResults().isEmpty()) {
-            hasValidTarget = true;
+    private void updateAprilTagData() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
 
-            // Luăm prima detecție din listă (cea mai relevantă)
-            com.qualcomm.hardware.limelightvision.LLResultTypes.FiducialResult fr = result.getFiducialResults().get(0);
+        hasValidTag = false;
+        lastTagId = 0;
+        lastBearing = 0.0;
 
-            lastTagId = (int) fr.getFiducialId(); // ID-ul real (20, 24 etc.)
-            lastTx = fr.getTargetXDegrees();     // Unghiul orizontal (bearing)
-            lastTy = fr.getTargetYDegrees();     // Unghiul vertical (pitch)
+        if (!detections.isEmpty()) {
+            AprilTagDetection tag = detections.get(0);
 
-            // Calcul distanță
-            double angleToTarget = Math.toRadians(CAMERA_PITCH + lastTy);
-            lastDistance = (TARGET_HEIGHT - CAMERA_HEIGHT) / Math.tan(angleToTarget);
-        } else {
-            hasValidTarget = false;
+            if (tag != null && tag.metadata != null) {
+                lastTagId = tag.id;
+                lastX = tag.ftcPose.x;
+                lastY = tag.ftcPose.y;
+                lastDistance = Math.sqrt(lastX * lastX + lastY * lastY);
+                lastBearing = tag.ftcPose.bearing;
+                hasValidTag = true;
+            }
         }
     }
 
-    // Metode simple pentru a citi datele din exterior
-    public boolean hasValidTag() { return hasValidTarget; }
-    public int getLastTagId() { return lastTagId; }
-    public double getLastBearing() { return lastTx; }
+    public int getLastTagId() {
+        return lastTagId;
+    }
+
+    public double getLastBearing() {
+        return lastBearing;
+    }
+
+    public boolean hasValidTag() {
+        return hasValidTag;
+    }
+
+    public double getLastX(){return lastX;};
+
+    public double getLastY(){return lastY;};
+
+    public double getDistance(){return lastDistance;}
 
 
+    public void enableProcesor(){
+        visionPortal.setProcessorEnabled(aprilTag, true);
+    }
+    public void disableProcesor(){
+        visionPortal.setProcessorEnabled(aprilTag, false);
+    }
 
-    public double getDistance() { return lastDistance; }
-    public double getLastX() { return lastTx; }
-    public double getLastY() { return lastDistance; }
+    /* ================= DATA ================= */
 
-    //public void enableProcesor() { limelight.pipelineSwitch(8); }
-    //public void disableProcesor() { limelight.pipelineSwitch(1); } // Presupunând că 1 e un pipeline gol
+    public List<AprilTagDetection> getDetections() {
+        return aprilTag.getDetections();
+    }
+
+    public AprilTagDetection getBestDetection() {
+        List<AprilTagDetection> detections = getDetections();
+        if (detections.isEmpty()) return null;
+        return detections.get(0);
+    }
 
 
 }

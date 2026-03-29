@@ -140,7 +140,7 @@ public class AutoVision11 extends CommandOpMode {
         buildPaths();
 
         carousel.resetForStart();
-        carousel.initAuto();
+        //carousel.initAuto();
 
         // CommandScheduler.getInstance().registerSubsystem(vision);
         CommandScheduler.getInstance().registerSubsystem(carousel);
@@ -267,7 +267,7 @@ public class AutoVision11 extends CommandOpMode {
 
                     ),
 
-                    new InstantCommand(intake::cleanup),
+                    //new InstantCommand(intake::cleanup),
 
 
                     new ParallelCommandGroup(

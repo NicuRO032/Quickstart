@@ -17,10 +17,10 @@ public class ShootAllBallsCommand extends SequentialCommandGroup {
                 new WaitCommand(25),
 
                 // 2. Comandă declanșarea salvei
-                new InstantCommand(carousel::triggerShoot),
+                new InstantCommand(carousel::triggerShoot)
 
                 // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
-                new WaitUntilCommand(carousel::allSlotsEmpty)
+//                new WaitUntilCommand(carousel::allSlotsEmpty)
         );
         addRequirements(carousel);
     }

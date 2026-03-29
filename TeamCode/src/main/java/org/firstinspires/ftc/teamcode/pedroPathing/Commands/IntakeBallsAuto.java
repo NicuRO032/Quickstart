@@ -16,8 +16,8 @@ public class IntakeBallsAuto extends SequentialCommandGroup {
                 new SequentialCommandGroup(
                         new InstantCommand(() -> {
                             carousel.activateIntake();
-                            carousel.setCarouselForIntake();
-                            intake.collect();
+//                            carousel.setCarouselForIntake();
+//                            intake.collect();
                         }),
 
                         // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare

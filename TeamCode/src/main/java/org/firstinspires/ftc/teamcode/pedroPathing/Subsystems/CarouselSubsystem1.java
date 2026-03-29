@@ -39,31 +39,28 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public static final double[] SLOW_SALVO_PAUSE1_FEEDBACK  = {2072.0, 2072.0, 2072.0};
     public static final double[] SLOW_SALVO_PAUSE2_POS       = {0.392, 0.392, 0.392};
     public static final double[] SLOW_SALVO_PAUSE2_FEEDBACK  = {1345.0, 1345.0, 1345.0};
-    public static int SLOW_SHOOT_PAUSE_MS = 200; // Pauza în milisecunde pentru recuperarea turației
+    public static int SLOW_SHOOT_PAUSE_MS = 500; // Pauza în milisecunde pentru recuperarea turației
 
 
     // Toleranța pentru atTarget
-    public static double FEEDBACK_TOLERANCE_MV = 500;
-    public static long AT_TARGET_STABILITY_MS = 50;
+    public static double FEEDBACK_TOLERANCE_MV = 120;
+    public static long AT_TARGET_STABILITY_MS = 20;
     public static double CAROUSEL_SERVO2_OFFSET = 0.02;
 
 
     // Constante shooter
-    public static double SHOOTER_kP = 0.008;
+    public static double SHOOTER_kP = 0.01;
     public static double SHOOTER_kI = 0.0;
     public static double SHOOTER_kD = 0.00001;
     public static double SHOOTER_kF = 0.00046;
     public static final double SHOOTER_MOTOR_CPR = 28.0;
     public static double DEFAULT_SHOOTER_RPM = 3200.0;
-    public static double SHOOTER_IDLE_RPM = 0; // Turația de menținere (ajustează să fie silențioasă)
-
-
 
     /* ================= CONSTANTE ================= */
 
-    public static final double SLOT_OCCUPIED_MM = 100.0;
+    public static final double SLOT_OCCUPIED_MM = 120.0;
     public static double COLOR_SENSOR_OCCUPIED_MM = 70.0;
-    public static final long SENSOR_DELAY_MS = 45;
+    public static final long SENSOR_DELAY_MS = 10;
 
 
 
@@ -73,12 +70,11 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     private final AnalogInput carouselFeedback;
     private final DistanceSensor entrySensor;
-    private final DistanceSensor intakeGateSensor;
     private final NormalizedColorSensor colorSensor1, colorSensor2;
     private final IntakeSubsystem1 intake;
 
     /* ================= STATES ================= */
-    public enum IntakeState { IDLE, CLEANUP_EXCESS, STORE_AND_ADVANCE, REVERSE_INTAKE }
+    public enum IntakeState {IDLE, STORE_AND_ADVANCE, MANUAL_MOVE, REVERSE_INTAKE}
     private IntakeState intakeState = IntakeState.IDLE;
 
     public enum OuttakeState { OUT_IDLE, PREPARING_SALVO, RELAXING_SERVO, SHOOTING_SALVO, FINISHED }
@@ -102,7 +98,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
     private OuttakePattern activePattern = OuttakePattern.GPP;
     private int activeSalvoIndex = 0; // Indexul salvei (0, 1, 2) care se va executa
     private boolean needsAutoPrepare = false; //Flag pentru a cere pregătirea automată a outtake-ului
-    private boolean ballWasAtGate = false;
 
     public enum BallColor { GREEN, PURPLE, UNKNOWN }
     public enum OuttakePattern { GPP, PGP, PPG }
@@ -138,8 +133,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
         shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motorShooter1");
         shooterMotor2 = hardwareMap.get(DcMotorEx.class, "motorShooter2");
-        entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_slot");
-        intakeGateSensor = hardwareMap.get(DistanceSensor.class, "sensor_gate");
+        entrySensor = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color1");
         colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensor_color2");
 
@@ -276,15 +270,13 @@ public class CarouselSubsystem1 extends SubsystemBase {
      * Oprește totul și resetează sistemul.
      */
     public void abortAll() {
-        setShooterTargetRPM(SHOOTER_IDLE_RPM);
-        intake.stop(); // OPREȘTE MOTOARELE
+        setShooterTargetRPM(0.0);
         autoEnabled = true;
-        intakeIsOn = false; // Resetează variabila globală din TeleOp
-
         for (int i = 0; i < 3; i++) {
             occupied[i] = false;
             slotColor[i] = BallColor.UNKNOWN;
         }
+
         resetForStart();
     }
 
@@ -371,17 +363,20 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public void resetForStart() {
         goToSlot(0);
-        intakeState = IntakeState.IDLE;
-        outtakeState = OuttakeState.OUT_IDLE;
+        this.intakeState = IntakeState.IDLE;
+        this.outtakeState = OuttakeState.OUT_IDLE;
         slowShootState = SlowShootSequence.INACTIVE;
-        autoEnabled = true;
+        this.autoEnabled = true;
     }
 
     public boolean isReadyToShoot() {
         return (outtakeState == OuttakeState.FINISHED || outtakeState == OuttakeState.OUT_IDLE) && atTarget() && isShooterReady();
     }
 
+
+
     public void activateIntake() { autoEnabled = true; }
+
 
     public void forcePreload(BallColor s0, BallColor s1, BallColor s2) {
         occupied[0] = true; slotColor[0] = s0;
@@ -392,87 +387,102 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public void setActivePattern(OuttakePattern pattern) { this.activePattern = pattern; }
 
 
-    private void finalizeSlot() {
-        occupied[logicalIndex] = true;
-        slotColor[logicalIndex] = detectBallColor();
+    public void manualStepLeft() {
+        autoEnabled = false;
+        int nextSlot = (logicalIndex - 1 + 3) % 3;
+        goToSlot(nextSlot);
+        intakeState = IntakeState.MANUAL_MOVE;
     }
-    private void handleIntake() {    // Calculăm câte bile avem deja stocate
-        int occupiedCount = 0;
-        for (boolean b : occupied) if (b) occupiedCount++;
 
+    public void manualStepRight() {////////////Aici trebuie refacut true-->false si logivalIndex+1
+        autoEnabled = false;
+        int nextSlot = (logicalIndex +1 ) % 3;
+        goToSlot(nextSlot);
+        intakeState = IntakeState.MANUAL_MOVE;
+    }
+
+
+    private void handleIntake() {
         switch (intakeState) {
             /**
-             * STAREA 1: IDLE - Așteaptă ca senzorul de la poartă (intakeGateSensor) să vadă o bilă.
+             * STAREA 1: Așteaptă sosirea unei bile.
+             * Stăm aici până când o bilă este detectată stabil la intrare ȘI caruselul nu e plin.
              */
             case IDLE:
-                if (autoEnabled && !allSlotsOccupied()) {
-                    boolean ballAtGate = intakeGateSensor.getDistance(DistanceUnit.MM) < 150.0 || entrySlotHasBall();
-
-                    if (ballAtGate) {
-                        ballWasAtGate = true; // REȚINEM că o bilă a intrat în sistem
-                        if (occupiedCount == 2) {
-                            intake.cleanup();
-                            intakeState = IntakeState.CLEANUP_EXCESS;
-                        } else {
-                            intake.collect();
-                            intakeState = IntakeState.STORE_AND_ADVANCE;
-                        }
-                    }
+                // Condiția de pornire: este activat modul automat, o bilă a sosit și mai este loc.
+                if (autoEnabled && entrySlotHasBall() && !allSlotsOccupied()) {
+                    // O bilă a sosit. Trecem la pasul 2: stocare și avansare.
+                    intakeState = IntakeState.STORE_AND_ADVANCE;
                 }
                 break;
 
-            case STORE_AND_ADVANCE:
-                if (entrySlotHasBall()) {
-                    // PROTECȚIA 1: Verificăm dacă slotul curent (logicalIndex) este gol
-                    // PROTECȚIA 2: Verificăm dacă bila a trecut anterior prin poartă
-                    finalizeSlot();
-                    ballWasAtGate = false; // Resetăm flag-ul după ce am înregistrat bila
-
-                    if (allSlotsOccupied()) {
-                        intake.eject();
-                        intakeReverseTimer.reset();
-                        intakeState = IntakeState.REVERSE_INTAKE;
-                        autoEnabled = false;
-                        intakeIsOn = false;
-                    } else {
-                        // Logica de găsire a următorului slot rămâne la fel...
-                        int nextEmptySlot = -1;
-                        for (int i = 0; i < 3; i++) {
-                            int checkIndex = (logicalIndex + 1 + i) % 3;
-                            if (!occupied[checkIndex]) {
-                                nextEmptySlot = checkIndex;
-                                break;
-                            }
-                        }
-                        if (nextEmptySlot != -1) goToSlot(nextEmptySlot);
-                        intakeState = IntakeState.IDLE;
-                    }
-                }
-                break;
-
-            case CLEANUP_EXCESS:
-                if (entrySlotHasBall()) {
-                    // Aceeași protecție dublă
-                    if (!occupied[logicalIndex] && ballWasAtGate) {
-                        finalizeSlot();
-                        ballWasAtGate = false;
-
-                        intake.eject();
-                        intakeReverseTimer.reset();
-                        intakeState = IntakeState.REVERSE_INTAKE;
-                        autoEnabled = false;
-                        intakeIsOn = false;
-                        needsAutoPrepare = true;
-                    }
-                }
-                break;
             /**
-             * STAREA 4: REVERSE_INTAKE - Curățare finală după ce caruselul e plin.
+             * STAREA 2: Marchează slotul, citește culoarea și avansează la următorul.
+             * Această stare se execută o singură dată per bilă.
              */
-            case REVERSE_INTAKE:
-                if (intakeReverseTimer.milliseconds() > 1000) {
-                    intake.stop();
+            case STORE_AND_ADVANCE:
+                // a) Marcăm slotul curent (logicalIndex) ca fiind ocupat.
+                occupied[logicalIndex] = true;
+
+                // b) Citim și salvăm culoarea bilei.
+                slotColor[logicalIndex] = detectBallColor();
+
+                // Verificăm dacă am umplut caruselul DUPĂ ce am adăugat bila curentă.
+                if (allSlotsOccupied()) {
+                    // Caruselul s-a umplut.
+                    autoEnabled = false;
+                    // IMPORTANT: Oprim orice logică de "ON" din TeleOp pentru a nu avea conflicte
+                    intakeIsOn = false;
+
+                    intake.setPower(0.7); // Folosește o putere pozitivă pentru outtake
+                    intakeReverseTimer.reset();
+                    intakeState = IntakeState.REVERSE_INTAKE;
+                    needsAutoPrepare = true;
+
+                } else {
+                    // Mai este loc. Găsim următorul slot liber.
+                    int nextEmptySlot = -1;
+                    for (int i = 0; i < 3; i++) {
+                        // Căutăm pornind de la slotul următor celui curent, pentru eficiență.
+                        int checkIndex = (logicalIndex + 1 + i) % 3;
+                        if (!occupied[checkIndex]) {
+                            nextEmptySlot = checkIndex;
+                            break;
+                        }
+                    }
+
+                    // Dacă am găsit un slot gol (ceea ce ar trebui să se întâmple mereu aici),
+                    // comandăm rotirea caruselului pentru a-l aduce la ora 12.
+                    if (nextEmptySlot != -1) {
+                        goToSlot(nextEmptySlot);
+                    }
+
+                    // IMPORTANT: După ce am comandat mișcarea, ne întoarcem IMEDIAT la IDLE.
+                    // Mașina de stări de intake și-a terminat treaba pentru această bilă.
+                    // Acum așteaptă dispariția bilei curente și apariția uneia noi.
                     intakeState = IntakeState.IDLE;
+                }
+                break;
+
+            //reversing the intake after we load all balls
+            case REVERSE_INTAKE:
+                // Așteptăm să treacă timpul de inversare
+                if (intakeReverseTimer.milliseconds() > 400) {
+                    intake.stop(); // Oprim motorul de intake
+                    intakeState = IntakeState.IDLE; // Revenim la starea de așteptare
+                }
+                break;
+
+
+            /**
+             * STAREA 4: Control Manual.
+             * Această stare este activată de funcțiile manualStep. Așteaptă finalizarea
+             * mișcării și apoi reactivează automat intake-ul.
+             */
+            case MANUAL_MOVE:
+                if (atTarget()) {
+                    intakeState = IntakeState.IDLE;
+                    autoEnabled = true;
                 }
                 break;
         }
@@ -505,7 +515,7 @@ public class CarouselSubsystem1 extends SubsystemBase {
                 if (outtakeTimer.milliseconds() > STABILIZATION_DURATION_MS) {
                     // A trecut timpul de stabilizare, Pornim MIȘCAREA LENTĂ de relaxare.
                     double currentTarget = targetServoPosition;
-                    double newTarget = currentTarget - 0.06; // Micșorăm poziția
+                    double newTarget = currentTarget - 0.07; // Micșorăm poziția
 
                     // Comandăm MIȘCAREA LENTĂ în loc de cea instantanee
                     startSlowMove(newTarget);
@@ -541,44 +551,41 @@ public class CarouselSubsystem1 extends SubsystemBase {
         switch (slowShootState) {
             case STEP_1:
                 // Nu dăm comandă aici (a fost dată în triggerSlowShoot)
-                if (atTarget() || !occupied[logicalIndex]) {
+                if (atTarget()) {
                     outtakeTimer.reset();
                     slowShootState = SlowShootSequence.PAUSE_1;
                 }
                 break;
 
             case PAUSE_1:
-                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS || !occupied[logicalIndex]) {
+                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
                     // COMANDĂM AICI (o singură dată, înainte să plecăm din stare)
                     goToServoPosition(SLOW_SALVO_PAUSE2_POS[activeSalvoIndex], SLOW_SALVO_PAUSE2_FEEDBACK[activeSalvoIndex]);
                     slowShootState = SlowShootSequence.STEP_2;
-                    logicalIndex = (logicalIndex + 1) % 3;
                 }
                 break;
 
             case STEP_2:
                 // DOAR AȘTEPTĂM. Nu punem goToServoPosition aici!
-                if (atTarget() || !occupied[logicalIndex]) {
+                if (atTarget()) {
                     outtakeTimer.reset();
                     slowShootState = SlowShootSequence.PAUSE_2;
                 }
                 break;
 
             case PAUSE_2:
-                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS || !occupied[logicalIndex]) {
+                if (outtakeTimer.milliseconds() >= SLOW_SHOOT_PAUSE_MS) {
                     // COMANDĂM POZIȚIA FINALĂ AICI
                     goToServoPosition(SALVO_END_POSITIONS[activeSalvoIndex], SALVO_END_FEEDBACK_MV[activeSalvoIndex]);
                     slowShootState = SlowShootSequence.STEP_3;
-                    logicalIndex = (logicalIndex + 1) % 3;
                 }
                 break;
 
             case STEP_3:
                 // Așteptăm confirmarea finală
-                if (atTarget() || !occupied[logicalIndex]) {
+                if (atTarget()) {
                     //outtakeState = OuttakeState.SHOOTING_SALVO; // Opțional, poți pune direct FINISHED
                     //slowShootState = SlowShootSequence.INACTIVE;
-                    logicalIndex = (logicalIndex + 1) % 3;
                     abortAll();
                 }
                 break;
@@ -643,8 +650,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
 
     public boolean isShooterReady() { return Math.abs(getShooterCurrentRPM() - currentTargetRPM) < 500; }
 
-    public boolean getReadyToShootCarousel() { return outtakeState == OuttakeState.FINISHED; }
-
     public OuttakePattern getActivePattern() { return this.activePattern; }
     public boolean atTarget() {
         double currentVoltage = carouselFeedback.getVoltage();
@@ -681,7 +686,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
     public boolean allSlotsOccupied() { return occupied[0] && occupied[1] && occupied[2]; }
-    public boolean allSlotsEmpty() { return !occupied[0] && !occupied[1] && !occupied[2]; }
     public String getIntakeState() { return intakeState.name(); }
     public String getOuttakeState() { return outtakeState.name(); }
     public int getLogicalIndex() { return logicalIndex; }
@@ -691,8 +695,6 @@ public class CarouselSubsystem1 extends SubsystemBase {
     public SlowShootSequence getSlowShootState() {
         return this.slowShootState;
     }
-
-    public void setCarouselForIntake() { intakeState = IntakeState.IDLE; }
 
     public boolean getOccupied(int i) { return occupied[i]; }
     public BallColor getBallColor(int i) { return slotColor[i]; }
@@ -731,10 +733,8 @@ public class CarouselSubsystem1 extends SubsystemBase {
     }
 
 
-    public double getSlotDistance() {
+    public double getMainDistance() {
         return entrySensor.getDistance(DistanceUnit.MM);
-    }
-    public double getGateDistance() { return intakeGateSensor.getDistance(DistanceUnit.MM);
     }
 
     public double getColor1Distance() {
@@ -745,51 +745,17 @@ public class CarouselSubsystem1 extends SubsystemBase {
         return ((DistanceSensor) colorSensor2).getDistance(DistanceUnit.MM);
     }
 
-    public void initAuto(){
-        for(int i = 0; i < 3; i++){
-            occupied[i] = true;
-        }
-    }
 
-    public int getNoBalls(){
-        int ans = 0;
-
-        for(int i = 0; i < 3; i++)
-            if(occupied[i])
-                ans++;
-
-        return ans;
-    }
-
-    public void setAllSlotsOccupied(){
-        for(int i = 0; i < 3; i++)
-            occupied[i] = true;
-    }
 
     @Override
     public void periodic() {
-        double shooterPower;
-        double currentVelo = shooterMotor1.getVelocity();
-
-        // Dacă avem o țintă mare (comandă de tragere), folosim PID-ul complet
-        if (currentTargetRPM > SHOOTER_IDLE_RPM + 100) {
-            shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
-            double targetVeloTicks = rpmToTicksPerSecond(currentTargetRPM);
-            double pidCorrection = shooterController.calculate(currentVelo, targetVeloTicks);
-            double ff = targetVeloTicks * SHOOTER_kF;
-            shooterPower = ff + pidCorrection;
-        }
-        // Dacă suntem în restul timpului (Idle), menținem volanta folosind DOAR Feedforward
-        else if (currentTargetRPM > 0 || autoEnabled) {
-            // Folosim doar kF pentru a-i da un curent minim constant
-            double idleVeloTicks = rpmToTicksPerSecond(SHOOTER_IDLE_RPM);
-            shooterPower = idleVeloTicks * SHOOTER_kF;
-        }
-        // Oprim de tot doar dacă RPM-ul țintă a fost pus pe 0 (ex: abortAll)
-        else {
-            shooterPower = 0;
-        }
-
+        // --- BUCLA DE CONTROL PENTRU SHOOTER (PIDF Manual) ---
+        shooterController.setPID(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD);
+        double currentShooterVelo = shooterMotor1.getVelocity(); // În ticks/sec
+        double targetShooterVelo = rpmToTicksPerSecond(currentTargetRPM);
+        double pidCorrection = shooterController.calculate(currentShooterVelo,targetShooterVelo);
+        double feedforward = targetShooterVelo * SHOOTER_kF;
+        double shooterPower = feedforward + pidCorrection;
         shooterMotor1.setPower(shooterPower);
         shooterMotor2.setPower(shooterPower);
 
