@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.Subsystems;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
@@ -10,22 +9,13 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.Exposur
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import android.util.Size;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 @Config
 public class VisionSubsystem extends SubsystemBase {
-    public static int EXPOSURE_MS = 2;
-    public static int GAIN = 230;
-    public static double FOCUS = 0.0;
 
     private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;
@@ -39,6 +29,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     public VisionSubsystem(HardwareMap hardwareMap) {
         aprilTag = new AprilTagProcessor.Builder().build();
+
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
@@ -139,6 +130,7 @@ public class VisionSubsystem extends SubsystemBase {
     public List<AprilTagDetection> getDetections() {
         return aprilTag.getDetections();
     }
+
 
     public AprilTagDetection getBestDetection() {
         List<AprilTagDetection> detections = getDetections();

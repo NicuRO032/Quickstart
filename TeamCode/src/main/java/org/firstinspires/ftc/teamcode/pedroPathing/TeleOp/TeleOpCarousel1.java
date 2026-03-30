@@ -333,8 +333,10 @@ public class TeleOpCarousel1 extends OpMode {
                 // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
                 if (vision.hasValidTag() && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
-                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
-                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
+//                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
+//                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
+                    carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
+                    turret.setShooterAngle(0.00402116 * x - 0.0283422);
                     //carousel.setShooterTargetRPM(SHOOT_RPM);
                     //turret.setShooterAngle(ANGLE_SHOOT);
                 }
@@ -371,8 +373,10 @@ public class TeleOpCarousel1 extends OpMode {
                     // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
                     if (carousel.canChangeRPM()) {
                         double x = vision.getDistance();
-                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
-                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
+//                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
+//                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
+                        carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
+                        turret.setShooterAngle(0.00402116 * x - 0.0283422);
                         //carousel.setShooterTargetRPM(SHOOT_RPM);
                         //turret.setShooterAngle(ANGLE_SHOOT);
                     }
@@ -409,6 +413,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         }
     }
+
 
 
     @SuppressLint("DefaultLocale")
@@ -473,7 +478,6 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("17.Shooter Angle:", turret.getCurrentShooterAngle());
         packet.put("18.Turret Angle:", turret.getTargetAngle());
         packet.put("18.AprilTag Bearing:", vision.getLastBearing());
-
 
         // Adaugă telemetria pentru viteza shooter-ului aici
         packet.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
