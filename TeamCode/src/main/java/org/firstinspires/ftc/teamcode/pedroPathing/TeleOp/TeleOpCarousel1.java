@@ -184,7 +184,7 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        sendTelemetry();
+      //  sendTelemetry();
 
     }
 
@@ -335,8 +335,8 @@ public class TeleOpCarousel1 extends OpMode {
                     double x = vision.getDistance();
 //                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
 //                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
-                    carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
-                    turret.setShooterAngle(0.00402116 * x - 0.0283422);
+                    carousel.setShooterTargetRPM(9.97723 * x + 2280.80533);
+                    turret.setShooterAngle(0.00160864 * x - 0.0544748);
                     //carousel.setShooterTargetRPM(SHOOT_RPM);
                     //turret.setShooterAngle(ANGLE_SHOOT);
                 }
@@ -375,8 +375,8 @@ public class TeleOpCarousel1 extends OpMode {
                         double x = vision.getDistance();
 //                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
 //                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
-                        carousel.setShooterTargetRPM(28.24809 * x + 2353.50774);
-                        turret.setShooterAngle(0.00402116 * x - 0.0283422);
+                        carousel.setShooterTargetRPM(9.97723 * x + 2280.80533);
+                        turret.setShooterAngle(0.00160864 * x - 0.0544748);
                         //carousel.setShooterTargetRPM(SHOOT_RPM);
                         //turret.setShooterAngle(ANGLE_SHOOT);
                     }

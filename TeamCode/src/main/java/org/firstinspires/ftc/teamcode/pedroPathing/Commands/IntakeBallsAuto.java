@@ -13,13 +13,16 @@ public class IntakeBallsAuto extends SequentialCommandGroup {
 
     public IntakeBallsAuto (CarouselSubsystem1 carousel, IntakeSubsystem1 intake){
         addCommands(
-                new InstantCommand(intake::collect),
-//                new InstantCommand(carousel::setCarouselForIntake),
+                new SequentialCommandGroup(
+                        new InstantCommand(() -> {
+                            carousel.activateIntake();
+//                            carousel.setCarouselForIntake();
+//                            intake.collect();
+                        }),
 
-                // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
-//                new WaitUntilCommand(carousel::allSlotsOccupied),
-
-                new WaitCommand(400)
+                        // 3. Așteaptă până când subsistemul se resetează singur în starea IDLE după finalizare
+                        new WaitUntilCommand(carousel::allSlotsOccupied)
+                )
         );
         addRequirements(carousel, intake);
     }
