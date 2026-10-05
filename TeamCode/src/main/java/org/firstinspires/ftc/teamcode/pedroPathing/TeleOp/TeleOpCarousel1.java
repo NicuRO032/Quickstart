@@ -21,6 +21,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.CarouselSubsystem1
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.IntakeSubsystem1;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Subsystems.VisionSubsystem;
+import org.firstinspires.ftc.teamcode.util.DesktopTelemetryServer;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 @TeleOp(name="TeleOp_Final_cu_Turela")
@@ -36,6 +37,8 @@ public class TeleOpCarousel1 extends OpMode {
     public static Pose startingPose;
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
+
+    private DesktopTelemetryServer telemetryServer;
 
     private boolean slowShoot = false, fastShoot = false;
     private ElapsedTime delayAruncare = new ElapsedTime();
@@ -72,6 +75,10 @@ public class TeleOpCarousel1 extends OpMode {
         //Intake1IsOn = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
+
+        // Inițializare server pe portul 5555
+        telemetryServer = new DesktopTelemetryServer(5555);
+        telemetryServer.start();
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
@@ -155,6 +162,15 @@ public class TeleOpCarousel1 extends OpMode {
         CommandScheduler.getInstance().run();
         follower.update();
 
+        Pose currentPose = follower.getPose();
+        if (currentPose != null && telemetryServer != null) {
+            telemetryServer.sendPose(
+                    currentPose.getX(),
+                    currentPose.getY(),
+                    Math.toDegrees(currentPose.getHeading())
+            );
+        }
+
         if (driver1.getButton(GamepadKeys.Button.LEFT_BUMPER)) {
             follower.setTeleOpDrive(
                     0, 0, 0, true
@@ -163,13 +179,13 @@ public class TeleOpCarousel1 extends OpMode {
             if (!slowMode) follower.setTeleOpDrive(
                     -gamepad1.left_stick_y,
                     -gamepad1.left_stick_x,
-                    gamepad1.left_trigger - gamepad1.right_trigger,
+                    -gamepad1.left_trigger + gamepad1.right_trigger,
                     true
             );
             else follower.setTeleOpDrive(
                     -gamepad1.left_stick_y * slowModeMultiplier,
                     -gamepad1.left_stick_x * slowModeMultiplier,
-                    (gamepad1.left_trigger - gamepad1.right_trigger) * slowModeMultiplier,
+                    (-gamepad1.left_trigger + gamepad1.right_trigger) * slowModeMultiplier,
                     true
             );
         }
@@ -184,8 +200,15 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-      //  sendTelemetry();
+        //  sendTelemetry();
 
+    }
+
+    @Override
+    public void stop() {
+        if (telemetryServer != null) {
+            telemetryServer.stop();
+        }
     }
 
     private void handleDriver1Controls() {
@@ -400,7 +423,7 @@ public class TeleOpCarousel1 extends OpMode {
                     }
 
                 } else {
-                    // ---- Dacă am pierdut ținta (bestTag este null sau are ID greșit) ----
+                    // ---- Dacă am pierdut ținta (bestTag best null sau are ID greșit) ----
 
                     // Trecem înapoi la starea de căutare
                     turretTeleOpState = TurretTeleOpState.SEMI_AUTO_SEARCHING;
