@@ -28,21 +28,33 @@ public class DesktopTelemetryServer {
 
         serverThread = new Thread(() -> {
             try {
+                // SO_REUSEADDR permite redeschiderea rapida a portului fara erori de "Address already in use"
                 serverSocket = new ServerSocket(port);
+                serverSocket.setReuseAddress(true);
+
                 while (isRunning) {
-                    // accept() blocks waiting for connection, outside synchronized block
+                    // Blocking accept()
                     Socket socket = serverSocket.accept();
 
+                    // Configurari pentru socket-ul clientului
+                    socket.setTcpNoDelay(true); // Trimite pachetele de telemetrie imediat (fara buffering Nagle)
+                    socket.setKeepAlive(true);
+
                     synchronized (this) {
+                        // Inchidem conexiunea veche daca exista una activa
                         if (clientSocket != null && !clientSocket.isClosed()) {
-                            clientSocket.close();
+                            try { clientSocket.close(); } catch (Exception ignored) {}
                         }
+                        if (writer != null) {
+                            writer.close();
+                        }
+
                         clientSocket = socket;
                         writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
                     }
                 }
             } catch (Exception ignored) {
-                // Exception caught when serverSocket is closed on stop()
+                // Exceptie normala cand serverSocket este inchis din stop()
             }
         }, "DesktopTelemetryServerThread");
 
@@ -51,22 +63,31 @@ public class DesktopTelemetryServer {
     }
 
     public synchronized void sendPose(double x, double y, double headingDeg) {
-        if (writer != null && !writer.checkError()) {
-            writer.println(String.format(Locale.US, "%.3f,%.3f,%.3f", x, y, headingDeg));
+        if (writer != null) {
+            // Verificam daca clientul s-a deconectat sau daca canalul a intampinat o eroare
+            if (writer.checkError()) {
+                cleanupClient();
+            } else {
+                writer.println(String.format(Locale.US, "%.3f,%.3f,%.3f", x, y, headingDeg));
+            }
+        }
+    }
+
+    private void cleanupClient() {
+        if (writer != null) {
+            writer.close();
+            writer = null;
+        }
+        if (clientSocket != null && !clientSocket.isClosed()) {
+            try { clientSocket.close(); } catch (Exception ignored) {}
+            clientSocket = null;
         }
     }
 
     public synchronized void stop() {
         isRunning = false;
         try {
-            if (writer != null) {
-                writer.close();
-                writer = null;
-            }
-            if (clientSocket != null && !clientSocket.isClosed()) {
-                clientSocket.close();
-                clientSocket = null;
-            }
+            cleanupClient();
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
                 serverSocket = null;

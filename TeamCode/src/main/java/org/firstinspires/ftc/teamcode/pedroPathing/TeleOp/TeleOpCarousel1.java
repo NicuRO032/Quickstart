@@ -67,6 +67,8 @@ public class TeleOpCarousel1 extends OpMode {
 
     @Override
     public void init() {
+        telemetryServer = new DesktopTelemetryServer(5555);
+        telemetryServer.start();
         CommandScheduler.getInstance().reset();
         if (startingPose == null) {
             startingPose = new Pose(0, 0, 0);
@@ -75,10 +77,6 @@ public class TeleOpCarousel1 extends OpMode {
         //Intake1IsOn = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
-
-        // Inițializare server pe portul 5555
-        telemetryServer = new DesktopTelemetryServer(5555);
-        telemetryServer.start();
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
@@ -149,6 +147,19 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.update();
 
         //vision.disableProcesor();
+    }
+
+    @Override
+    public void init_loop() {
+        follower.update();
+        Pose currentPose = follower.getPose();
+        if (currentPose != null && telemetryServer != null) {
+            telemetryServer.sendPose(
+                    currentPose.getX(),
+                    currentPose.getY(),
+                    Math.toDegrees(currentPose.getHeading())
+            );
+        }
     }
 
     @Override
@@ -270,6 +281,7 @@ public class TeleOpCarousel1 extends OpMode {
 
         if (carousel.getOuttakeState().equals("OUT_IDLE")) outtakePrepared = false;
     }
+
     private void handleDriver2Controls() {
         // --- Control Unghi Shooter (păstrat) ---
         if (driver2.wasJustPressed(GamepadKeys.Button.Y))
@@ -356,8 +368,6 @@ public class TeleOpCarousel1 extends OpMode {
                 // Setarea RPM-ului și unghiului în funcție de distanță (păstrată)
                 if (vision.hasValidTag() && carousel.canChangeRPM()) { // Verificăm dacă avem o țintă vizibilă, chiar dacă nu e cea corectă
                     double x = vision.getDistance();
-//                    carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
-//                    turret.setShooterAngle(0.000952381 * x - 0.00555556);
                     carousel.setShooterTargetRPM(9.97723 * x + 2280.80533);
                     turret.setShooterAngle(0.00160864 * x - 0.0544748);
                     //carousel.setShooterTargetRPM(SHOOT_RPM);
@@ -396,8 +406,6 @@ public class TeleOpCarousel1 extends OpMode {
                     // 2. Setăm RPM-ul și unghiul shooter-ului în funcție de distanță
                     if (carousel.canChangeRPM()) {
                         double x = vision.getDistance();
-//                        carousel.setShooterTargetRPM(5.82256 * x + 2597.00876);
-//                        turret.setShooterAngle(0.000952381 * x - 0.00555556);
                         carousel.setShooterTargetRPM(9.97723 * x + 2280.80533);
                         turret.setShooterAngle(0.00160864 * x - 0.0544748);
                         //carousel.setShooterTargetRPM(SHOOT_RPM);
@@ -437,8 +445,6 @@ public class TeleOpCarousel1 extends OpMode {
         }
     }
 
-
-
     @SuppressLint("DefaultLocale")
     private void sendTelemetry() {
         double bearing = vision.getLastBearing();
@@ -460,18 +466,6 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
-        /**
-         packet.put("01. Turret TeleOp State", turretTeleOpState.name());
-         packet.put("02. Turret Subsystem State", turret.getControlState().name());
-         packet.put("03. Turret Target", turret.getTargetAngle());
-         packet.put("04. Turret Current", turret.getCurrentAngle());
-         packet.put("05. AprilTag Bearing", bearing);
-         packet.put("06. Shooter Angle Mode", turret.getAngleControlState());
-         packet.put("07. Shooter Angle Pos", turret.getShooterAnglePosition());
-         packet.put("08. Global index", carousel.getGlobalIndex());
-         packet.put("09. LogicalIndex", carousel.getLogicalIndex());
-         packet.put("10. Outtake State", carousel.getOuttakeState());
-         **/
 
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
@@ -482,7 +476,6 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("041.Carousel Current Feedback (mV)", String.format("%.3f", carousel.getCurrentFeedbackMv()));
         packet.put("042.Carousel Feedback Error (mV)", String.format("%.3f", carousel.getFeedbackError()));
         packet.put("043.Carousel At Target", carousel.atTarget()); // Foarte util de monitorizat
-
 
         packet.put("050. Main Distance (mm)", carousel.getMainDistance());
         packet.put("051. Color1 Distance (mm)", String.format("%.3f", carousel.getColor1Distance()));
@@ -507,14 +500,6 @@ public class TeleOpCarousel1 extends OpMode {
         packet.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
         packet.put("Shooter Power", carousel.getShooterPower());
 
-
-/**
- packet.put("14.Turret TeleOp State", turretTeleOpState.name());
- packet.put("15.Turret Subsystem State", turret.getControlState().name());
- packet.put("16.Turret Target", turret.getTargetAngle());
- packet.put("17.Turret Current", turret.getCurrentAngle());
- packet.put("18.AprilTag Bearing", bearing);
- **/
         dashboard.sendTelemetryPacket(packet);
     }
 }
