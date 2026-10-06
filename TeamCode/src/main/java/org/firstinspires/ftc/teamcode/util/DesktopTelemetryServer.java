@@ -4,7 +4,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class DesktopTelemetryServer {
     private final int port;
@@ -13,6 +15,9 @@ public class DesktopTelemetryServer {
     private PrintWriter writer;
     private Thread serverThread;
     private volatile boolean isRunning = false;
+
+    // Buffer pentru datele de telemetrie stil Dashboard
+    private final Map<String, String> telemetryMap = new LinkedHashMap<>();
 
     public DesktopTelemetryServer() {
         this(5555);
@@ -28,20 +33,15 @@ public class DesktopTelemetryServer {
 
         serverThread = new Thread(() -> {
             try {
-                // SO_REUSEADDR permite redeschiderea rapida a portului fara erori de "Address already in use"
                 serverSocket = new ServerSocket(port);
                 serverSocket.setReuseAddress(true);
 
                 while (isRunning) {
-                    // Blocking accept()
                     Socket socket = serverSocket.accept();
-
-                    // Configurari pentru socket-ul clientului
-                    socket.setTcpNoDelay(true); // Trimite pachetele de telemetrie imediat (fara buffering Nagle)
+                    socket.setTcpNoDelay(true);
                     socket.setKeepAlive(true);
 
                     synchronized (this) {
-                        // Inchidem conexiunea veche daca exista una activa
                         if (clientSocket != null && !clientSocket.isClosed()) {
                             try { clientSocket.close(); } catch (Exception ignored) {}
                         }
@@ -53,23 +53,44 @@ public class DesktopTelemetryServer {
                         writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
                     }
                 }
-            } catch (Exception ignored) {
-                // Exceptie normala cand serverSocket este inchis din stop()
-            }
+            } catch (Exception ignored) {}
         }, "DesktopTelemetryServerThread");
 
         serverThread.setDaemon(true);
         serverThread.start();
     }
 
+    // Trimitere pozitie robot
     public synchronized void sendPose(double x, double y, double headingDeg) {
         if (writer != null) {
-            // Verificam daca clientul s-a deconectat sau daca canalul a intampinat o eroare
             if (writer.checkError()) {
                 cleanupClient();
             } else {
-                writer.println(String.format(Locale.US, "%.3f,%.3f,%.3f", x, y, headingDeg));
+                writer.println(String.format(Locale.US, "POSE,%.3f,%.3f,%.3f", x, y, headingDeg));
             }
+        }
+    }
+
+    // Adaugă o cheie și o valoare în pachetul curent (stil packet.put)
+    public synchronized void put(String key, Object value) {
+        telemetryMap.put(key, String.valueOf(value));
+    }
+
+    // Trimite tot pachetul de date adunat și curăță buffer-ul
+    public synchronized void sendTelemetry() {
+        if (writer != null && !telemetryMap.isEmpty()) {
+            if (writer.checkError()) {
+                cleanupClient();
+                return;
+            }
+
+            StringBuilder builder = new StringBuilder("DATA");
+            for (Map.Entry<String, String> entry : telemetryMap.entrySet()) {
+                builder.append(";").append(entry.getKey()).append("=").append(entry.getValue());
+            }
+
+            writer.println(builder.toString());
+            telemetryMap.clear();
         }
     }
 
@@ -92,8 +113,6 @@ public class DesktopTelemetryServer {
                 serverSocket.close();
                 serverSocket = null;
             }
-        } catch (Exception ignored) {
-            // Cleanup exceptions ignored
-        }
+        } catch (Exception ignored) {}
     }
 }

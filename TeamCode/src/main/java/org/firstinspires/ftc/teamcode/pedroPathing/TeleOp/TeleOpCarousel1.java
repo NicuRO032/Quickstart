@@ -155,8 +155,8 @@ public class TeleOpCarousel1 extends OpMode {
         Pose currentPose = follower.getPose();
         if (currentPose != null && telemetryServer != null) {
             telemetryServer.sendPose(
-                    currentPose.getX(),
                     currentPose.getY(),
+                    currentPose.getX(),
                     Math.toDegrees(currentPose.getHeading())
             );
         }
@@ -211,7 +211,7 @@ public class TeleOpCarousel1 extends OpMode {
         handleDriver1Controls();
         handleDriver2Controls();
 
-        //  sendTelemetry();
+          sendTelemetry();
 
     }
 
@@ -466,6 +466,19 @@ public class TeleOpCarousel1 extends OpMode {
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
+
+        if (telemetryServer != null) {
+            telemetryServer.put("00. Intake State", carousel.getIntakeState());
+            telemetryServer.put("10. Outtake State", carousel.getOuttakeState());
+            telemetryServer.put("101.SlowShootState", carousel.getSlowShootState());
+            telemetryServer.put("02.LogicalIndex", carousel.getLogicalIndex());
+            telemetryServer.put("Shooter Target Velocity", carousel.getShooterTargetRPM());
+            telemetryServer.put("Shooter Current Velocity", carousel.getShooterCurrentRPM());
+            telemetryServer.put("Shooter Power", carousel.getShooterPower());
+
+            // Trimite pachetul adunat prin TCP
+            telemetryServer.sendTelemetry();
+        }
 
         packet.put("00. Intake State", carousel.getIntakeState());
         packet.put("10. Outtake State", carousel.getOuttakeState());
